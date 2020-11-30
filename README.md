@@ -1,6 +1,38 @@
 # data-imputation-paper
 
+## Paper Scope
 
+### Datasets
+
+120 - 150 datasets from [OpenML](https://www.openml.org). Only numerical or categorical variables, no unstructured text.
+
+
+### Experiments
+
+- 3 types of missingness: MCAR, MAR, MNAR (using [jenga](https://github.com/schelterlabs/jenga))
+- [5, 10, 30, 50] % of missing data
+- some imputation methods of the following
+  - mode imputation (baseline)
+  - ML-based imputation
+    - [`fancyimpute`](https://github.com/iskandr/fancyimpute)
+      - [MatrixFactorization](https://github.com/iskandr/fancyimpute/blob/master/fancyimpute/matrix_factorization.py)
+      - [NuclearNormMinimization](https://github.com/iskandr/fancyimpute/blob/master/fancyimpute/nuclear_norm_minimization.py)
+      - [KNN](https://github.com/iskandr/fancyimpute/blob/master/fancyimpute/knn.py)
+  - [`sklearn`](https://scikit-learn.org/stable/modules/impute.html#impute)
+    - [`KNNImputer`](https://scikit-learn.org/stable/modules/generated/sklearn.impute.KNNImputer.html#sklearn.impute.KNNImputer)
+    - [IterativeImputer](https://scikit-learn.org/stable/auto_examples/impute/plot_iterative_imputer_variants_comparison.html#sphx-glr-auto-examples-impute-plot-iterative-imputer-variants-comparison-py) with the estimators:
+      - [`RandomForestRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html#sklearn.ensemble.RandomForestRegressor) to mimic MissForest
+      - [`BayesianRidge`](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html#sklearn.linear_model.BayesianRidge) a regularized linear regression to mimic MICE with linear model
+  - DL-based imputation:
+    - DataWig?
+  - Generative imputation:
+    - [GAIN](https://github.com/jsyoon0823/GAIN) (afaik the most popular?)
+
+
+### Performance Measures
+
+- Imputation Performance (MSE, cross-entropy, F1, ...)
+- Impact on downstream task training
 
 
 ## Installation
