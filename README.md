@@ -5,6 +5,12 @@
 
 ## Installation
 
+You need to initialize and clone the `jenga` submodule:
+```bash
+git submodule init
+git submodule update
+```
+
 In order to set up the necessary environment:
 
 1. create an environment `data-imputation-paper` with the help of [conda],
