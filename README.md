@@ -11,6 +11,12 @@ git submodule init
 git submodule update
 ```
 
+Then run to install jenga: 
+```bash
+python src/jenga/setup.py develop
+```
+
+
 In order to set up the necessary environment:
 
 1. create an environment `data-imputation-paper` with the help of [conda],
@@ -88,7 +94,8 @@ Then take a look into the `scripts` and `notebooks` folders.
 ├── setup.py                <- Use `python setup.py develop` to install for development or
 |                              or create a distribution with `python setup.py bdist_wheel`.
 ├── src
-│   └── dsproject_demo      <- Actual Python package where the main functionality goes.
+│   └── data-imputation-paper      <- Actual Python package where the main functionality goes.
+│   └── jenga               <- Jenga code, used to add data corruptions/missingness.
 ├── tests                   <- Unit tests which can be run with `py.test`.
 ├── .coveragerc             <- Configuration for coverage reports of unit tests.
 ├── .isort.cfg              <- Configuration for git hook that sorts imports.
