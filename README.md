@@ -13,7 +13,8 @@ git submodule update
 
 Then run to install jenga (probably you want do this after create and activate an environment): 
 ```bash
-python src/jenga/setup.py develop
+cd src/jenga
+python setup.py develop
 ```
 
 
