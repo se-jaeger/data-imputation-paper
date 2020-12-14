@@ -23,10 +23,9 @@ class BaseImputer(ABC):
         return pd.api.types.is_categorical_dtype(data[target_column])
 
     @abstractmethod
-    def fit(self, data: pd.DataFrame, target_column: str, columns: list = [], refit: bool = False, **kwargs) -> None:
+    def fit(self, data: pd.DataFrame, target_column: str, refit: bool = False, **kwargs) -> None:
 
         self._target_column = target_column
-        self._columns = columns
 
         # some basic error checking
         if self._fitted and not refit:
@@ -50,9 +49,9 @@ class SKLearnModeImputer(BaseImputer):
 
         self._imputer = SimpleImputer(**imputer_args)
 
-    def fit(self, data: pd.DataFrame, target_column: str, columns: list = [], refit: bool = False, **kwargs) -> None:
+    def fit(self, data: pd.DataFrame, target_column: str, refit: bool = False, **kwargs) -> None:
 
-        super().fit(data=data, target_column=target_column, columns=columns, refit=refit)
+        super().fit(data=data, target_column=target_column, refit=refit)
 
         # set proper strategy for column type
         if self._is_regression_imputation(data, target_column):
