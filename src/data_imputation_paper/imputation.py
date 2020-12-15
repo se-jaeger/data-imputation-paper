@@ -15,12 +15,41 @@ class BaseImputer(ABC):
 
     def __init__(self):
         self._fitted = False
+        self._imputer = None
+        self._data_encoder = None
+
+    def _guess_dtypes(self, data: pd.DataFrame) -> Tuple[List[str], List[str]]:
+        categorical_columns = [c for c in data.columns if pd.api.types.is_categorical_dtype(data[c])]
+        numerical_columns = [c for c in data.columns if pd.api.types.is_numeric_dtype(data[c]) and c not in categorical_columns]
+        return categorical_columns, numerical_columns
 
     def _is_regression_imputation(self, data: pd.DataFrame, target_column: str) -> bool:
         return pd.api.types.is_numeric_dtype(data[target_column])
 
     def _is_classification_imputation(self, data: pd.DataFrame, target_column: str) -> bool:
         return pd.api.types.is_categorical_dtype(data[target_column])
+
+    def _is_fitted(self, estimator: BaseEstimator) -> bool:
+        return_value = False
+
+        if estimator is not None:
+            return_value = bool(
+                [
+                    # this one is the official sklearn to check whether a estimator is fitted
+                    v for v in vars(estimator)
+                    if (v.endswith("_") or v.startswith("_")) and not v.startswith("__")
+                ]
+            )
+
+        return return_value
+
+    @abstractmethod
+    def _encode_data_for_imputation(self, data: pd.DataFrame, refit: bool = False) -> Tuple[pd.DataFrame, list]:
+        pass
+
+    @abstractmethod
+    def _decode_data_after_imputation(self, imputed: pd.array, index: pd.Index, dtypes: pd.Series) -> pd.DataFrame:
+        pass
 
     @abstractmethod
     def fit(self, data: pd.DataFrame, target_column: str, refit: bool = False, **kwargs) -> None:
@@ -35,7 +64,7 @@ class BaseImputer(ABC):
             raise ImputerError(f"target column '{target_column}' not found, must be one of: {', '.join(data.columns)}")
 
     @abstractmethod
-    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    def transform(self, data: pd.DataFrame, **kwargs) -> Tuple[pd.DataFrame, list]:
         pass
 
 
