@@ -1,7 +1,14 @@
 from abc import ABC, abstractmethod
+from typing import Tuple, List
 
-from typing import Tuple
+from sklearn.linear_model import BayesianRidge
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.experimental import enable_iterative_imputer  # only imported but will not be used explicitely
 from sklearn.impute import IterativeImputer, SimpleImputer
+from sklearn.base import BaseEstimator
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
+from sklearn.compose import ColumnTransformer
 
 import numpy as np
 import pandas as pd
@@ -109,3 +116,108 @@ class SKLearnModeImputer(BaseImputer):
 
     def _decode_data_after_imputation(self, imputed: pd.array, index: pd.Index, dtypes: pd.Series) -> pd.DataFrame:
         pass
+
+
+class SKLearnIterativeImputer(BaseImputer):
+
+    _IMPLEMENTED_STRATEGIES = ["MissForest".lower(), "MICE".lower()]
+
+    def __init__(self, strategy: str, data_encoding_type: str = "one-hot", imputer_args: dict = {}, estimator_args: dict = {}):
+
+        super().__init__()
+
+        self._strategy = strategy.lower()
+        self._imputer_args = imputer_args
+        self._estimator_args = estimator_args
+
+        if data_encoding_type in ["one-hot", "ordinal"]:
+            self._data_encoding_type = data_encoding_type
+        else:
+            raise ImputerError(f"don't know how to decode data for type '{self._data_encoding_type}'")
+
+        if "forest" in self._strategy:
+            estimator = RandomForestRegressor(**estimator_args)
+
+        elif "mice" in self._strategy:
+            estimator = BayesianRidge(**estimator_args)
+
+        else:
+            raise ImputerError(f"given strategy '{strategy}' is not implemented. Need to be one of: {', '.join(self._IMPLEMENTED_STRATEGIES)}")
+
+        self._imputer = IterativeImputer(estimator=estimator, **imputer_args)
+
+    def fit(self, data: pd.DataFrame, target_column: str, refit: bool = False, **kwargs) -> None:
+
+        super().fit(data=data, target_column=target_column, refit=refit)
+
+        encoded_data, _ = self._encode_data_for_imputation(data, refit=True)
+
+        self._imputer.fit(encoded_data, **kwargs)
+        self._fitted = True
+
+    def transform(self, data: pd.DataFrame, **kwargs) -> Tuple[pd.DataFrame, list]:
+
+        encoded_data, imputed_mask = self._encode_data_for_imputation(data)
+
+        # transform returns np.array => need to create a dataframe again
+        imputed_array = self._imputer.transform(encoded_data, **kwargs)
+        completed_df = self._decode_data_after_imputation(imputed_array, data.index, data.dtypes)
+
+        # fix variable order and return imputed data and mask
+        return completed_df[data.columns], imputed_mask
+
+    def _encode_data_for_imputation(self, data: pd.DataFrame, refit: bool = False) -> Tuple[pd.DataFrame, list]:
+
+        # TODO: in sklearn 0.24 OrdinalEncoder will suport `handle_unknown`
+        # This hopefully will help to handle the case when the target column is categorical.
+        encoder = OneHotEncoder(sparse=False) if self._data_encoding_type == "one-hot" else OrdinalEncoder()
+
+        categorical_columns, numerical_columns = self._guess_dtypes(data)
+        mask = list(data[self._target_column].isnull())  # To preserve missing values in target_column
+
+        if refit or not self._is_fitted(self._data_encoder):
+            categorical_preprocessing = Pipeline(
+                [
+                    ('mark_missing', SimpleImputer(strategy='constant', fill_value='__NA__')),
+                    ('categorical_encoder', encoder)
+                ]
+            )
+
+            numerical_preprocessing = Pipeline(
+                [
+                    ('mark_missing', SimpleImputer(strategy='constant', fill_value=0)),  # is 0 a sensible value?
+                ]
+            )
+
+            feature_transformation = ColumnTransformer(transformers=[
+                    ('categorical_features', categorical_preprocessing, categorical_columns),
+                    ('scaled_numeric', numerical_preprocessing, numerical_columns)
+                ]
+            )
+
+            self._data_encoder = feature_transformation.fit(data)
+
+        encoded_data = self._data_encoder.transform(data)
+
+        return encoded_data, mask
+
+    def _decode_data_after_imputation(self, imputed: pd.array, index: pd.Index, dtypes: pd.Series) -> pd.DataFrame:
+
+        # numerical columns are append on the right.
+        # transformer 2 (index 1) is 'numerical_preprocessing', the third value in the tuple represents the column names.
+        numerical_columns = self._data_encoder.transformers[1][2]
+        categorical_columns = self._data_encoder.transformers[0][2]
+
+        columns = numerical_columns + categorical_columns
+
+        categorical_values = self._data_encoder.named_transformers_["categorical_features"].named_steps["categorical_encoder"] \
+            .inverse_transform(imputed[:, :-len(numerical_columns)])  # get one-hot-encoded features and transform them back
+
+        numerical_values = imputed[:, -len(numerical_columns):]
+
+        imputed_df = pd.DataFrame(np.concatenate([numerical_values, categorical_values], axis=1), columns=columns, index=index)
+
+        for column in columns:
+            imputed_df[column] = imputed_df[column].astype(dtypes[column].name)
+
+        return imputed_df
