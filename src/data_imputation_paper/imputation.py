@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from typing import Tuple
+from sklearn.impute import IterativeImputer, SimpleImputer
 
 import numpy as np
 import pandas as pd
@@ -72,10 +73,9 @@ class SKLearnModeImputer(BaseImputer):
 
     def __init__(self, imputer_args: dict = {}):
 
-        from sklearn.impute import SimpleImputer
-
         super().__init__()
 
+        self._imputer_args = imputer_args
         self._imputer = SimpleImputer(**imputer_args)
 
     def fit(self, data: pd.DataFrame, target_column: str, refit: bool = False, **kwargs) -> None:
@@ -93,14 +93,19 @@ class SKLearnModeImputer(BaseImputer):
 
         self._fitted = True
 
-    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    def transform(self, data: pd.DataFrame, **kwargs) -> Tuple[pd.DataFrame, pd.Series]:
 
         completed = data.copy()
         imputed_mask = completed[self._target_column].isnull()  # TODO: does this work in all cases
 
         # sklearns' SimpleImputer expects 2D array
-        imputed = self._imputer.transform(completed[self._target_column].to_numpy().reshape(-1, 1))
+        imputed = self._imputer.transform(completed[self._target_column].to_numpy().reshape(-1, 1), **kwargs)
         completed[self._target_column] = imputed
 
         return completed, imputed_mask
 
+    def _encode_data_for_imputation(self, data: pd.DataFrame, refit: bool = False) -> Tuple[pd.DataFrame, list]:
+        pass
+
+    def _decode_data_after_imputation(self, imputed: pd.array, index: pd.Index, dtypes: pd.Series) -> pd.DataFrame:
+        pass
