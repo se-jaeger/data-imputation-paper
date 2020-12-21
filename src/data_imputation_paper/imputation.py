@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 from sklearn.linear_model import BayesianRidge
 from sklearn.ensemble import RandomForestRegressor
@@ -54,12 +54,17 @@ class BaseImputer(ABC):
 
     def _encode_data_for_imputation(self, data: pd.DataFrame, refit: bool = False) -> Tuple[pd.DataFrame, list]:
 
+        missing_mask = list(data[self._target_column].isnull())
+
         # TODO: in sklearn 0.24 OrdinalEncoder will suport `handle_unknown`
         # This hopefully will help to handle the case when the target column is categorical.
         encoder = OneHotEncoder(sparse=False) if self._data_encoding_type == "one-hot" else OrdinalEncoder()
 
         categorical_columns, numerical_columns = self._guess_dtypes(data)
-        mask = list(data[self._target_column].isnull())  # To preserve missing values in target_column
+
+        # We need this to prevent the to-be-imputed column of getting encoded
+        if self._is_classification_imputation(data, self._target_column):
+            categorical_columns.remove(self._target_column)
 
         if refit or not self._is_fitted(self._data_encoder):
             categorical_preprocessing = Pipeline(
@@ -85,23 +90,49 @@ class BaseImputer(ABC):
 
         encoded_data = self._data_encoder.transform(data)
 
-        return encoded_data, mask
+        if self._is_classification_imputation(data, self._target_column):
+            target_column = data[self._target_column].astype(str).values.reshape(-1, 1)  # use string type for proper imputing
+            encoded_data = np.hstack((encoded_data, target_column))
 
-    def _decode_data_after_imputation(self, imputed: pd.array, index: pd.Index, dtypes: pd.Series) -> pd.DataFrame:
+        return encoded_data, missing_mask
+
+    def _decode_data_after_imputation(
+        self,
+        imputed: np.ndarray,
+        index: pd.Index,
+        dtypes: pd.Series,
+        is_classification: Optional[bool] = None
+    ) -> pd.DataFrame:
 
         # numerical columns are append on the right.
         # transformer 2 (index 1) is 'numerical_preprocessing', the third value in the tuple represents the column names.
         numerical_columns = self._data_encoder.transformers[1][2]
         categorical_columns = self._data_encoder.transformers[0][2]
 
-        columns = numerical_columns + categorical_columns
+        # Encoding Pipeline (from left to right) first encodes the categorical columns and appends the numerical ones to the right
+        # If the imputation is classification task, i.e., the target column is categorical, we do not encode it and add it also to the right
+        # SKlearns' IterativeImputer detects the missing values and impute them.
+        # So we need here to build the pipeline in reversed order and ... (see below)
+        if is_classification:
+            num_numerical = len(numerical_columns) + 1  # + 1 because added target to the right
+            columns = numerical_columns + categorical_columns + [self._target_column]
+            numerical_values = imputed[:, -num_numerical:-1]
+        else:
+            num_numerical = len(numerical_columns)
+            columns = numerical_columns + categorical_columns
+            numerical_values = imputed[:, -num_numerical:]
 
         categorical_values = self._data_encoder.named_transformers_["categorical_features"].named_steps["categorical_encoder"] \
-            .inverse_transform(imputed[:, :-len(numerical_columns)])  # get one-hot-encoded features and transform them back
+            .inverse_transform(imputed[:, :-num_numerical])  # get encoded features and transform them back
 
-        numerical_values = imputed[:, -len(numerical_columns):]
+        # ...we then put all the things together. Because we do not know the original columns order here, this is something
+        # the transform method need to take care of.
+        if is_classification:
+            imputed_values = np.hstack([numerical_values, categorical_values, imputed[:, -1].reshape(-1, 1)])
+        else:
+            imputed_values = np.hstack([numerical_values, categorical_values])
 
-        imputed_df = pd.DataFrame(np.concatenate([numerical_values, categorical_values], axis=1), columns=columns, index=index)
+        imputed_df = pd.DataFrame(imputed_values, columns=columns, index=index)
 
         for column in columns:
             imputed_df[column] = imputed_df[column].astype(dtypes[column].name)
@@ -204,7 +235,12 @@ class SKLearnIterativeImputer(BaseImputer):
 
         # transform returns np.array => need to create a dataframe again
         imputed_array = self._imputer.transform(encoded_data, **kwargs)
-        completed_df = self._decode_data_after_imputation(imputed_array, data.index, data.dtypes)
+        completed_df = self._decode_data_after_imputation(
+            imputed_array,
+            data.index,
+            data.dtypes,
+            self._is_classification_imputation(data, self._target_column)
+        )
 
         # fix variable order and return imputed data and mask
         return completed_df[data.columns], imputed_mask
