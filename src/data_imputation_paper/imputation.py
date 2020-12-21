@@ -1,17 +1,17 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Optional
-
-from sklearn.linear_model import BayesianRidge
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.experimental import enable_iterative_imputer  # only imported but will not be used explicitely
-from sklearn.impute import IterativeImputer, SimpleImputer
-from sklearn.base import BaseEstimator
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
-from sklearn.compose import ColumnTransformer
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.experimental import \
+    enable_iterative_imputer  # only imported but will not be used explicitely
+from sklearn.impute import IterativeImputer, KNNImputer, SimpleImputer
+from sklearn.linear_model import BayesianRidge
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
 
 class ImputerError(Exception):
@@ -219,6 +219,45 @@ class SKLearnIterativeImputer(BaseImputer):
             raise ImputerError(f"given strategy '{strategy}' is not implemented. Need to be one of: {', '.join(self._IMPLEMENTED_STRATEGIES)}")
 
         self._imputer = IterativeImputer(estimator=estimator, **imputer_args)
+
+    def fit(self, data: pd.DataFrame, target_column: str, refit: bool = False, **kwargs) -> None:
+
+        super().fit(data=data, target_column=target_column, refit=refit)
+
+        encoded_data, _ = self._encode_data_for_imputation(data, refit=True)
+
+        self._imputer.fit(encoded_data, **kwargs)
+        self._fitted = True
+
+    def transform(self, data: pd.DataFrame, **kwargs) -> Tuple[pd.DataFrame, list]:
+
+        encoded_data, imputed_mask = self._encode_data_for_imputation(data)
+
+        # transform returns np.array => need to create a dataframe again
+        imputed_array = self._imputer.transform(encoded_data, **kwargs)
+        completed_df = self._decode_data_after_imputation(
+            imputed_array,
+            data.index,
+            data.dtypes,
+            self._is_classification_imputation(data, self._target_column)
+        )
+
+        # fix variable order and return imputed data and mask
+        return completed_df[data.columns], imputed_mask
+
+
+class SKLearnKNNImputer(BaseImputer):
+
+    def __init__(self, data_encoding_type: Optional[str] = None, **kwargs):
+
+        super().__init__()
+
+        if data_encoding_type in ["one-hot", "ordinal"]:
+            self._data_encoding_type = data_encoding_type
+        else:
+            raise ImputerError(f"don't know how to decode data for type '{self._data_encoding_type}'")
+
+        self._imputer = KNNImputer(**kwargs)
 
     def fit(self, data: pd.DataFrame, target_column: str, refit: bool = False, **kwargs) -> None:
 
