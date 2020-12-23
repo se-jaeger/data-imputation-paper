@@ -1,17 +1,20 @@
+import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.experimental import \
-    enable_iterative_imputer  # only imported but will not be used explicitely
-from sklearn.impute import IterativeImputer, KNNImputer, SimpleImputer
-from sklearn.linear_model import BayesianRidge
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import precision_recall_curve
+from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+logger = logging.getLogger()
 
 
 class ImputerError(Exception):
@@ -23,263 +26,263 @@ class BaseImputer(ABC):
 
     def __init__(self):
         self._fitted = False
-        self._imputer = None
-        self._data_encoder = None
-        self._data_encoding_type = None
 
     def _guess_dtypes(self, data: pd.DataFrame) -> Tuple[List[str], List[str]]:
         categorical_columns = [c for c in data.columns if pd.api.types.is_categorical_dtype(data[c])]
         numerical_columns = [c for c in data.columns if pd.api.types.is_numeric_dtype(data[c]) and c not in categorical_columns]
         return categorical_columns, numerical_columns
 
-    def _is_regression_imputation(self, data: pd.DataFrame, target_column: str) -> bool:
-        return pd.api.types.is_numeric_dtype(data[target_column])
-
-    def _is_classification_imputation(self, data: pd.DataFrame, target_column: str) -> bool:
-        return pd.api.types.is_categorical_dtype(data[target_column])
-
-    def _is_fitted(self, estimator: BaseEstimator) -> bool:
-        return_value = False
-
-        if estimator is not None:
-            return_value = bool(
-                [
-                    # this one is the official sklearn to check whether a estimator is fitted
-                    v for v in vars(estimator)
-                    if (v.endswith("_") or v.startswith("_")) and not v.startswith("__")
-                ]
-            )
-
-        return return_value
-
-    def _encode_data_for_imputation(self, data: pd.DataFrame, refit: bool = False) -> Tuple[pd.DataFrame, list]:
-
-        missing_mask = list(data[self._target_column].isnull())
-
-        # TODO: in sklearn 0.24 OrdinalEncoder will suport `handle_unknown`
-        # This hopefully will help to handle the case when the target column is categorical.
-        encoder = OneHotEncoder(sparse=False) if self._data_encoding_type == "one-hot" else OrdinalEncoder()
-
-        categorical_columns, numerical_columns = self._guess_dtypes(data)
-
-        # We need this to prevent the to-be-imputed column of getting encoded
-        if self._is_classification_imputation(data, self._target_column):
-            categorical_columns.remove(self._target_column)
-
-        if refit or not self._is_fitted(self._data_encoder):
-            categorical_preprocessing = Pipeline(
-                [
-                    ('mark_missing', SimpleImputer(strategy='constant', fill_value='__NA__')),
-                    ('categorical_encoder', encoder)
-                ]
-            )
-
-            numerical_preprocessing = Pipeline(
-                [
-                    ('mark_missing', SimpleImputer(strategy='constant', fill_value=0)),  # is 0 a sensible value?
-                ]
-            )
-
-            feature_transformation = ColumnTransformer(transformers=[
-                    ('categorical_features', categorical_preprocessing, categorical_columns),
-                    ('scaled_numeric', numerical_preprocessing, numerical_columns)
-                ]
-            )
-
-            self._data_encoder = feature_transformation.fit(data)
-
-        encoded_data = self._data_encoder.transform(data)
-
-        if self._is_classification_imputation(data, self._target_column):
-            target_column = data[self._target_column].astype(str).values.reshape(-1, 1)  # use string type for proper imputing
-            encoded_data = np.hstack((encoded_data, target_column))
-
-        return encoded_data, missing_mask
-
-    def _decode_data_after_imputation(
-        self,
-        imputed: np.ndarray,
-        index: pd.Index,
-        dtypes: pd.Series,
-        is_classification: Optional[bool] = None
-    ) -> pd.DataFrame:
-
-        # numerical columns are append on the right.
-        # transformer 2 (index 1) is 'numerical_preprocessing', the third value in the tuple represents the column names.
-        numerical_columns = self._data_encoder.transformers[1][2]
-        categorical_columns = self._data_encoder.transformers[0][2]
-
-        # Encoding Pipeline (from left to right) first encodes the categorical columns and appends the numerical ones to the right
-        # If the imputation is classification task, i.e., the target column is categorical, we do not encode it and add it also to the right
-        # SKlearns' IterativeImputer detects the missing values and impute them.
-        # So we need here to build the pipeline in reversed order and ... (see below)
-        if is_classification:
-            num_numerical = len(numerical_columns) + 1  # + 1 because added target to the right
-            columns = numerical_columns + categorical_columns + [self._target_column]
-            numerical_values = imputed[:, -num_numerical:-1]
-        else:
-            num_numerical = len(numerical_columns)
-            columns = numerical_columns + categorical_columns
-            numerical_values = imputed[:, -num_numerical:]
-
-        categorical_values = self._data_encoder.named_transformers_["categorical_features"].named_steps["categorical_encoder"] \
-            .inverse_transform(imputed[:, :-num_numerical])  # get encoded features and transform them back
-
-        # ...we then put all the things together. Because we do not know the original columns order here, this is something
-        # the transform method need to take care of.
-        if is_classification:
-            imputed_values = np.hstack([numerical_values, categorical_values, imputed[:, -1].reshape(-1, 1)])
-        else:
-            imputed_values = np.hstack([numerical_values, categorical_values])
-
-        imputed_df = pd.DataFrame(imputed_values, columns=columns, index=index)
-
-        for column in columns:
-            imputed_df[column] = imputed_df[column].astype(dtypes[column].name)
-
-        return imputed_df
+    def _restore_dtype(self, data: pd.DataFrame, dtypes: pd.Series) -> None:
+        for column in data.columns:
+            data[column] = data[column].astype(dtypes[column].name)
 
     @abstractmethod
-    def fit(self, data: pd.DataFrame, target_column: str, refit: bool = False, **kwargs) -> None:
+    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False):
 
-        self._target_column = target_column
+        self._target_columns = target_columns
+        self._categorical_columns, self._numerical_columns = self._guess_dtypes(data)
 
         # some basic error checking
         if self._fitted and not refit:
             raise ImputerError("Imputer is already fitted. Force refitting with 'refit'.")
 
-        if self._target_column not in data.columns:
-            raise ImputerError(f"target column '{target_column}' not found, must be one of: {', '.join(data.columns)}")
+        if not type(target_columns) == list:
+            raise ImputerError(f"Parameter 'target_column' need to be of type list but is '{type(target_columns)}'")
+
+        if any([column not in data.columns for column in self._target_columns]):
+            raise ImputerError(f"All target columns ('{self._target_columns}') must be in: {', '.join(data.columns)}")
 
     @abstractmethod
-    def transform(self, data: pd.DataFrame, **kwargs) -> Tuple[pd.DataFrame, list]:
+    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
         pass
 
 
-class SKLearnModeImputer(BaseImputer):
+class SklearnBaseImputer(BaseImputer):
 
-    def __init__(self, imputer_args: dict = {}):
-
-        super().__init__()
-
-        self._imputer_args = imputer_args
-        self._imputer = SimpleImputer(**imputer_args)
-
-    def fit(self, data: pd.DataFrame, target_column: str, refit: bool = False, **kwargs) -> None:
-
-        super().fit(data=data, target_column=target_column, refit=refit)
-
-        # set proper strategy for column type
-        if self._is_regression_imputation(data, target_column):
-            self._imputer.set_params(strategy="mean")
-
-        elif self._is_classification_imputation(data, target_column):
-            self._imputer.set_params(strategy="most_frequent")
-
-        self._imputer.fit(data[target_column].to_numpy().reshape(-1, 1), **kwargs)  # sklearns' SimpleImputer expects 2D array
-
-        self._fitted = True
-
-    def transform(self, data: pd.DataFrame, **kwargs) -> Tuple[pd.DataFrame, pd.Series]:
-
-        completed = data.copy()
-        imputed_mask = completed[self._target_column].isnull()  # TODO: does this work in all cases
-
-        # sklearns' SimpleImputer expects 2D array
-        imputed = self._imputer.transform(completed[self._target_column].to_numpy().reshape(-1, 1), **kwargs)
-        completed[self._target_column] = imputed
-
-        return completed, imputed_mask
-
-
-class SKLearnIterativeImputer(BaseImputer):
-
-    _IMPLEMENTED_STRATEGIES = ["MissForest".lower(), "MICE".lower()]
-
-    def __init__(self, strategy: str, data_encoding_type: str = "one-hot", imputer_args: dict = {}, estimator_args: dict = {}):
+    def __init__(
+        self,
+        categorical_imputer: Tuple[BaseEstimator, Dict[str, object]],
+        numerical_imputer: Tuple[BaseEstimator, Dict[str, object]],
+        categorical_precision_threshold: float = 0.85
+    ):
 
         super().__init__()
 
-        self._strategy = strategy.lower()
-        self._imputer_args = imputer_args
-        self._estimator_args = estimator_args
-
-        if data_encoding_type in ["one-hot", "ordinal"]:
-            self._data_encoding_type = data_encoding_type
-        else:
-            raise ImputerError(f"don't know how to decode data for type '{self._data_encoding_type}'")
-
-        if "forest" in self._strategy:
-            estimator = RandomForestRegressor(**estimator_args)
-
-        elif "mice" in self._strategy:
-            estimator = BayesianRidge(**estimator_args)
-
-        else:
-            raise ImputerError(f"given strategy '{strategy}' is not implemented. Need to be one of: {', '.join(self._IMPLEMENTED_STRATEGIES)}")
-
-        self._imputer = IterativeImputer(estimator=estimator, **imputer_args)
-
-    def fit(self, data: pd.DataFrame, target_column: str, refit: bool = False, **kwargs) -> None:
-
-        super().fit(data=data, target_column=target_column, refit=refit)
-
-        encoded_data, _ = self._encode_data_for_imputation(data, refit=True)
-
-        self._imputer.fit(encoded_data, **kwargs)
-        self._fitted = True
-
-    def transform(self, data: pd.DataFrame, **kwargs) -> Tuple[pd.DataFrame, list]:
-
-        encoded_data, imputed_mask = self._encode_data_for_imputation(data)
-
-        # transform returns np.array => need to create a dataframe again
-        imputed_array = self._imputer.transform(encoded_data, **kwargs)
-        completed_df = self._decode_data_after_imputation(
-            imputed_array,
-            data.index,
-            data.dtypes,
-            self._is_classification_imputation(data, self._target_column)
+        self._predictors: Dict[str, BaseEstimator] = {}
+        self._categorical_precision_threshold = categorical_precision_threshold
+        self._numerical_imputer = (
+            numerical_imputer[0],
+            {f'numerical_imputer__{name}': value for name, value in numerical_imputer[1].items()}
+        )
+        self._categorical_imputer = (
+            categorical_imputer[0],
+            {f'categorical_imputer__{name}': value for name, value in categorical_imputer[1].items()}
         )
 
-        # fix variable order and return imputed data and mask
-        return completed_df[data.columns], imputed_mask
+    @staticmethod
+    def _categorical_columns_to_string(data_frame: pd.DataFrame) -> pd.DataFrame:
+        missing_mask = data_frame.isna()
 
+        for column in data_frame.columns:
+            if pd.api.types.is_categorical_dtype(data_frame[column]):
+                data_frame[column] = data_frame[column].astype(str)
 
-class SKLearnKNNImputer(BaseImputer):
+        # preserve missing values
+        data_frame[missing_mask] = np.nan
+        return data_frame
 
-    def __init__(self, data_encoding_type: Optional[str] = None, **kwargs):
+    def _get_pipeline_and_parameters(self, column: str) -> Tuple[Pipeline, Dict[str, object]]:
 
-        super().__init__()
-
-        if data_encoding_type in ["one-hot", "ordinal"]:
-            self._data_encoding_type = data_encoding_type
-        else:
-            raise ImputerError(f"don't know how to decode data for type '{self._data_encoding_type}'")
-
-        self._imputer = KNNImputer(**kwargs)
-
-    def fit(self, data: pd.DataFrame, target_column: str, refit: bool = False, **kwargs) -> None:
-
-        super().fit(data=data, target_column=target_column, refit=refit)
-
-        encoded_data, _ = self._encode_data_for_imputation(data, refit=True)
-
-        self._imputer.fit(encoded_data, **kwargs)
-        self._fitted = True
-
-    def transform(self, data: pd.DataFrame, **kwargs) -> Tuple[pd.DataFrame, list]:
-
-        encoded_data, imputed_mask = self._encode_data_for_imputation(data)
-
-        # transform returns np.array => need to create a dataframe again
-        imputed_array = self._imputer.transform(encoded_data, **kwargs)
-        completed_df = self._decode_data_after_imputation(
-            imputed_array,
-            data.index,
-            data.dtypes,
-            self._is_classification_imputation(data, self._target_column)
+        # define general pipeline for processing columns this will be applied on all variables
+        # that are use for prediction, i.e. predictor variables
+        categorical_preprocessing = Pipeline(
+            [
+                ('mark_missing', SimpleImputer(strategy='constant', fill_value='__NA__')),
+                ('one_hot_encode', OneHotEncoder(handle_unknown='ignore'))  # OneHot because Ordinal can't handle unknowns yet..
+            ]
         )
 
-        # fix variable order and return imputed data and mask
-        return completed_df[data.columns], imputed_mask
+        numeric_preprocessing = Pipeline(
+            [
+                ('mark_missing', SimpleImputer(strategy='median')),  # TODO: grid search?
+                ('scale',  StandardScaler())
+            ]
+        )
+
+        # (to-be-imputed-)column is categorical ..
+        if column in self._categorical_columns:
+
+            # .. so we need to remove the target (column) from the list of categorical columns
+            categorical_predictor_variables = [x for x in self._categorical_columns if x != column]
+
+            feature_transformation = ColumnTransformer(transformers=[
+                    ('categorical_features', categorical_preprocessing, categorical_predictor_variables),
+                    ('numerical_features', numeric_preprocessing, self._numerical_columns)
+                ]
+            )
+
+            pipeline = Pipeline(
+                [
+                    ('features', feature_transformation),
+                    ('learner', self._categorical_imputer[0])
+                ]
+            )
+
+            parameters = self._categorical_imputer[1]
+
+        # (to-be-imputed-)column is numerical ...
+        elif column in self._numerical_columns:
+
+            # ... so we need to remove the target (column) from the list of numerical columns
+            numerical_predictor_variables = [x for x in self._numerical_columns if x != column]
+
+            feature_transformation = ColumnTransformer(transformers=[
+                    ('categorical_features', categorical_preprocessing, self._categorical_columns),
+                    ('numerical_features', numeric_preprocessing, numerical_predictor_variables)
+                ]
+            )
+
+            pipeline = Pipeline(
+                [
+                    ('features', feature_transformation),
+                    ('learner', self._numerical_imputer[0])
+                ]
+            )
+
+            parameters = self._numerical_imputer[1]
+
+        return pipeline, parameters
+
+    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False):
+
+        super().fit(data=data, target_columns=target_columns, refit=refit)
+
+        # cast categorical columns to strings fixes problems where categories are integer values and treated as regression task
+        data = self._categorical_columns_to_string(data.copy())  # We don't want to change the input dataframe -> copy it
+
+        for column in self._target_columns:
+            # TODO: Is it better to only train on fully observed data?
+
+            pipeline, parameters = self._get_pipeline_and_parameters(column)
+            search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
+
+            # TODO: Questions:
+            # 1. was it intentional that the "target" is part of the data?
+            #   for me this does not really makes sense -> see: https://github.com/schelterlabs/jenga/blob/yacl/jenga/cleaning/Cleaners.py#L143
+            # 2. Why a data split in train/test? (this is probably because I didn't get the part below)
+            self._predictors[column] = search.fit(data.loc[:, data.columns != column], data[column])  # TODO: only store the best predictor?
+            logger.debug(f"Predictor for column '{column}' reached {search.best_score_}")
+
+            if column in self._categorical_columns:
+
+                # TODO: didn't get this
+                # precision-recall curves for finding the likelihood thresholds for minimal precision
+                self._predictors[column].thresholds = {}
+                probabilities = self._predictors[column].predict_proba(data.loc[:, data.columns != column])
+
+                for index, label in enumerate(self._predictors[column].classes_):
+                    precision, recall, threshold = precision_recall_curve(data[column] == label, probabilities[:, index], pos_label=True)
+                    threshold_for_minimal_precision = threshold[(precision >= self._categorical_precision_threshold).nonzero()[0][0]]
+                    self._predictors[column].thresholds[label] = threshold_for_minimal_precision
+
+        return self
+
+    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+
+        # save the original dtypes because ..
+        dtypes = data.dtypes
+
+        # ... dtypes of data need to be same as for fitting
+        data = self._categorical_columns_to_string(data.copy())  # We don't want to change the input dataframe -> copy it
+
+        imputed_mask = data.isna().any(axis=1)
+
+        for column in self._target_columns:
+            missing_mask = data[column].isna()
+            amount_missing_in_columns = missing_mask.sum()
+
+            if amount_missing_in_columns > 0:
+                data.loc[missing_mask, column] = self._predictors[column].predict(data.loc[missing_mask, data.columns != column])
+
+                logger.debug(f'Imputed {amount_missing_in_columns} values in column {column}')
+
+        self._restore_dtype(data, dtypes)
+
+        return data, imputed_mask
+
+
+class SklearnForestImputer(SklearnBaseImputer):
+
+    def __init__(
+        self,
+        grid_categorical_imputer_arguments: Dict[str, object] = {},
+        grid_numerical_imputer_arguments: Dict[str, object] = {},
+        categorical_precision_threshold: float = 0.85
+    ):
+        super().__init__(
+            (RandomForestClassifier(n_jobs=-1), grid_categorical_imputer_arguments),
+            (RandomForestRegressor(n_jobs=-1), grid_numerical_imputer_arguments),
+            categorical_precision_threshold=categorical_precision_threshold
+        )
+
+
+class SklearnKNNImputer(SklearnBaseImputer):
+
+    def __init__(
+        self,
+        grid_categorical_imputer_arguments: Dict[str, object] = {},
+        grid_numerical_imputer_arguments: Dict[str, object] = {},
+        categorical_precision_threshold: float = 0.85
+    ):
+        super().__init__(
+            (KNeighborsClassifier(n_jobs=-1), grid_categorical_imputer_arguments),
+            (KNeighborsRegressor(n_jobs=-1), grid_numerical_imputer_arguments),
+            categorical_precision_threshold=categorical_precision_threshold
+        )
+
+
+class SklearnModeImputer(SklearnBaseImputer):
+
+    def __init__(self, grid_imputer_arguments: dict = {}):
+
+        # BaseImputer bootstraps the object
+        BaseImputer.__init__(self)
+
+        self._predictors: Dict[str, float] = {}
+
+    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False):
+
+        # BaseImputer does some error checking and bootstrap
+        BaseImputer.fit(self, data, target_columns, refit)
+
+        for column in self._target_columns:
+            if column in self._categorical_columns:
+                self._predictors[column] = data[column].mode()[0]  # It's possible that there are more than one values most frequent
+
+            elif column in self._numerical_columns:
+                self._predictors[column] = data[column].mean(axis=0)
+
+        return self
+
+    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+
+        # save the original dtypes because ..
+        dtypes = data.dtypes
+
+        # ... dtypes of data need to be same as for fitting
+        data = self._categorical_columns_to_string(data.copy())  # We don't want to change the input dataframe -> copy it
+
+        imputed_mask = data.isna().any(axis=1)
+
+        for column in self._target_columns:
+            missing_mask = data[column].isna()
+            amount_missing_in_columns = missing_mask.sum()
+
+            if amount_missing_in_columns > 0:
+                data.loc[missing_mask, column] = self._predictors[column]
+
+                logger.debug(f'Imputed {amount_missing_in_columns} values in column {column}')
+
+        self._restore_dtype(data, dtypes)
+
+        return data, imputed_mask

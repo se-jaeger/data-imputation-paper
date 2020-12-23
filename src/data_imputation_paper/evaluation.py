@@ -1,15 +1,13 @@
 import math
-
 from typing import List
 
-from jenga.tasks.openml import OpenMLTask
+import pandas as pd
 from jenga.corruptions.generic import MissingValues
+from jenga.tasks.openml import OpenMLTask
+from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error
 from tqdm import tqdm
-from sklearn.metrics import mean_absolute_error, mean_squared_error, f1_score
 
 from .imputation import BaseImputer
-
-import pandas as pd
 
 
 class EvaluationError(Exception):
@@ -138,7 +136,7 @@ class Evaluator(object):
         self._imputer = imputer
         self._target_column = self._missing_value.column
 
-    def evaluate(self, num_repetitions: int, fit_kwargs: dict = {}, transform_kwargs: dict = {}) -> EvaluationResult:
+    def evaluate(self, num_repetitions: int) -> EvaluationResult:
 
         result = EvaluationResult(self._task, self._missing_value)
 
@@ -146,10 +144,10 @@ class Evaluator(object):
             missing_train = self._missing_value.transform(self._task.train_data)
             missing_test = self._missing_value.transform(self._task.test_data)
 
-            self._imputer.fit(self._task.train_data, self._target_column, refit=True, **fit_kwargs)
+            self._imputer.fit(self._task.train_data, [self._target_column], refit=True)
 
-            train_imputed, train_imputed_mask = self._imputer.transform(missing_train, **transform_kwargs)
-            test_imputed, test_imputed_mask = self._imputer.transform(missing_test, **transform_kwargs)
+            train_imputed, train_imputed_mask = self._imputer.transform(missing_train)
+            test_imputed, test_imputed_mask = self._imputer.transform(missing_test)
 
             result.append(train_imputed, test_imputed)
 
