@@ -9,7 +9,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
 
 logger = logging.getLogger()
 
@@ -60,8 +60,16 @@ class SklearnBaseImputer(BaseImputer):
         self,
         categorical_imputer: Tuple[BaseEstimator, Dict[str, object]],
         numerical_imputer: Tuple[BaseEstimator, Dict[str, object]],
-        categorical_precision_threshold: float = 0.85
+        categorical_precision_threshold: float = 0.85,
+        encode_as: str = "ordinal"
     ):
+
+        valid_encodings = ["one-hot", "ordinal"]
+
+        if encode_as not in valid_encodings:
+            raise ImputerError(f"parameter 'encode_as' need to be one of: {', '.join(valid_encodings)}")
+
+        self._encoder = OneHotEncoder(handle_unknown='ignore') if encode_as == "one-hot" else OrdinalEncoder(handle_unknown='ignore')
 
         super().__init__()
 
@@ -95,7 +103,7 @@ class SklearnBaseImputer(BaseImputer):
         categorical_preprocessing = Pipeline(
             [
                 ('mark_missing', SimpleImputer(strategy='constant', fill_value='__NA__')),
-                ('one_hot_encode', OneHotEncoder(handle_unknown='ignore'))  # NOTE: OneHot because Ordinal can't handle unknowns yet..
+                ('one_hot_encode', self._encoder)
             ]
         )
 
