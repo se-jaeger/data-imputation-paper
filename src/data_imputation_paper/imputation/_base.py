@@ -6,10 +6,8 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import GridSearchCV
-from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
@@ -188,83 +186,6 @@ class SklearnBaseImputer(BaseImputer):
 
             if amount_missing_in_columns > 0:
                 data.loc[missing_mask, column] = self._predictors[column].predict(data.loc[missing_mask])
-
-                logger.debug(f'Imputed {amount_missing_in_columns} values in column {column}')
-
-        self._restore_dtype(data, dtypes)
-
-        return data, imputed_mask
-
-
-class SklearnForestImputer(SklearnBaseImputer):
-
-    def __init__(
-        self,
-        grid_categorical_imputer_arguments: Dict[str, object] = {},
-        grid_numerical_imputer_arguments: Dict[str, object] = {},
-        categorical_precision_threshold: float = 0.85
-    ):
-        super().__init__(
-            (RandomForestClassifier(n_jobs=-1), grid_categorical_imputer_arguments),
-            (RandomForestRegressor(n_jobs=-1), grid_numerical_imputer_arguments),
-            categorical_precision_threshold=categorical_precision_threshold
-        )
-
-
-class SklearnKNNImputer(SklearnBaseImputer):
-
-    def __init__(
-        self,
-        grid_categorical_imputer_arguments: Dict[str, object] = {},
-        grid_numerical_imputer_arguments: Dict[str, object] = {},
-        categorical_precision_threshold: float = 0.85
-    ):
-        super().__init__(
-            (KNeighborsClassifier(n_jobs=-1), grid_categorical_imputer_arguments),
-            (KNeighborsRegressor(n_jobs=-1), grid_numerical_imputer_arguments),
-            categorical_precision_threshold=categorical_precision_threshold
-        )
-
-
-class SklearnModeImputer(SklearnBaseImputer):
-
-    def __init__(self, grid_imputer_arguments: dict = {}):
-
-        # BaseImputer bootstraps the object
-        BaseImputer.__init__(self)
-
-        self._predictors: Dict[str, float] = {}
-
-    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False):
-
-        # BaseImputer does some error checking and bootstrap
-        BaseImputer.fit(self, data, target_columns, refit)
-
-        for column in self._target_columns:
-            if column in self._categorical_columns:
-                self._predictors[column] = data[column].mode()[0]  # It's possible that there are more than one values most frequent
-
-            elif column in self._numerical_columns:
-                self._predictors[column] = data[column].mean(axis=0)
-
-        return self
-
-    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
-
-        # save the original dtypes because ..
-        dtypes = data.dtypes
-
-        # ... dtypes of data need to be same as for fitting
-        data = self._categorical_columns_to_string(data.copy())  # We don't want to change the input dataframe -> copy it
-
-        imputed_mask = data.isna().any(axis=1)
-
-        for column in self._target_columns:
-            missing_mask = data[column].isna()
-            amount_missing_in_columns = missing_mask.sum()
-
-            if amount_missing_in_columns > 0:
-                data.loc[missing_mask, column] = self._predictors[column]
 
                 logger.debug(f'Imputed {amount_missing_in_columns} values in column {column}')
 
