@@ -8,7 +8,6 @@ from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import precision_recall_curve
 from sklearn.model_selection import GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.pipeline import Pipeline
@@ -98,13 +97,13 @@ class SklearnBaseImputer(BaseImputer):
         categorical_preprocessing = Pipeline(
             [
                 ('mark_missing', SimpleImputer(strategy='constant', fill_value='__NA__')),
-                ('one_hot_encode', OneHotEncoder(handle_unknown='ignore'))  # OneHot because Ordinal can't handle unknowns yet..
+                ('one_hot_encode', OneHotEncoder(handle_unknown='ignore'))  # NOTE: OneHot because Ordinal can't handle unknowns yet..
             ]
         )
 
         numeric_preprocessing = Pipeline(
             [
-                ('mark_missing', SimpleImputer(strategy='median')),  # TODO: grid search?
+                ('mark_missing', SimpleImputer(strategy='mean')),  # NOTE: for paper: make clear we use mean imputation without further optimization.
                 ('scale',  StandardScaler())
             ]
         )
@@ -161,29 +160,15 @@ class SklearnBaseImputer(BaseImputer):
         data = self._categorical_columns_to_string(data.copy())  # We don't want to change the input dataframe -> copy it
 
         for column in self._target_columns:
-            # TODO: Is it better to only train on fully observed data?
+            # NOTE: We use the whole available data.
+            # If there are missing values in predictor columns, they getting imputed beforehand to use them for fitting.
 
             pipeline, parameters = self._get_pipeline_and_parameters(column)
             search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
 
-            # TODO: Questions:
-            # 1. was it intentional that the "target" is part of the data?
-            #   for me this does not really makes sense -> see: https://github.com/schelterlabs/jenga/blob/yacl/jenga/cleaning/Cleaners.py#L143
-            # 2. Why a data split in train/test? (this is probably because I didn't get the part below)
-            self._predictors[column] = search.fit(data.loc[:, data.columns != column], data[column])  # TODO: only store the best predictor?
+            # NOTE: target column is excluded in the pipeline. So, wouldn't be used of fit/predict.
+            self._predictors[column] = search.fit(data, data[column])  # TODO: only store the best predictor?
             logger.debug(f"Predictor for column '{column}' reached {search.best_score_}")
-
-            if column in self._categorical_columns:
-
-                # TODO: didn't get this
-                # precision-recall curves for finding the likelihood thresholds for minimal precision
-                self._predictors[column].thresholds = {}
-                probabilities = self._predictors[column].predict_proba(data.loc[:, data.columns != column])
-
-                for index, label in enumerate(self._predictors[column].classes_):
-                    precision, recall, threshold = precision_recall_curve(data[column] == label, probabilities[:, index], pos_label=True)
-                    threshold_for_minimal_precision = threshold[(precision >= self._categorical_precision_threshold).nonzero()[0][0]]
-                    self._predictors[column].thresholds[label] = threshold_for_minimal_precision
 
         return self
 
@@ -195,14 +180,14 @@ class SklearnBaseImputer(BaseImputer):
         # ... dtypes of data need to be same as for fitting
         data = self._categorical_columns_to_string(data.copy())  # We don't want to change the input dataframe -> copy it
 
-        imputed_mask = data.isna().any(axis=1)
+        imputed_mask = data[self._target_columns].isna().any(axis=1)
 
         for column in self._target_columns:
             missing_mask = data[column].isna()
             amount_missing_in_columns = missing_mask.sum()
 
             if amount_missing_in_columns > 0:
-                data.loc[missing_mask, column] = self._predictors[column].predict(data.loc[missing_mask, data.columns != column])
+                data.loc[missing_mask, column] = self._predictors[column].predict(data.loc[missing_mask])
 
                 logger.debug(f'Imputed {amount_missing_in_columns} values in column {column}')
 
