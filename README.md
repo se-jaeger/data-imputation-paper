@@ -11,7 +11,7 @@ git submodule init
 git submodule update
 ```
 
-Then run to install jenga (probably you want do this after create and activate an environment): 
+Then run to install jenga (probably you want do this after create and activate an environment):
 ```bash
 cd src/jenga
 python setup.py develop
@@ -30,7 +30,7 @@ In order to set up the necessary environment:
    ```
 3. install `data-imputation-paper` with:
    ```
-   python setup.py install # or `develop`
+   python setup.py develop # or `install`
    ```
 
 Optional and needed only once after `git clone`:
