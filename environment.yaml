@@ -23,6 +23,6 @@ dependencies:
   - tox
   - pre_commit
   - nbdime
-  - nbstripout
   - sphinx
   - recommonmark
+  - tqdm
