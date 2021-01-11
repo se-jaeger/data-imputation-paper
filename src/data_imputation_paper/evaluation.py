@@ -7,7 +7,7 @@ from jenga.tasks.openml import OpenMLTask
 from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error
 from tqdm import tqdm
 
-from .imputation import BaseImputer
+from .imputation._base import BaseImputer
 
 
 class EvaluationError(Exception):
