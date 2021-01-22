@@ -158,7 +158,7 @@ class SklearnBaseImputer(BaseImputer):
 
         return pipeline, parameters
 
-    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False):
+    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False) -> BaseImputer:
 
         super().fit(data=data, target_columns=target_columns, refit=refit)
 
