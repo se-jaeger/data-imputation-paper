@@ -173,7 +173,7 @@ class SklearnBaseImputer(BaseImputer):
             search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
 
             # NOTE: target column is excluded in the pipeline. So, wouldn't be used of fit/predict.
-            self._predictors[column] = search.fit(data, data[column])  # TODO: only store the best predictor?
+            self._predictors[column] = search.fit(data, data[column]).best_estimator_
             logger.debug(f"Predictor for column '{column}' reached {search.best_score_}")
 
         return self
