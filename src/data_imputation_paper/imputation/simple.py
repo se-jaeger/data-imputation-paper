@@ -29,6 +29,8 @@ class ModeImputer(SklearnBaseImputer):
             elif column in self._numerical_columns:
                 self._predictors[column] = data[column].mean(axis=0)
 
+        self._fitted = True
+
         return self
 
     def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:

@@ -176,6 +176,8 @@ class SklearnBaseImputer(BaseImputer):
             self._predictors[column] = search.fit(data, data[column]).best_estimator_
             logger.debug(f"Predictor for column '{column}' reached {search.best_score_}")
 
+        self._fitted = True
+
         return self
 
     def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
