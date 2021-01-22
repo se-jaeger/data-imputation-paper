@@ -24,10 +24,23 @@ class BaseImputer(ABC):
     def __init__(self):
         self._fitted = False
 
-    def _guess_dtypes(self, data: pd.DataFrame) -> Tuple[List[str], List[str]]:
+    @staticmethod
+    def _guess_dtypes(data: pd.DataFrame) -> Tuple[List[str], List[str]]:
         categorical_columns = [c for c in data.columns if pd.api.types.is_categorical_dtype(data[c])]
         numerical_columns = [c for c in data.columns if pd.api.types.is_numeric_dtype(data[c]) and c not in categorical_columns]
         return categorical_columns, numerical_columns
+
+    @staticmethod
+    def _categorical_columns_to_string(data_frame: pd.DataFrame) -> pd.DataFrame:
+        missing_mask = data_frame.isna()
+
+        for column in data_frame.columns:
+            if pd.api.types.is_categorical_dtype(data_frame[column]):
+                data_frame[column] = data_frame[column].astype(str)
+
+        # preserve missing values
+        data_frame[missing_mask] = np.nan
+        return data_frame
 
     def _restore_dtype(self, data: pd.DataFrame, dtypes: pd.Series) -> None:
         for column in data.columns:
@@ -83,18 +96,6 @@ class SklearnBaseImputer(BaseImputer):
             categorical_imputer[0],
             {f'categorical_imputer__{name}': value for name, value in categorical_imputer[1].items()}
         )
-
-    @staticmethod
-    def _categorical_columns_to_string(data_frame: pd.DataFrame) -> pd.DataFrame:
-        missing_mask = data_frame.isna()
-
-        for column in data_frame.columns:
-            if pd.api.types.is_categorical_dtype(data_frame[column]):
-                data_frame[column] = data_frame[column].astype(str)
-
-        # preserve missing values
-        data_frame[missing_mask] = np.nan
-        return data_frame
 
     def _get_pipeline_and_parameters(self, column: str) -> Tuple[Pipeline, Dict[str, object]]:
 
