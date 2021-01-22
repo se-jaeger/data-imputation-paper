@@ -17,7 +17,7 @@ class ModeImputer(SklearnBaseImputer):
 
         self._predictors: Dict[str, float] = {}
 
-    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False):
+    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False) -> BaseImputer:
 
         # BaseImputer does some error checking and bootstrap
         BaseImputer.fit(self, data, target_columns, refit)
@@ -28,6 +28,8 @@ class ModeImputer(SklearnBaseImputer):
 
             elif column in self._numerical_columns:
                 self._predictors[column] = data[column].mean(axis=0)
+
+        self._fitted = True
 
         return self
 

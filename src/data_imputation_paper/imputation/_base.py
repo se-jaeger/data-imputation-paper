@@ -61,7 +61,7 @@ class SklearnBaseImputer(BaseImputer):
         categorical_imputer: Tuple[BaseEstimator, Dict[str, object]],
         numerical_imputer: Tuple[BaseEstimator, Dict[str, object]],
         categorical_precision_threshold: float = 0.85,
-        encode_as: str = "ordinal"
+        encode_as: str = "one-hot"
     ):
 
         valid_encodings = ["one-hot", "ordinal"]
@@ -103,7 +103,7 @@ class SklearnBaseImputer(BaseImputer):
         categorical_preprocessing = Pipeline(
             [
                 ('mark_missing', SimpleImputer(strategy='constant', fill_value='__NA__')),
-                ('one_hot_encode', self._encoder)
+                ('encode', self._encoder)
             ]
         )
 
@@ -158,7 +158,7 @@ class SklearnBaseImputer(BaseImputer):
 
         return pipeline, parameters
 
-    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False):
+    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False) -> BaseImputer:
 
         super().fit(data=data, target_columns=target_columns, refit=refit)
 
@@ -173,8 +173,10 @@ class SklearnBaseImputer(BaseImputer):
             search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
 
             # NOTE: target column is excluded in the pipeline. So, wouldn't be used of fit/predict.
-            self._predictors[column] = search.fit(data, data[column])  # TODO: only store the best predictor?
+            self._predictors[column] = search.fit(data, data[column]).best_estimator_
             logger.debug(f"Predictor for column '{column}' reached {search.best_score_}")
+
+        self._fitted = True
 
         return self
 
