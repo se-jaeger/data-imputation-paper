@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
@@ -12,12 +12,14 @@ class ForestImputer(SklearnBaseImputer):
         self,
         grid_categorical_imputer_arguments: Dict[str, object] = {},
         grid_numerical_imputer_arguments: Dict[str, object] = {},
-        categorical_precision_threshold: float = 0.85
+        categorical_precision_threshold: float = 0.85,
+        seed: Optional[int] = None
     ):
         super().__init__(
             (RandomForestClassifier(n_jobs=-1), grid_categorical_imputer_arguments),
             (RandomForestRegressor(n_jobs=-1), grid_numerical_imputer_arguments),
-            categorical_precision_threshold=categorical_precision_threshold
+            categorical_precision_threshold=categorical_precision_threshold,
+            seed=seed
         )
 
 
@@ -27,10 +29,12 @@ class KNNImputer(SklearnBaseImputer):
         self,
         grid_categorical_imputer_arguments: Dict[str, object] = {},
         grid_numerical_imputer_arguments: Dict[str, object] = {},
-        categorical_precision_threshold: float = 0.85
+        categorical_precision_threshold: float = 0.85,
+        seed: Optional[int] = None
     ):
         super().__init__(
             (KNeighborsClassifier(n_jobs=-1), grid_categorical_imputer_arguments),
             (KNeighborsRegressor(n_jobs=-1), grid_numerical_imputer_arguments),
-            categorical_precision_threshold=categorical_precision_threshold
+            categorical_precision_threshold=categorical_precision_threshold,
+            seed=seed
         )

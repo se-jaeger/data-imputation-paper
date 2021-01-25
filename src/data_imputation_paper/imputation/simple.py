@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -10,10 +10,10 @@ logger = logging.getLogger()
 
 class ModeImputer(SklearnBaseImputer):
 
-    def __init__(self, grid_imputer_arguments: dict = {}):
+    def __init__(self, grid_imputer_arguments: dict = {}, seed: Optional[int] = None):
 
         # BaseImputer bootstraps the object
-        BaseImputer.__init__(self)
+        BaseImputer.__init__(self, seed=seed)
 
         self._predictors: Dict[str, float] = {}
 
