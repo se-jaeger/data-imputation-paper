@@ -1,11 +1,11 @@
 import math
-from typing import List
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 from jenga.corruptions.generic import MissingValues
 from jenga.tasks.openml import OpenMLTask
 from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error
-from tqdm import tqdm
 
 from .imputation._base import BaseImputer
 
@@ -17,11 +17,10 @@ class EvaluationError(Exception):
 
 class EvaluationResult(object):
 
-    def __init__(self, task: OpenMLTask, missing_value: MissingValues):
+    def __init__(self, task: OpenMLTask, target_column: str):
 
         self._task = task
-        self._missing_value = missing_value
-        self._target_column = self._missing_value.column
+        self._target_column = target_column
         self._finalized = False
         self.results: List[pd.DataFrame] = []
         self.repetitions = 0
@@ -136,25 +135,78 @@ class EvaluationResult(object):
 
 class Evaluator(object):
 
-    def __init__(self, task: OpenMLTask, missing_value: MissingValues, imputer: BaseImputer):
+    def __init__(self, task: OpenMLTask, missing_values: List[MissingValues], imputer: BaseImputer, path: Optional[Path] = None):
+
         self._task = task
-        self._missing_value = missing_value
+        self._missing_values = missing_values
         self._imputer = imputer
-        self._target_column = self._missing_value.column
+        self._result: Optional[Dict[str, EvaluationResult]] = None
+        self._path = path
 
-    def evaluate(self, num_repetitions: int) -> EvaluationResult:
+    @staticmethod
+    def report_results(result_dictionary: Dict[str, EvaluationResult]) -> None:
+        target_columns = list(result_dictionary.keys())
 
-        result = EvaluationResult(self._task, self._missing_value)
+        print(f"Evaluation result contains {len(target_columns)} target columns: {', '.join(target_columns)}")
+        print("All are in a round-robin fashion imputed and performances are as follows:\n")
 
-        for _ in tqdm(range(num_repetitions)):
-            missing_train = self._missing_value.transform(self._task.train_data)
-            missing_test = self._missing_value.transform(self._task.test_data)
+        for key, value in result_dictionary.items():
+            print(f"Target Column: {key}")
+            print(value.result)
+            print()
 
-            self._imputer.fit(missing_train, [self._target_column], refit=True)
+    def evaluate(self, num_repetitions: int):
 
-            train_imputed, train_imputed_mask = self._imputer.transform(missing_train)
-            test_imputed, test_imputed_mask = self._imputer.transform(missing_test)
+        result = {}
 
-            result.append(train_imputed, test_imputed, train_imputed_mask, test_imputed_mask)
+        for target_column in [missing_value.column for missing_value in self._missing_values]:
 
-        return result.finalize()
+            result_temp = EvaluationResult(self._task, target_column)
+
+            for _ in range(num_repetitions):
+                missing_train, missing_test = self._apply_missing_values(self._task, self._missing_values)
+
+                self._imputer.fit(missing_train, [target_column], refit=True)
+
+                train_imputed, train_imputed_mask = self._imputer.transform(missing_train)
+                test_imputed, test_imputed_mask = self._imputer.transform(missing_test)
+
+                result_temp.append(train_imputed, test_imputed, train_imputed_mask, test_imputed_mask)
+
+            result[target_column] = result_temp.finalize()
+
+        self._result = result
+        self._save_results()
+
+        return self
+
+    def report(self) -> None:
+        if self._result is None:
+            raise EvaluationError("Not evaluated yet. Call 'evaluate' first!")
+
+        else:
+            self.report_results(self._result)
+
+    def _apply_missing_values(self, task: OpenMLTask, missing_values: List[MissingValues]) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+        train_data = task.train_data.copy()
+        test_data = task.test_data.copy()
+
+        for missing_value in missing_values:
+            train_data = missing_value.transform(train_data)
+            test_data = missing_value.transform(test_data)
+
+        return (train_data, test_data)
+
+    def _save_results(self):
+        if self._path is not None:
+            self._path.mkdir(parents=True, exist_ok=True)
+
+            for column in self._result.keys():
+                self._result[column].result.to_csv(self._path / f"{column}.csv", index=False)
+
+                results_path = self._path / column
+                results_path.mkdir(parents=True, exist_ok=True)
+
+                for index, data_frame in enumerate(self._result[column].results):
+                    data_frame.to_csv(results_path / f"rep_{index}.csv", index=False)

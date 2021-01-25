@@ -112,7 +112,7 @@ class SklearnBaseImputer(BaseImputer):
         categorical_preprocessing = Pipeline(
             [
                 ('mark_missing', SimpleImputer(strategy='constant', fill_value='__NA__')),
-                ('one_hot_encode', self._encoder)
+                ('encode', self._encoder)
             ]
         )
 
@@ -167,7 +167,7 @@ class SklearnBaseImputer(BaseImputer):
 
         return pipeline, parameters
 
-    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False):
+    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False) -> BaseImputer:
 
         super().fit(data=data, target_columns=target_columns, refit=refit)
 
@@ -184,6 +184,8 @@ class SklearnBaseImputer(BaseImputer):
             missing_mask = data[column].isna()
             self._predictors[column] = search.fit(data[~missing_mask], data.loc[~missing_mask, column])  # TODO: only store the best predictor?
             logger.debug(f"Predictor for column '{column}' reached {search.best_score_}")
+
+        self._fitted = True
 
         return self
 
