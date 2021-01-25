@@ -28,16 +28,22 @@ class EvaluationResult(object):
 
         self._set_imputation_task_type()
 
-    def append(self, train_data_imputed: pd.DataFrame, test_data_imputed: pd.DataFrame):
+    def append(
+        self,
+        train_data_imputed: pd.DataFrame,
+        test_data_imputed: pd.DataFrame,
+        train_imputed_mask: pd.Series,
+        test_imputed_mask: pd.Series
+    ):
 
         if self._finalized:
             raise EvaluationError("Evaluation already finalized")
 
         self._update_results(
-            train=self._task.train_data[self._target_column],
-            train_imputed=train_data_imputed[self._target_column],
-            test=self._task.test_data[self._target_column],
-            test_imputed=test_data_imputed[self._target_column],
+            train=self._task.train_data.loc[train_imputed_mask, self._target_column],
+            train_imputed=train_data_imputed.loc[train_imputed_mask, self._target_column],
+            test=self._task.test_data.loc[test_imputed_mask, self._target_column],
+            test_imputed=test_data_imputed.loc[test_imputed_mask, self._target_column],
             imputation_type=self._imputation_task_type
         )
 
@@ -144,11 +150,11 @@ class Evaluator(object):
             missing_train = self._missing_value.transform(self._task.train_data)
             missing_test = self._missing_value.transform(self._task.test_data)
 
-            self._imputer.fit(self._task.train_data, [self._target_column], refit=True)
+            self._imputer.fit(missing_train, [self._target_column], refit=True)
 
             train_imputed, train_imputed_mask = self._imputer.transform(missing_train)
             test_imputed, test_imputed_mask = self._imputer.transform(missing_test)
 
-            result.append(train_imputed, test_imputed)
+            result.append(train_imputed, test_imputed, train_imputed_mask, test_imputed_mask)
 
         return result.finalize()
