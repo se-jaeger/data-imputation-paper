@@ -1,9 +1,11 @@
 import logging
+import random
 from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -21,8 +23,13 @@ class ImputerError(Exception):
 
 class BaseImputer(ABC):
 
-    def __init__(self):
+    def __init__(self, seed: Optional[int] = None):
         self._fitted = False
+
+        if seed is not None:
+            tf.random.set_seed(seed)
+            random.seed(seed)
+            np.random.seed(seed)
 
     @staticmethod
     def _guess_dtypes(data: pd.DataFrame) -> Tuple[List[str], List[str]]:
@@ -74,7 +81,8 @@ class SklearnBaseImputer(BaseImputer):
         categorical_imputer: Tuple[BaseEstimator, Dict[str, object]],
         numerical_imputer: Tuple[BaseEstimator, Dict[str, object]],
         categorical_precision_threshold: float = 0.85,
-        encode_as: str = "one-hot"
+        encode_as: str = "one-hot",
+        seed: Optional[int] = None
     ):
 
         valid_encodings = ["one-hot", "ordinal"]
@@ -84,7 +92,7 @@ class SklearnBaseImputer(BaseImputer):
 
         self._encoder = OneHotEncoder(handle_unknown='ignore') if encode_as == "one-hot" else OrdinalEncoder(handle_unknown='ignore')
 
-        super().__init__()
+        super().__init__(seed=seed)
 
         self._predictors: Dict[str, BaseEstimator] = {}
         self._categorical_precision_threshold = categorical_precision_threshold
@@ -173,8 +181,8 @@ class SklearnBaseImputer(BaseImputer):
             pipeline, parameters = self._get_pipeline_and_parameters(column)
             search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
 
-            # NOTE: target column is excluded in the pipeline. So, wouldn't be used of fit/predict.
-            self._predictors[column] = search.fit(data, data[column]).best_estimator_
+            missing_mask = data[column].isna()
+            self._predictors[column] = search.fit(data[~missing_mask], data.loc[~missing_mask, column])  # TODO: only store the best predictor?
             logger.debug(f"Predictor for column '{column}' reached {search.best_score_}")
 
         self._fitted = True

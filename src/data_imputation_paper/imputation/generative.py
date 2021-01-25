@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -17,7 +17,6 @@ from ._base import BaseImputer, ImputerError
 logger = logging.getLogger()
 
 # TODO: Further Steps:
-# 1. compare graph from original paper with this one.
 # 2. HPO possibilities
 
 
@@ -26,10 +25,11 @@ class GAINImputer(BaseImputer):
     def __init__(
         self,
         num_data_columns: int,
-        hyperparameters: Dict[str, Union[str, int, float]]  # TODO: check types
+        hyperparameters: Dict[str, Union[str, int, float]],  # TODO: check types
+        seed: Optional[int] = None
     ):
 
-        super().__init__()
+        super().__init__(seed=seed)
 
         self.num_data_columns = num_data_columns
         self._check_and_set_default_hyperparameters(hyperparameters)
@@ -120,7 +120,6 @@ class GAINImputer(BaseImputer):
             data = self._data_scaler.fit_transform(data)
 
         else:
-
             if self._categorical_columns:
 
                 data = _fix_nan(data)
