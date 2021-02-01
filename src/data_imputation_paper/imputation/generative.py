@@ -93,8 +93,8 @@ class GAINImputer(BaseImputer):
 
         self.hyperparameters = {
             "alpha": 100,
-            "batch_size": 128,
-            "epochs": 100,
+            "batch_size": 256,
+            "epochs": 10,
             "hint_rate": 0.9
         }
 
@@ -151,8 +151,9 @@ class GAINImputer(BaseImputer):
 
         encoded_data = self._encode_data(data.copy())
 
-        generator_optimizer = Adam()
-        discriminator_optimizer = Adam()
+        # TODO: hps
+        generator_optimizer = Adam(0.0005)
+        discriminator_optimizer = Adam(0.00005)
 
         generator_var_list = self.generator.trainable_weights
         discriminator_var_list = self.discriminator.trainable_weights
@@ -168,16 +169,31 @@ class GAINImputer(BaseImputer):
             discriminator_gradients = tape.gradient(discriminator_loss, discriminator_var_list)
             discriminator_optimizer.apply_gradients(zip(discriminator_gradients, discriminator_var_list))
 
+            return generater_loss, discriminator_loss
+
         train = tf.data.Dataset.from_tensor_slices(encoded_data)
         train_data = train.shuffle(len(train)).batch(self.hyperparameters["batch_size"])
 
-        for _ in range(self.hyperparameters["epochs"]):
+        logger.debug("Start training loop ...")
+
+        for epoch in range(self.hyperparameters["epochs"]):
+            total_generator_loss = 0
+            total_discriminator_loss = 0
+
             for train_batch in train_data:
                 X, M, H = self._prepare_GAIN_input_data(train_batch.numpy())
-                train_step(X, M, H)
+                generater_loss, discriminator_loss = train_step(X, M, H)
+
+                total_generator_loss += generater_loss
+                total_discriminator_loss += discriminator_loss
+
+            generator_loss_temp = total_generator_loss / self.hyperparameters["batch_size"]
+            discriminator_loss_temp = total_discriminator_loss / self.hyperparameters["batch_size"]
+            logger.debug(f"Epoch {epoch:>4} losses -- generator: {generator_loss_temp:>6,.4f}; discriminator: {discriminator_loss_temp:>6,.4f}")
+
+        logger.debug("Done training!")
 
         self._fitted = True
-
         return self
 
     def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
