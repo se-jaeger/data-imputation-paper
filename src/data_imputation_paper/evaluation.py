@@ -166,12 +166,15 @@ class Evaluator(object):
             for _ in range(num_repetitions):
                 missing_train, missing_test = self._apply_missing_values(self._task, self._missing_values)
 
+                # TODO: At least for GAIN, this one trains futher ...
+                # We need to reset it anyhow..
                 self._imputer.fit(missing_train, [target_column], refit=True)
 
                 train_imputed, train_imputed_mask = self._imputer.transform(missing_train)
                 test_imputed, test_imputed_mask = self._imputer.transform(missing_test)
 
-                result_temp.append(train_imputed, test_imputed, train_imputed_mask, test_imputed_mask)
+                # NOTE: masks are DataFrames => append expects Series
+                result_temp.append(train_imputed, test_imputed, train_imputed_mask[target_column], test_imputed_mask[target_column])
 
             result[target_column] = result_temp.finalize()
 

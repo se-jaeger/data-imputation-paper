@@ -33,15 +33,15 @@ class ModeImputer(SklearnBaseImputer):
 
         return self
 
-    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+        imputed_mask = data[self._target_columns].isna()
 
         # save the original dtypes because ..
         dtypes = data.dtypes
 
         # ... dtypes of data need to be same as for fitting
         data = self._categorical_columns_to_string(data.copy())  # We don't want to change the input dataframe -> copy it
-
-        imputed_mask = data.isna().any(axis=1)
 
         for column in self._target_columns:
             missing_mask = data[column].isna()
