@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger()
 
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter("[%(asctime)s - %(filename)-17s:%(lineno)-4s - %(levelname)-7s - %(funcName)-35s]: %(message)s")
+formatter = logging.Formatter("[%(asctime)s - %(filename)-12s:%(lineno)-4s - %(levelname)-7s - %(funcName)-15s]: %(message)s")
 
 info_handler = logging.StreamHandler(sys.stdout)
 info_handler.setLevel(logging.INFO)
