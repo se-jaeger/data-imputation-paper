@@ -70,7 +70,18 @@ class BaseImputer(ABC):
             raise ImputerError(f"All target columns ('{self._target_columns}') must be in: {', '.join(data.columns)}")
 
     @abstractmethod
-    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Imputes the columns of (the copied) `data` the imputer is fitted for.
+
+        Args:
+            data (pd.DataFrame): To-be-imputed data.
+
+        Returns:
+            Tuple[pd.DataFrame, pd.DataFrame]: First return value (index 0) is the (copied and) imputed `data`.
+                Second return value (index 1) is a mask representing which values are imputed.
+                It is a `DataFrame` because argument `target_columns` for `fit` method uses `list` of column names.
+        """
         pass
 
 
@@ -182,22 +193,22 @@ class SklearnBaseImputer(BaseImputer):
             search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
 
             missing_mask = data[column].isna()
-            self._predictors[column] = search.fit(data[~missing_mask], data.loc[~missing_mask, column])  # TODO: only store the best predictor?
+            self._predictors[column] = search.fit(data[~missing_mask], data.loc[~missing_mask, column]).best_estimator_
             logger.debug(f"Predictor for column '{column}' reached {search.best_score_}")
 
         self._fitted = True
 
         return self
 
-    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+        imputed_mask = data[self._target_columns].isna()
 
         # save the original dtypes because ..
         dtypes = data.dtypes
 
         # ... dtypes of data need to be same as for fitting
         data = self._categorical_columns_to_string(data.copy())  # We don't want to change the input dataframe -> copy it
-
-        imputed_mask = data[self._target_columns].isna().any(axis=1)
 
         for column in self._target_columns:
             missing_mask = data[column].isna()

@@ -196,20 +196,19 @@ class GAINImputer(BaseImputer):
         self._fitted = True
         return self
 
-    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-        imputed_mask = data[self._target_columns].isna().any(axis=1)
+        imputed_mask = data[self._target_columns].isna()
 
         encoded_data = self._encode_data(data.copy())
         X, M, _ = self._prepare_GAIN_input_data(encoded_data)
         imputed = self.imputer([X, M]).numpy()
 
-        # presever everything but the missing values.
+        # presever everything but the missing values in target columns.
         result = data.copy()
-        result.loc[imputed_mask, self._target_columns] = self._decode_encoded_data(
-            imputed,
-            data.columns,
-            data.index
-        ).loc[imputed_mask, self._target_columns]
+        imputed_data_frame = self._decode_encoded_data(imputed, data.columns, data.index)
+
+        for column in imputed_mask.columns:
+            result.loc[imputed_mask[column], column] = imputed_data_frame.loc[imputed_mask[column], column]
 
         return result, imputed_mask
