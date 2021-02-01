@@ -4,8 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import MinMaxScaler, OrdinalEncoder
+from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.activations import relu, sigmoid
 from tensorflow.keras.initializers import GlorotNormal
@@ -13,6 +12,7 @@ from tensorflow.keras.layers import Dense, Input, concatenate
 from tensorflow.keras.optimizers import Adam
 
 from ._base import BaseImputer, ImputerError
+from .utils import CategoricalEncoder
 
 logger = logging.getLogger()
 
@@ -93,27 +93,20 @@ class GAINImputer(BaseImputer):
 
         self.hyperparameters = {
             "alpha": 100,
-            "batch_size": 128,
-            "epochs": 100,
+            "batch_size": 256,
+            "epochs": 10,
             "hint_rate": 0.9
         }
 
     def _encode_data(self, data: pd.DataFrame) -> np.array:
 
-        def _fix_nan(data):
-            data = self._categorical_columns_to_string(data)
-            data[self._categorical_columns] = SimpleImputer(strategy='constant', fill_value='__NA__').fit_transform(data[self._categorical_columns])
-
-            return data
-
-        missing_mask = data.isna()
+        missing_mask = data[self._target_columns].isna()
+        column_indices_of_targets = [data.columns.get_loc(column) for column in self._target_columns]
 
         if not self._fitted:
-
             if self._categorical_columns:
 
-                data = _fix_nan(data)
-                self._data_encoder = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=len(data))
+                self._data_encoder = CategoricalEncoder()
                 data[self._categorical_columns] = self._data_encoder.fit_transform(data[self._categorical_columns])
 
             self._data_scaler = MinMaxScaler()
@@ -122,12 +115,14 @@ class GAINImputer(BaseImputer):
         else:
             if self._categorical_columns:
 
-                data = _fix_nan(data)
                 data[self._categorical_columns] = self._data_encoder.transform(data[self._categorical_columns])
 
             data = self._data_scaler.transform(data)
 
-        data[missing_mask] = np.nan
+        # NOTE: setting (scattered) values on 2D-arrays is a bit more tricky than on DataFrames
+        for missing_mask_index, column_index in enumerate(column_indices_of_targets):
+            data[missing_mask.iloc[:, missing_mask_index], column_index] = np.nan
+
         return data
 
     def _decode_encoded_data(self, encoded_data: np.array, columns: pd.Index, indices: pd.Index) -> pd.DataFrame:
@@ -139,9 +134,9 @@ class GAINImputer(BaseImputer):
 
             # round the encoded categories to next int. This is valid because we encode with OrdinalEncoder.
             # clip in range 0..(n-1), where n is the number of categories.
-            for index, column in enumerate(self._categorical_columns):
+            for column in self._categorical_columns:
                 data[column] = data[column].round(0)
-                data[column] = data[column].clip(lower=0, upper=len(self._data_encoder.categories_[index]) - 1)
+                data[column] = data[column].clip(lower=0, upper=len(self._data_encoder._numerical2category[column].keys()) - 1)
 
             data[self._categorical_columns] = self._data_encoder.inverse_transform(data[self._categorical_columns])
 
@@ -156,8 +151,9 @@ class GAINImputer(BaseImputer):
 
         encoded_data = self._encode_data(data.copy())
 
-        generator_optimizer = Adam()
-        discriminator_optimizer = Adam()
+        # TODO: hps
+        generator_optimizer = Adam(0.0005)
+        discriminator_optimizer = Adam(0.00005)
 
         generator_var_list = self.generator.trainable_weights
         discriminator_var_list = self.discriminator.trainable_weights
@@ -173,16 +169,31 @@ class GAINImputer(BaseImputer):
             discriminator_gradients = tape.gradient(discriminator_loss, discriminator_var_list)
             discriminator_optimizer.apply_gradients(zip(discriminator_gradients, discriminator_var_list))
 
+            return generater_loss, discriminator_loss
+
         train = tf.data.Dataset.from_tensor_slices(encoded_data)
         train_data = train.shuffle(len(train)).batch(self.hyperparameters["batch_size"])
 
-        for _ in range(self.hyperparameters["epochs"]):
+        logger.debug("Start training loop ...")
+
+        for epoch in range(self.hyperparameters["epochs"]):
+            total_generator_loss = 0
+            total_discriminator_loss = 0
+
             for train_batch in train_data:
                 X, M, H = self._prepare_GAIN_input_data(train_batch.numpy())
-                train_step(X, M, H)
+                generater_loss, discriminator_loss = train_step(X, M, H)
+
+                total_generator_loss += generater_loss
+                total_discriminator_loss += discriminator_loss
+
+            generator_loss_temp = total_generator_loss / self.hyperparameters["batch_size"]
+            discriminator_loss_temp = total_discriminator_loss / self.hyperparameters["batch_size"]
+            logger.debug(f"Epoch {epoch:>4} losses -- generator: {generator_loss_temp:>6,.4f}; discriminator: {discriminator_loss_temp:>6,.4f}")
+
+        logger.debug("Done training!")
 
         self._fitted = True
-
         return self
 
     def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
