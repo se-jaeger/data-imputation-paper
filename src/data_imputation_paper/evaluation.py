@@ -148,7 +148,7 @@ class Evaluator(object):
         self._task = task
         self._missing_values = missing_values
         self._imputer_class = imputer_class
-        self._imputer_args = imputer_args
+        self._imputer_arguments = imputer_args
         self._result: Optional[Dict[str, EvaluationResult]] = None
         self._path = path
 
@@ -176,14 +176,14 @@ class Evaluator(object):
                 missing_train, missing_test = self._apply_missing_values(self._task, self._missing_values)
 
                 # NOTE: we need to reset the object to avoid fitting it further, so instantiate it here
-                self._imputer = self._imputer_class(**self._imputer_args)
+                self._imputer = self._imputer_class(**self._imputer_arguments)
                 self._imputer.fit(missing_train, [target_column], refit=True)
 
                 train_imputed, train_imputed_mask = self._imputer.transform(missing_train)
                 test_imputed, test_imputed_mask = self._imputer.transform(missing_test)
 
                 # NOTE: masks are DataFrames => append expects Series
-                result_temp.append(train_imputed, test_imputed, train_imputed_mask[target_column], test_imputed_mask[target_column])
+                result_temp.append(target_column, train_imputed, test_imputed, train_imputed_mask[target_column], test_imputed_mask[target_column])
 
             result[target_column] = result_temp.finalize()
 
