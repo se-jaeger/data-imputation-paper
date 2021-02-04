@@ -29,6 +29,7 @@ class EvaluationResult(object):
 
     def append(
         self,
+        target_column: str,
         train_data_imputed: pd.DataFrame,
         test_data_imputed: pd.DataFrame,
         train_imputed_mask: pd.Series,
@@ -39,10 +40,10 @@ class EvaluationResult(object):
             raise EvaluationError("Evaluation already finalized")
 
         self._update_results(
-            train=self._task.train_data.loc[train_imputed_mask, self._target_column],
-            train_imputed=train_data_imputed.loc[train_imputed_mask, self._target_column],
-            test=self._task.test_data.loc[test_imputed_mask, self._target_column],
-            test_imputed=test_data_imputed.loc[test_imputed_mask, self._target_column],
+            train=self._task.train_data.loc[train_imputed_mask, target_column],
+            train_imputed=train_data_imputed.loc[train_imputed_mask, target_column],
+            test=self._task.test_data.loc[test_imputed_mask, target_column],
+            test_imputed=test_data_imputed.loc[test_imputed_mask, target_column],
             imputation_type=self._imputation_task_type
         )
 
