@@ -12,6 +12,7 @@ dependencies:
   - matplotlib
   - seaborn
   - scikit-learn>=0.24
+  - optuna
   # for development only (could also be kept in a separate environment file)
   - pip:
     - flake8
