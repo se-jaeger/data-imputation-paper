@@ -1,6 +1,6 @@
 import math
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
 from jenga.corruptions.generic import MissingValues
@@ -135,11 +135,19 @@ class EvaluationResult(object):
 
 class Evaluator(object):
 
-    def __init__(self, task: OpenMLTask, missing_values: List[MissingValues], imputer: BaseImputer, path: Optional[Path] = None):
+    def __init__(
+        self,
+        task: OpenMLTask,
+        missing_values: List[MissingValues],
+        imputer_class: Callable[..., BaseImputer],
+        imputer_args: dict,
+        path: Optional[Path] = None
+    ):
 
         self._task = task
         self._missing_values = missing_values
-        self._imputer = imputer
+        self._imputer_class = imputer_class
+        self._imputer_args = imputer_args
         self._result: Optional[Dict[str, EvaluationResult]] = None
         self._path = path
 
@@ -166,8 +174,8 @@ class Evaluator(object):
             for _ in range(num_repetitions):
                 missing_train, missing_test = self._apply_missing_values(self._task, self._missing_values)
 
-                # TODO: At least for GAIN, this one trains futher ...
-                # We need to reset it anyhow..
+                # NOTE: we need to reset the object to avoid fitting it further, so instantiate it here
+                self._imputer = self._imputer_class(**self._imputer_args)
                 self._imputer.fit(missing_train, [target_column], refit=True)
 
                 train_imputed, train_imputed_mask = self._imputer.transform(missing_train)
