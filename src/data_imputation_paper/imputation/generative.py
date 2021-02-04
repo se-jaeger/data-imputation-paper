@@ -1,7 +1,9 @@
 import logging
+import shutil
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import optuna
 import pandas as pd
 import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
@@ -15,9 +17,12 @@ from ._base import BaseImputer, ImputerError
 from .utils import CategoricalEncoder
 
 logger = logging.getLogger()
+optuna.logging.set_verbosity(optuna.logging.WARNING)
+tf.get_logger().setLevel('WARN')
 
 # TODO: Further Steps:
-# 2. HPO possibilities
+# - HPO possibilities
+# set seeds everywhere
 
 
 class GAINImputer(BaseImputer):
@@ -25,34 +30,36 @@ class GAINImputer(BaseImputer):
     def __init__(
         self,
         num_data_columns: int,
-        hyperparameters: Dict[str, Union[str, int, float]],  # TODO: check types
+        hyperparameters: Dict[str, Union[int, float]] = {},
         seed: Optional[int] = None
     ):
 
         super().__init__(seed=seed)
 
         self.num_data_columns = num_data_columns
-        self._check_and_set_default_hyperparameters(hyperparameters)
+        self._initial_hyperparameters = hyperparameters
+
+    def _create_GAIN_model(self) -> None:
 
         # GAIN inputs
-        X = Input((num_data_columns,))
-        M = Input((num_data_columns,))
-        H = Input((num_data_columns,))
+        X = Input((self.num_data_columns,))
+        M = Input((self.num_data_columns,))
+        H = Input((self.num_data_columns,))
 
         # GAIN structure
         self.generator = Sequential(
             [
-                Dense(num_data_columns*2, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(num_data_columns, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(num_data_columns, activation=sigmoid, kernel_initializer=GlorotNormal())
+                Dense(self.num_data_columns*2, activation=relu, kernel_initializer=GlorotNormal()),
+                Dense(self.num_data_columns, activation=relu, kernel_initializer=GlorotNormal()),
+                Dense(self.num_data_columns, activation=sigmoid, kernel_initializer=GlorotNormal())
             ]
         )
 
         self.discriminator = Sequential(
             [
-                Dense(num_data_columns*2, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(num_data_columns, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(num_data_columns, activation=sigmoid, kernel_initializer=GlorotNormal())
+                Dense(self.num_data_columns*2, activation=relu, kernel_initializer=GlorotNormal()),
+                Dense(self.num_data_columns, activation=relu, kernel_initializer=GlorotNormal()),
+                Dense(self.num_data_columns, activation=sigmoid, kernel_initializer=GlorotNormal())
             ]
         )
 
@@ -69,15 +76,69 @@ class GAINImputer(BaseImputer):
         MSE_loss = tf.reduce_mean((M * X - M * generater_output)**2) / tf.reduce_mean(M)
         generater_loss = generater_loss_temp + self.hyperparameters["alpha"] * MSE_loss
 
-        self.gain = Model(inputs=[X, M, H], outputs=[generater_output, generater_loss, discriminator_output, discriminator_loss])
+        self.gain = Model(inputs=[X, M, H], outputs=[generater_loss, discriminator_loss])
 
         # preserve original data and add generator output (i.e. imputed values)
         imputer_output = M * X + (1 - M) * generater_output
         self.imputer = Model(inputs=[X, M], outputs=[imputer_output])
 
+    def _train_method(self, trial: optuna.trial.Trial, data: np.array) -> float:
+
+        # Set hyperparameter once
+        self._set_hyperparameters_for_optimization(trial)
+
+        self._create_GAIN_model()
+
+        generator_optimizer = Adam(**self.hyperparameters["generator_Adam"])
+        discriminator_optimizer = Adam(**self.hyperparameters["discriminator_Adam"])
+
+        generator_var_list = self.generator.trainable_weights
+        discriminator_var_list = self.discriminator.trainable_weights
+
+        @tf.function
+        def train_step(X, M, H):
+            with tf.GradientTape(persistent=True) as tape:
+                generater_loss, discriminator_loss = self.gain([X, M, H])
+
+            generator_gradients = tape.gradient(generater_loss, generator_var_list)
+            generator_optimizer.apply_gradients(zip(generator_gradients, generator_var_list))
+
+            discriminator_gradients = tape.gradient(discriminator_loss, discriminator_var_list)
+            discriminator_optimizer.apply_gradients(zip(discriminator_gradients, discriminator_var_list))
+
+            return generater_loss, discriminator_loss
+
+        train = tf.data.Dataset.from_tensor_slices(data)
+        train_data = train.shuffle(len(train)).batch(self.hyperparameters["batch_size"])
+
+        logger.debug("Start training loop ...")
+
+        for epoch in range(self.hyperparameters["epochs"]):
+            total_generator_loss = 0
+            total_discriminator_loss = 0
+
+            for train_batch in train_data:
+                X, M, H = self._prepare_GAIN_input_data(train_batch.numpy())
+                generater_loss, discriminator_loss = train_step(X, M, H)
+
+                total_generator_loss += generater_loss
+                total_discriminator_loss += discriminator_loss
+
+            generator_loss_temp = total_generator_loss / self.hyperparameters["batch_size"]
+            discriminator_loss_temp = total_discriminator_loss / self.hyperparameters["batch_size"]
+            logger.debug(f"Epoch {epoch:>4} losses -- generator: {generator_loss_temp:>6,.4f}; discriminator: {discriminator_loss_temp:>6,.4f}")
+
+        logger.debug("Done training!")
+
+        # Optuna minimizes/maximizes this return value
+        X, M, H = self._prepare_GAIN_input_data(data)
+        generater_loss, _ = self.gain([X, M, H])
+
+        return generater_loss
+
     def _prepare_GAIN_input_data(self, data: np.array):
         X_temp = np.nan_to_num(data, nan=0)
-        Z_temp = np.random.uniform(0, 0.01, size=[data.shape[0], self.num_data_columns])  # TODO: is this a HP? -> 0.01
+        Z_temp = np.random.uniform(0, self.hyperparameters["noise"], size=[data.shape[0], self.num_data_columns])  # TODO: is this a HP? -> 0.01
 
         random_hints = np.random.uniform(0., 1., size=[data.shape[0], self.num_data_columns])
         masked_random_hints = 1 * (random_hints < self.hyperparameters["hint_rate"])
@@ -88,14 +149,72 @@ class GAINImputer(BaseImputer):
 
         return X, M, H
 
-    # TODO: check types
-    def _check_and_set_default_hyperparameters(self, hyperparameters: Dict[str, Union[str, int, float]]) -> None:
+    def _get_search_space(
+        self
+    ):
+        # default values
+        GAIN = {
+            "alpha": [100],
+            "hint_rate": [0.9],
+            "noise": [0.01]
+        }
+        training = {
+            "batch_size": [48],
+            "epochs": [10]
+        }
+        # optimizers
+        generator = {
+            "learning_rate": [0.0005],
+            "beta_1": [0.9],
+            "beta_2": [0.999],
+            "epsilon": [1e-7],
+            "amsgrad": [False]
+        }
+        discriminator = {
+            "learning_rate": [0.00005],
+            "beta_1": [0.9],
+            "beta_2": [0.999],
+            "epsilon": [1e-7],
+            "amsgrad": [False]
+        }
 
+        # TODO: take the initial HPs and use the above ones as default if not set.
+
+        search_space = dict(
+            **GAIN,
+            **training,
+            **{f"generator_{key}": value for key, value in generator.items()},
+            **{f"discriminator_{key}": value for key, value in discriminator.items()}
+        )
+
+        return search_space
+
+    def _set_hyperparameters_for_optimization(self, trial: optuna.trial.Trial) -> None:
         self.hyperparameters = {
-            "alpha": 100,
-            "batch_size": 256,
-            "epochs": 10,
-            "hint_rate": 0.9
+            # GAIN
+            "alpha": trial.suggest_discrete_uniform("alpha", 0, 9999999999, 1),
+            "hint_rate": trial.suggest_discrete_uniform("hint_rate", 0, 1, 1),
+            "noise": trial.suggest_discrete_uniform("noise", 0, 1, 1),
+
+            # training
+            "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 1024, 1),
+            "epochs": trial.suggest_discrete_uniform("epochs", 0, 10000, 1),
+
+            # optimizers
+            "generator_Adam": {
+                "learning_rate": trial.suggest_discrete_uniform("generator_learning_rate", 0, 1, 1),
+                "beta_1": trial.suggest_discrete_uniform("generator_beta_1", 0, 1, 1),
+                "beta_2": trial.suggest_discrete_uniform("generator_beta_2", 0, 1, 1),
+                "epsilon": trial.suggest_discrete_uniform("generator_epsilon", 0, 1, 1),
+                "amsgrad": trial.suggest_categorical("generator_amsgrad", [True, False])
+            },
+            "discriminator_Adam": {
+                "learning_rate": trial.suggest_discrete_uniform("discriminator_learning_rate", 0, 1, 1),
+                "beta_1": trial.suggest_discrete_uniform("discriminator_beta_1", 0, 1, 1),
+                "beta_2": trial.suggest_discrete_uniform("discriminator_beta_2", 0, 1, 1),
+                "epsilon": trial.suggest_discrete_uniform("discriminator_epsilon", 0, 1, 1),
+                "amsgrad": trial.suggest_categorical("discriminator_amsgrad", [True, False])
+            }
         }
 
     def _encode_data(self, data: pd.DataFrame) -> np.array:
@@ -151,48 +270,17 @@ class GAINImputer(BaseImputer):
 
         encoded_data = self._encode_data(data.copy())
 
-        # TODO: hps
-        generator_optimizer = Adam(0.0005)
-        discriminator_optimizer = Adam(0.00005)
+        def save_best_imputer(study, trial):
+            if study.best_trial.number == trial.number:
+                # TODO: we can save here the best HPs
+                self.imputer.save(".model", include_optimizer=False)
 
-        generator_var_list = self.generator.trainable_weights
-        discriminator_var_list = self.discriminator.trainable_weights
+        search_space = self._get_search_space()
+        study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
+        study.optimize(lambda trial: self._train_method(trial, encoded_data), callbacks=[save_best_imputer])
 
-        @tf.function
-        def train_step(X, M, H):
-            with tf.GradientTape(persistent=True) as tape:
-                _, generater_loss, _, discriminator_loss = self.gain([X, M, H])
-
-            generator_gradients = tape.gradient(generater_loss, generator_var_list)
-            generator_optimizer.apply_gradients(zip(generator_gradients, generator_var_list))
-
-            discriminator_gradients = tape.gradient(discriminator_loss, discriminator_var_list)
-            discriminator_optimizer.apply_gradients(zip(discriminator_gradients, discriminator_var_list))
-
-            return generater_loss, discriminator_loss
-
-        train = tf.data.Dataset.from_tensor_slices(encoded_data)
-        train_data = train.shuffle(len(train)).batch(self.hyperparameters["batch_size"])
-
-        logger.debug("Start training loop ...")
-
-        for epoch in range(self.hyperparameters["epochs"]):
-            total_generator_loss = 0
-            total_discriminator_loss = 0
-
-            for train_batch in train_data:
-                X, M, H = self._prepare_GAIN_input_data(train_batch.numpy())
-                generater_loss, discriminator_loss = train_step(X, M, H)
-
-                total_generator_loss += generater_loss
-                total_discriminator_loss += discriminator_loss
-
-            generator_loss_temp = total_generator_loss / self.hyperparameters["batch_size"]
-            discriminator_loss_temp = total_discriminator_loss / self.hyperparameters["batch_size"]
-            logger.debug(f"Epoch {epoch:>4} losses -- generator: {generator_loss_temp:>6,.4f}; discriminator: {discriminator_loss_temp:>6,.4f}")
-
-        logger.debug("Done training!")
-
+        self.imputer = tf.keras.models.load_model(".model", compile=False)
+        shutil.rmtree(".model", ignore_errors=True)
         self._fitted = True
         return self
 
