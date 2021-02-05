@@ -41,24 +41,24 @@ class GAINImputer(BaseImputer):
     def _create_GAIN_model(self) -> None:
 
         # GAIN inputs
-        X = Input((self.num_data_columns,))
-        M = Input((self.num_data_columns,))
-        H = Input((self.num_data_columns,))
+        X = Input((self._num_data_columns,))
+        M = Input((self._num_data_columns,))
+        H = Input((self._num_data_columns,))
 
         # GAIN structure
         self.generator = Sequential(
             [
-                Dense(self.num_data_columns*2, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(self.num_data_columns, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(self.num_data_columns, activation=sigmoid, kernel_initializer=GlorotNormal())
+                Dense(self._num_data_columns*2, activation=relu, kernel_initializer=GlorotNormal()),
+                Dense(self._num_data_columns, activation=relu, kernel_initializer=GlorotNormal()),
+                Dense(self._num_data_columns, activation=sigmoid, kernel_initializer=GlorotNormal())
             ]
         )
 
         self.discriminator = Sequential(
             [
-                Dense(self.num_data_columns*2, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(self.num_data_columns, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(self.num_data_columns, activation=sigmoid, kernel_initializer=GlorotNormal())
+                Dense(self._num_data_columns*2, activation=relu, kernel_initializer=GlorotNormal()),
+                Dense(self._num_data_columns, activation=relu, kernel_initializer=GlorotNormal()),
+                Dense(self._num_data_columns, activation=sigmoid, kernel_initializer=GlorotNormal())
             ]
         )
 
@@ -139,7 +139,7 @@ class GAINImputer(BaseImputer):
         X_temp = np.nan_to_num(data, nan=0)
         Z_temp = np.random.uniform(0, self.hyperparameters["noise"], size=[data.shape[0], self._num_data_columns])
 
-        random_hints = np.random.uniform(0., 1., size=[data.shape[0], self.num_data_columns])
+        random_hints = np.random.uniform(0., 1., size=[data.shape[0], self._num_data_columns])
         masked_random_hints = 1 * (random_hints < self.hyperparameters["hint_rate"])
 
         M = 1 - np.isnan(data)
@@ -224,8 +224,8 @@ class GAINImputer(BaseImputer):
 
         super().fit(data=data, target_columns=target_columns, refit=refit)
 
-        if data.shape[1] != self.num_data_columns:
-            raise ImputerError(f"Given data has {data.shape[1]} columns, expected are {self.num_data_columns}. See constructor.")
+        if data.shape[1] != self._num_data_columns:
+            raise ImputerError(f"Given data has {data.shape[1]} columns, expected are {self._num_data_columns}. See constructor.")
 
         encoded_data = self._encode_data(data.copy())
 
