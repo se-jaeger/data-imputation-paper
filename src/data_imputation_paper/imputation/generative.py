@@ -14,14 +14,13 @@ from tensorflow.keras.layers import Dense, Input, concatenate
 from tensorflow.keras.optimizers import Adam
 
 from ._base import BaseImputer, ImputerError
-from .utils import CategoricalEncoder
+from .utils import CategoricalEncoder, _get_search_space_for_grid_search
 
 logger = logging.getLogger()
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 tf.get_logger().setLevel('WARN')
 
 # TODO: Further Steps:
-# - HPO possibilities
 # set seeds everywhere
 
 
@@ -30,14 +29,14 @@ class GAINImputer(BaseImputer):
     def __init__(
         self,
         num_data_columns: int,
-        hyperparameters: Dict[str, Union[int, float]] = {},
+        hyperparameter_grid: Dict[str, Union[int, float]] = {},
         seed: Optional[int] = None
     ):
 
         super().__init__(seed=seed)
 
-        self.num_data_columns = num_data_columns
-        self._initial_hyperparameters = hyperparameters
+        self._num_data_columns = num_data_columns
+        self._hyperparameter_grid = hyperparameter_grid
 
     def _create_GAIN_model(self) -> None:
 
@@ -138,7 +137,7 @@ class GAINImputer(BaseImputer):
 
     def _prepare_GAIN_input_data(self, data: np.array):
         X_temp = np.nan_to_num(data, nan=0)
-        Z_temp = np.random.uniform(0, self.hyperparameters["noise"], size=[data.shape[0], self.num_data_columns])  # TODO: is this a HP? -> 0.01
+        Z_temp = np.random.uniform(0, self.hyperparameters["noise"], size=[data.shape[0], self._num_data_columns])
 
         random_hints = np.random.uniform(0., 1., size=[data.shape[0], self.num_data_columns])
         masked_random_hints = 1 * (random_hints < self.hyperparameters["hint_rate"])
@@ -148,46 +147,6 @@ class GAINImputer(BaseImputer):
         X = M * X_temp + (1 - M) * Z_temp
 
         return X, M, H
-
-    def _get_search_space(
-        self
-    ):
-        # default values
-        GAIN = {
-            "alpha": [100],
-            "hint_rate": [0.9],
-            "noise": [0.01]
-        }
-        training = {
-            "batch_size": [48],
-            "epochs": [10]
-        }
-        # optimizers
-        generator = {
-            "learning_rate": [0.0005],
-            "beta_1": [0.9],
-            "beta_2": [0.999],
-            "epsilon": [1e-7],
-            "amsgrad": [False]
-        }
-        discriminator = {
-            "learning_rate": [0.00005],
-            "beta_1": [0.9],
-            "beta_2": [0.999],
-            "epsilon": [1e-7],
-            "amsgrad": [False]
-        }
-
-        # TODO: take the initial HPs and use the above ones as default if not set.
-
-        search_space = dict(
-            **GAIN,
-            **training,
-            **{f"generator_{key}": value for key, value in generator.items()},
-            **{f"discriminator_{key}": value for key, value in discriminator.items()}
-        )
-
-        return search_space
 
     def _set_hyperparameters_for_optimization(self, trial: optuna.trial.Trial) -> None:
         self.hyperparameters = {
@@ -275,7 +234,7 @@ class GAINImputer(BaseImputer):
                 # TODO: we can save here the best HPs
                 self.imputer.save(".model", include_optimizer=False)
 
-        search_space = self._get_search_space()
+        search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
         study.optimize(lambda trial: self._train_method(trial, encoded_data), callbacks=[save_best_imputer])
 
