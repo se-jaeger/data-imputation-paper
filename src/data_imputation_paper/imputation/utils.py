@@ -7,7 +7,7 @@ def _get_search_space_for_grid_search(hyperparameter_grid: dict) -> dict:
     hyperparameters = dict()
 
     gain_default_hyperparameter_grid = {
-        "GAIN": {
+        "gain": {
             "alpha": [100],
             "hint_rate": [0.9],
             "noise": [0.01]
@@ -34,8 +34,10 @@ def _get_search_space_for_grid_search(hyperparameter_grid: dict) -> dict:
 
     # If hyperparameter is given use it, else return default value. All others are ignored.
     for hp_type in gain_default_hyperparameter_grid.keys():
+        hp_type = hp_type.lower()
         hyperparameters[hp_type] = {}
         for hp in gain_default_hyperparameter_grid[hp_type].keys():
+            hp = hp.lower()
             hyperparameters[hp_type][hp] = hyperparameter_grid.get(
                 hp_type,
                 gain_default_hyperparameter_grid[hp_type]
@@ -45,7 +47,7 @@ def _get_search_space_for_grid_search(hyperparameter_grid: dict) -> dict:
             )
 
     search_space = dict(
-        **hyperparameters["GAIN"],
+        **hyperparameters["gain"],
         **hyperparameters["training"],
         **{f"generator_{key}": value for key, value in hyperparameters["generator"].items()},
         **{f"discriminator_{key}": value for key, value in hyperparameters["discriminator"].items()}
