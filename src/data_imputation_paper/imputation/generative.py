@@ -6,6 +6,7 @@ import numpy as np
 import optuna
 import pandas as pd
 import tensorflow as tf
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.activations import relu, sigmoid
@@ -44,7 +45,7 @@ class GAINImputer(BaseImputer):
                     },
                     "training": {
                         "batch_size": [...],
-                        "epochs": [...]
+                        "epochs": [...],
                     },
                     "generator": {
                         "learning_rate": [...],
@@ -154,36 +155,29 @@ class GAINImputer(BaseImputer):
             return generater_loss, discriminator_loss
 
         # ==== TODO: CV
+        # TODO: CV splits..
+        n_splits = 3
+        k_fold = KFold(n_splits=n_splits, shuffle=True, random_state=self._seed)
+        cv_generator_loss = 0
 
-        train = tf.data.Dataset.from_tensor_slices(data)
-        train_data = train.shuffle(len(train)).batch(self.hyperparameters["batch_size"])
+        for train_index, test_index in k_fold.split(data):
 
-        logger.debug("Start training loop ...")
+            train = tf.data.Dataset.from_tensor_slices(data[train_index])
+            train_data = train.batch(self.hyperparameters["batch_size"])
 
-        for epoch in range(self.hyperparameters["epochs"]):
-            total_generator_loss = 0
-            total_discriminator_loss = 0
+            for _ in range(self.hyperparameters["epochs"]):
+                for train_batch in train_data:
+                    X, M, H = self._prepare_GAIN_input_data(train_batch.numpy())
+                    train_step(X, M, H)
 
-            for train_batch in train_data:
-                X, M, H = self._prepare_GAIN_input_data(train_batch.numpy())
-                generater_loss, discriminator_loss = train_step(X, M, H)
-
-                total_generator_loss += generater_loss
-                total_discriminator_loss += discriminator_loss
-
-            generator_loss_temp = total_generator_loss / self.hyperparameters["batch_size"]
-            discriminator_loss_temp = total_discriminator_loss / self.hyperparameters["batch_size"]
-            logger.debug(f"Epoch {epoch:>4} losses -- generator: {generator_loss_temp:>6,.4f}; discriminator: {discriminator_loss_temp:>6,.4f}")
-
-        logger.debug("Done training!")
+            X, M, H = self._prepare_GAIN_input_data(data[test_index])
+            generater_loss, _ = self.gain([X, M, H])
+            cv_generator_loss += generater_loss
 
         # TODO: ==== then return mean value...
 
         # Optuna minimizes/maximizes this return value
-        X, M, H = self._prepare_GAIN_input_data(data)
-        generater_loss, _ = self.gain([X, M, H])
-
-        return generater_loss
+        return cv_generator_loss / n_splits
 
     def _prepare_GAIN_input_data(self, data: np.array) -> Tuple[np.array, np.array, np.array]:
         """
@@ -319,7 +313,10 @@ class GAINImputer(BaseImputer):
 
         search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
-        study.optimize(lambda trial: self._train_method(trial, encoded_data), callbacks=[save_best_imputer])
+        study.optimize(
+            lambda trial: self._train_method(trial, encoded_data),
+            callbacks=[save_best_imputer]
+        )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
         self.imputer = tf.keras.models.load_model(".model", compile=False)
         shutil.rmtree(".model", ignore_errors=True)

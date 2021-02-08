@@ -32,8 +32,9 @@ class BaseImputer(ABC):
         """
 
         self._fitted = False
+        self._seed = seed
 
-        if seed is not None:
+        if self._seed is not None:
             tf.random.set_seed(seed)
             random.seed(seed)
             np.random.seed(seed)
