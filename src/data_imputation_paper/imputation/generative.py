@@ -26,7 +26,7 @@ class GAINImputer(BaseImputer):
     def __init__(
         self,
         num_data_columns: int,
-        hyperparameter_grid: Dict[str, Union[int, float, Dict[str, Union[int, float]]]] = {},
+        hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {},
         seed: Optional[int] = None
     ):
         """
@@ -34,8 +34,8 @@ class GAINImputer(BaseImputer):
 
         Args:
             num_data_columns (int): Number of columns in the to-be-imputed data. Necessary to build the GAIN model properly.
-            hyperparameter_grid (Dict[str, Union[int, float, Dict[str, Union[int, float]]]], optional): Provides the hyperparameter grid used for HPO.
-                The dictionary structure is as follows:
+            hyperparameter_grid (Dict[str, Union[int, float, Dict[str, Union[int, float]]]], optional): \
+                Provides the hyperparameter grid used for HPO. The dictionary structure is as follows:
                 hyperparameter_grid = {
                     "GAIN": {
                         "alpha": [...],
@@ -67,6 +67,7 @@ class GAINImputer(BaseImputer):
 
         super().__init__(seed=seed)
 
+        self._fitted = False
         self._num_data_columns = num_data_columns
         self._hyperparameter_grid = hyperparameter_grid
 
@@ -152,6 +153,8 @@ class GAINImputer(BaseImputer):
 
             return generater_loss, discriminator_loss
 
+        # ==== TODO: CV
+
         train = tf.data.Dataset.from_tensor_slices(data)
         train_data = train.shuffle(len(train)).batch(self.hyperparameters["batch_size"])
 
@@ -174,6 +177,8 @@ class GAINImputer(BaseImputer):
 
         logger.debug("Done training!")
 
+        # TODO: ==== then return mean value...
+
         # Optuna minimizes/maximizes this return value
         X, M, H = self._prepare_GAIN_input_data(data)
         generater_loss, _ = self.gain([X, M, H])
@@ -188,7 +193,7 @@ class GAINImputer(BaseImputer):
             data (np.array): Encoded and (0, 1) scaled data
 
         Returns:
-            Tuple[np.array, np.array, np.array]: Three matrices all of the same shapes used as GAIN input:
+            Tuple[np.array, np.array, np.array]: Three matrices all of the same shapes used as GAIN input: \
                 `X` (data matrix), `M` (mask matrix), `H` (hint matrix)
         """
 
@@ -241,8 +246,8 @@ class GAINImputer(BaseImputer):
 
     def _encode_data(self, data: pd.DataFrame) -> np.array:
         """
-        Encode the input `DataFrame` into an `Array`. Categorical non numerical columns are first encoded, then the whole matrix
-        is scaled to be in range from `0` to `1`.
+        Encode the input `DataFrame` into an `Array`. Categorical non numerical columns are first encoded, \
+            then the whole matrix is scaled to be in range from `0` to `1`.
 
         Args:
             data (pd.DataFrame): To-be-imputed data
@@ -297,9 +302,9 @@ class GAINImputer(BaseImputer):
 
         return data
 
-    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False) -> BaseImputer:
+    def fit(self, data: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
 
-        super().fit(data=data, target_columns=target_columns, refit=refit)
+        super().fit(data=data, target_columns=target_columns)
 
         if data.shape[1] != self._num_data_columns:
             raise ImputerError(f"Given data has {data.shape[1]} columns, expected are {self._num_data_columns}. See constructor.")

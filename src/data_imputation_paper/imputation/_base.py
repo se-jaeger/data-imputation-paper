@@ -24,6 +24,13 @@ class ImputerError(Exception):
 class BaseImputer(ABC):
 
     def __init__(self, seed: Optional[int] = None):
+        """
+        Abstract Base Class that defines the interface for all Imputer classes.
+
+        Args:
+            seed (Optional[int], optional): Seed to make behavior deterministic. Defaults to None.
+        """
+
         self._fitted = False
 
         if seed is not None:
@@ -33,12 +40,32 @@ class BaseImputer(ABC):
 
     @staticmethod
     def _guess_dtypes(data: pd.DataFrame) -> Tuple[List[str], List[str]]:
+        """
+        Helper method: finds categorical and numerical columns.
+
+        Args:
+            data (pd.DataFrame): Data to guess the columns data types
+
+        Returns:
+            Tuple[List[str], List[str]]: Lists of categorical and numerical column names
+        """
+
         categorical_columns = [c for c in data.columns if pd.api.types.is_categorical_dtype(data[c])]
         numerical_columns = [c for c in data.columns if pd.api.types.is_numeric_dtype(data[c]) and c not in categorical_columns]
         return categorical_columns, numerical_columns
 
     @staticmethod
     def _categorical_columns_to_string(data_frame: pd.DataFrame) -> pd.DataFrame:
+        """
+        Treats the categorical columns as strings and preserves missing values.
+
+        Args:
+            data_frame (pd.DataFrame): To-be-converted data
+
+        Returns:
+            pd.DataFrame: Data, where the categorical columns are strings
+        """
+
         missing_mask = data_frame.isna()
 
         for column in data_frame.columns:
@@ -50,11 +77,19 @@ class BaseImputer(ABC):
         return data_frame
 
     def _restore_dtype(self, data: pd.DataFrame, dtypes: pd.Series) -> None:
+        """
+        Restores the data types of the columns
+
+        Args:
+            data (pd.DataFrame): Data, which column data types need to be restored
+            dtypes (pd.Series): Data types
+        """
+
         for column in data.columns:
             data[column] = data[column].astype(dtypes[column].name)
 
     @abstractmethod
-    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False):
+    def fit(self, data: pd.DataFrame, target_columns: List[str]):
         """
         Fit the imputer based on given `data` to imputed the `target_columns` lated on.
 
@@ -67,18 +102,18 @@ class BaseImputer(ABC):
             ImputerError: If element of `target_columns` is not column of `data`.
         """
 
-        self._target_columns = target_columns
-        self._categorical_columns, self._numerical_columns = self._guess_dtypes(data)
-
         # some basic error checking
-        if self._fitted and not refit:
-            raise ImputerError("Imputer is already fitted. Force refitting with 'refit'.")
+        if self._fitted:
+            raise ImputerError(f"Imputer is already fitted. Target columns: {', '.join(self._target_columns)}")
 
         if not type(target_columns) == list:
             raise ImputerError(f"Parameter 'target_column' need to be of type list but is '{type(target_columns)}'")
 
-        if any([column not in data.columns for column in self._target_columns]):
-            raise ImputerError(f"All target columns ('{self._target_columns}') must be in: {', '.join(data.columns)}")
+        if any([column not in data.columns for column in target_columns]):
+            raise ImputerError(f"All target columns ('{target_columns}') must be in: {', '.join(data.columns)}")
+
+        self._target_columns = target_columns
+        self._categorical_columns, self._numerical_columns = self._guess_dtypes(data)
 
     @abstractmethod
     def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -89,8 +124,8 @@ class BaseImputer(ABC):
             data (pd.DataFrame): To-be-imputed data.
 
         Returns:
-            Tuple[pd.DataFrame, pd.DataFrame]: First return value (index 0) is the (copied and) imputed `data`.
-                Second return value (index 1) is a mask representing which values are imputed.
+            Tuple[pd.DataFrame, pd.DataFrame]: First return value (index 0) is the (copied and) imputed `data`. \
+                Second return value (index 1) is a mask representing which values are imputed. \
                 It is a `DataFrame` because argument `target_columns` for `fit` method uses `list` of column names.
         """
         pass
@@ -102,10 +137,22 @@ class SklearnBaseImputer(BaseImputer):
         self,
         categorical_imputer: Tuple[BaseEstimator, Dict[str, object]],
         numerical_imputer: Tuple[BaseEstimator, Dict[str, object]],
-        categorical_precision_threshold: float = 0.85,
         encode_as: str = "one-hot",
         seed: Optional[int] = None
     ):
+        """
+        Base class for scikit-learn based imputers. Builds for each to-be-imputed column a pipeline \
+            that incorporates all other columns for imputation.
+
+        Args:
+            categorical_imputer (Tuple[BaseEstimator, Dict[str, object]]): imputer object and hyperparameter grid for categorical columns
+            numerical_imputer (Tuple[BaseEstimator, Dict[str, object]]): imputer object and hyperparameter grid for numerical columns
+            encode_as (str, optional): Defines how to encode categorical columns. Defaults to "one-hot".
+            seed (Optional[int], optional): Seed to make behavior deterministic. Defaults to None.
+
+        Raises:
+            ImputerError: [description]
+        """
 
         valid_encodings = ["one-hot", "ordinal"]
 
@@ -117,7 +164,6 @@ class SklearnBaseImputer(BaseImputer):
         super().__init__(seed=seed)
 
         self._predictors: Dict[str, BaseEstimator] = {}
-        self._categorical_precision_threshold = categorical_precision_threshold
         self._numerical_imputer = (
             numerical_imputer[0],
             {f'numerical_imputer__{name}': value for name, value in numerical_imputer[1].items()}
@@ -127,7 +173,16 @@ class SklearnBaseImputer(BaseImputer):
             {f'categorical_imputer__{name}': value for name, value in categorical_imputer[1].items()}
         )
 
-    def _get_pipeline_and_parameters(self, column: str) -> Tuple[Pipeline, Dict[str, object]]:
+    def _get_pipeline_and_hyperparameter_grid(self, column: str) -> Tuple[Pipeline, Dict[str, object]]:
+        """
+        Helper method: builds the imputer pipeline for a given column.
+
+        Args:
+            column (str): Target column
+
+        Returns:
+            Tuple[Pipeline, Dict[str, object]]: Imputer pipeline and hyperparameter grid
+        """
 
         # define general pipeline for processing columns this will be applied on all variables
         # that are use for prediction, i.e. predictor variables
@@ -160,11 +215,11 @@ class SklearnBaseImputer(BaseImputer):
             pipeline = Pipeline(
                 [
                     ('features', feature_transformation),
-                    ('learner', self._categorical_imputer[0])
+                    ('categorical_imputer', self._categorical_imputer[0])
                 ]
             )
 
-            parameters = self._categorical_imputer[1]
+            hyperparameter_grid = self._categorical_imputer[1]
 
         # (to-be-imputed-)column is numerical ...
         elif column in self._numerical_columns:
@@ -181,17 +236,17 @@ class SklearnBaseImputer(BaseImputer):
             pipeline = Pipeline(
                 [
                     ('features', feature_transformation),
-                    ('learner', self._numerical_imputer[0])
+                    ('numerical_imputer', self._numerical_imputer[0])
                 ]
             )
 
-            parameters = self._numerical_imputer[1]
+            hyperparameter_grid = self._numerical_imputer[1]
 
-        return pipeline, parameters
+        return pipeline, hyperparameter_grid
 
-    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False) -> BaseImputer:
+    def fit(self, data: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
 
-        super().fit(data=data, target_columns=target_columns, refit=refit)
+        super().fit(data=data, target_columns=target_columns)
 
         # cast categorical columns to strings fixes problems where categories are integer values and treated as regression task
         data = self._categorical_columns_to_string(data.copy())  # We don't want to change the input dataframe -> copy it
@@ -200,8 +255,8 @@ class SklearnBaseImputer(BaseImputer):
             # NOTE: We use the whole available data.
             # If there are missing values in predictor columns, they getting imputed beforehand to use them for fitting.
 
-            pipeline, parameters = self._get_pipeline_and_parameters(column)
-            search = GridSearchCV(pipeline, parameters, cv=5, n_jobs=-1)
+            pipeline, hyperparameter_grid = self._get_pipeline_and_hyperparameter_grid(column)
+            search = GridSearchCV(pipeline, hyperparameter_grid, cv=5, n_jobs=-1)
 
             missing_mask = data[column].isna()
             self._predictors[column] = search.fit(data[~missing_mask], data.loc[~missing_mask, column]).best_estimator_

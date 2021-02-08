@@ -10,17 +10,23 @@ logger = logging.getLogger()
 
 class ModeImputer(SklearnBaseImputer):
 
-    def __init__(self, grid_imputer_arguments: dict = {}, seed: Optional[int] = None):
+    def __init__(self, seed: Optional[int] = None):
+        """
+        Imputer that fills missing values with the column's mean (for numerical columns) or most frequent (for categorical columns) value.
+
+        Args:
+            seed (Optional[int], optional): Seed to make behavior deterministic. Defaults to None.
+        """
 
         # BaseImputer bootstraps the object
         BaseImputer.__init__(self, seed=seed)
 
         self._predictors: Dict[str, float] = {}
 
-    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False) -> BaseImputer:
+    def fit(self, data: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
 
         # BaseImputer does some error checking and bootstrap
-        BaseImputer.fit(self, data, target_columns, refit)
+        BaseImputer.fit(self, data, target_columns)
 
         for column in self._target_columns:
             if column in self._categorical_columns:

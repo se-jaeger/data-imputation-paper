@@ -175,9 +175,8 @@ class Evaluator(object):
             for _ in range(num_repetitions):
                 missing_train, missing_test = self._apply_missing_values(self._task, self._missing_values)
 
-                # NOTE: we need to reset the object to avoid fitting it further, so instantiate it here
                 self._imputer = self._imputer_class(**self._imputer_arguments)
-                self._imputer.fit(missing_train, [target_column], refit=True)
+                self._imputer.fit(missing_train, [target_column])
 
                 train_imputed, train_imputed_mask = self._imputer.transform(missing_train)
                 test_imputed, test_imputed_mask = self._imputer.transform(missing_test)
