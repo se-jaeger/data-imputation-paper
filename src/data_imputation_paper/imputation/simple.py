@@ -41,6 +41,8 @@ class ModeImputer(SklearnBaseImputer):
 
     def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
+        BaseImputer.transform(self, data=data)
+
         imputed_mask = data[self._target_columns].isna()
 
         # save the original dtypes because ..
@@ -61,3 +63,6 @@ class ModeImputer(SklearnBaseImputer):
         self._restore_dtype(data, dtypes)
 
         return data, imputed_mask
+
+    def get_best_hyperparameters(self) -> dict:
+        return {}
