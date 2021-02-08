@@ -10,15 +10,24 @@ class ForestImputer(SklearnBaseImputer):
 
     def __init__(
         self,
-        grid_categorical_imputer_arguments: Dict[str, object] = {},
-        grid_numerical_imputer_arguments: Dict[str, object] = {},
-        categorical_precision_threshold: float = 0.85,
+        hyperparameter_grid_categorical_imputer: Dict[str, object] = {},
+        hyperparameter_grid_numerical_imputer: Dict[str, object] = {},
         seed: Optional[int] = None
     ):
+        """
+        Imputer uses `RandomForestClassifier` for categorical columns and `RandomForestRegressor` for numerical columns.
+
+        Args:
+            hyperparameter_grid_categorical_imputer (Dict[str, object], optional): \
+                Hyperparameter grid for HPO for `RandomForestClassifier`. Defaults to {}.
+            hyperparameter_grid_numerical_imputer (Dict[str, object], optional): \
+                Hyperparameter grid for HPO for `RandomForestRegressor`. Defaults to {}.
+            seed (Optional[int], optional): Seed to make behavior deterministic. Defaults to None.
+        """
+
         super().__init__(
-            (RandomForestClassifier(n_jobs=-1), grid_categorical_imputer_arguments),
-            (RandomForestRegressor(n_jobs=-1), grid_numerical_imputer_arguments),
-            categorical_precision_threshold=categorical_precision_threshold,
+            (RandomForestClassifier(n_jobs=-1), hyperparameter_grid_categorical_imputer),
+            (RandomForestRegressor(n_jobs=-1), hyperparameter_grid_numerical_imputer),
             seed=seed
         )
 
@@ -27,14 +36,23 @@ class KNNImputer(SklearnBaseImputer):
 
     def __init__(
         self,
-        grid_categorical_imputer_arguments: Dict[str, object] = {},
-        grid_numerical_imputer_arguments: Dict[str, object] = {},
-        categorical_precision_threshold: float = 0.85,
+        hyperparameter_grid_categorical_imputer: Dict[str, object] = {},
+        hyperparameter_grid_numerical_imputer: Dict[str, object] = {},
         seed: Optional[int] = None
     ):
+        """
+        Imputer uses `KNeighborsClassifier` for categorical columns and `KNeighborsRegressor` for numerical columns.
+
+        Args:
+            hyperparameter_grid_categorical_imputer (Dict[str, object], optional): \
+                Hyperparameter grid for HPO for `KNeighborsClassifier`. Defaults to {}.
+            hyperparameter_grid_numerical_imputer (Dict[str, object], optional): \
+                Hyperparameter grid for HPO for `KNeighborsRegressor`. Defaults to {}.
+            seed (Optional[int], optional): Seed to make behavior deterministic. Defaults to None.
+        """
+
         super().__init__(
-            (KNeighborsClassifier(n_jobs=-1), grid_categorical_imputer_arguments),
-            (KNeighborsRegressor(n_jobs=-1), grid_numerical_imputer_arguments),
-            categorical_precision_threshold=categorical_precision_threshold,
+            (KNeighborsClassifier(n_jobs=-1), hyperparameter_grid_categorical_imputer),
+            (KNeighborsRegressor(n_jobs=-1), hyperparameter_grid_numerical_imputer),
             seed=seed
         )

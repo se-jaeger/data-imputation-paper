@@ -6,6 +6,7 @@ import numpy as np
 import optuna
 import pandas as pd
 import tensorflow as tf
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.activations import relu, sigmoid
@@ -26,7 +27,7 @@ class GAINImputer(BaseImputer):
     def __init__(
         self,
         num_data_columns: int,
-        hyperparameter_grid: Dict[str, Union[int, float, Dict[str, Union[int, float]]]] = {},
+        hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {},
         seed: Optional[int] = None
     ):
         """
@@ -34,8 +35,8 @@ class GAINImputer(BaseImputer):
 
         Args:
             num_data_columns (int): Number of columns in the to-be-imputed data. Necessary to build the GAIN model properly.
-            hyperparameter_grid (Dict[str, Union[int, float, Dict[str, Union[int, float]]]], optional): Provides the hyperparameter grid used for HPO.
-                The dictionary structure is as follows:
+            hyperparameter_grid (Dict[str, Union[int, float, Dict[str, Union[int, float]]]], optional): \
+                Provides the hyperparameter grid used for HPO. The dictionary structure is as follows:
                 hyperparameter_grid = {
                     "GAIN": {
                         "alpha": [...],
@@ -44,7 +45,7 @@ class GAINImputer(BaseImputer):
                     },
                     "training": {
                         "batch_size": [...],
-                        "epochs": [...]
+                        "epochs": [...],
                     },
                     "generator": {
                         "learning_rate": [...],
@@ -67,6 +68,7 @@ class GAINImputer(BaseImputer):
 
         super().__init__(seed=seed)
 
+        self._fitted = False
         self._num_data_columns = num_data_columns
         self._hyperparameter_grid = hyperparameter_grid
 
@@ -152,33 +154,30 @@ class GAINImputer(BaseImputer):
 
             return generater_loss, discriminator_loss
 
-        train = tf.data.Dataset.from_tensor_slices(data)
-        train_data = train.shuffle(len(train)).batch(self.hyperparameters["batch_size"])
+        # ==== TODO: CV
+        # TODO: CV splits..
+        n_splits = 3
+        k_fold = KFold(n_splits=n_splits, shuffle=True, random_state=self._seed)
+        cv_generator_loss = 0
 
-        logger.debug("Start training loop ...")
+        for train_index, test_index in k_fold.split(data):
 
-        for epoch in range(self.hyperparameters["epochs"]):
-            total_generator_loss = 0
-            total_discriminator_loss = 0
+            train = tf.data.Dataset.from_tensor_slices(data[train_index])
+            train_data = train.batch(self.hyperparameters["batch_size"])
 
-            for train_batch in train_data:
-                X, M, H = self._prepare_GAIN_input_data(train_batch.numpy())
-                generater_loss, discriminator_loss = train_step(X, M, H)
+            for _ in range(self.hyperparameters["epochs"]):
+                for train_batch in train_data:
+                    X, M, H = self._prepare_GAIN_input_data(train_batch.numpy())
+                    train_step(X, M, H)
 
-                total_generator_loss += generater_loss
-                total_discriminator_loss += discriminator_loss
+            X, M, H = self._prepare_GAIN_input_data(data[test_index])
+            generater_loss, _ = self.gain([X, M, H])
+            cv_generator_loss += generater_loss
 
-            generator_loss_temp = total_generator_loss / self.hyperparameters["batch_size"]
-            discriminator_loss_temp = total_discriminator_loss / self.hyperparameters["batch_size"]
-            logger.debug(f"Epoch {epoch:>4} losses -- generator: {generator_loss_temp:>6,.4f}; discriminator: {discriminator_loss_temp:>6,.4f}")
-
-        logger.debug("Done training!")
+        # TODO: ==== then return mean value...
 
         # Optuna minimizes/maximizes this return value
-        X, M, H = self._prepare_GAIN_input_data(data)
-        generater_loss, _ = self.gain([X, M, H])
-
-        return generater_loss
+        return cv_generator_loss / n_splits
 
     def _prepare_GAIN_input_data(self, data: np.array) -> Tuple[np.array, np.array, np.array]:
         """
@@ -188,7 +187,7 @@ class GAINImputer(BaseImputer):
             data (np.array): Encoded and (0, 1) scaled data
 
         Returns:
-            Tuple[np.array, np.array, np.array]: Three matrices all of the same shapes used as GAIN input:
+            Tuple[np.array, np.array, np.array]: Three matrices all of the same shapes used as GAIN input: \
                 `X` (data matrix), `M` (mask matrix), `H` (hint matrix)
         """
 
@@ -241,8 +240,8 @@ class GAINImputer(BaseImputer):
 
     def _encode_data(self, data: pd.DataFrame) -> np.array:
         """
-        Encode the input `DataFrame` into an `Array`. Categorical non numerical columns are first encoded, then the whole matrix
-        is scaled to be in range from `0` to `1`.
+        Encode the input `DataFrame` into an `Array`. Categorical non numerical columns are first encoded, \
+            then the whole matrix is scaled to be in range from `0` to `1`.
 
         Args:
             data (pd.DataFrame): To-be-imputed data
@@ -297,9 +296,9 @@ class GAINImputer(BaseImputer):
 
         return data
 
-    def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False) -> BaseImputer:
+    def fit(self, data: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
 
-        super().fit(data=data, target_columns=target_columns, refit=refit)
+        super().fit(data=data, target_columns=target_columns)
 
         if data.shape[1] != self._num_data_columns:
             raise ImputerError(f"Given data has {data.shape[1]} columns, expected are {self._num_data_columns}. See constructor.")
@@ -314,7 +313,10 @@ class GAINImputer(BaseImputer):
 
         search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
-        study.optimize(lambda trial: self._train_method(trial, encoded_data), callbacks=[save_best_imputer])
+        study.optimize(
+            lambda trial: self._train_method(trial, encoded_data),
+            callbacks=[save_best_imputer]
+        )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
         self.imputer = tf.keras.models.load_model(".model", compile=False)
         shutil.rmtree(".model", ignore_errors=True)

@@ -1,12 +1,16 @@
+from typing import Dict, List, Union
+
 import numpy as np
 import pandas as pd
 
 
-def _get_search_space_for_grid_search(hyperparameter_grid: dict) -> dict:
+def _get_search_space_for_grid_search(
+    hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]]
+) -> Dict[str, List[Union[int, float, bool]]]:
 
-    hyperparameters = dict()
+    hyperparameters: Dict[str, Dict[str, List[Union[int, float, bool]]]] = dict()
 
-    gain_default_hyperparameter_grid = {
+    gain_default_hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {
         "gain": {
             "alpha": [100],
             "hint_rate": [0.9],
@@ -57,7 +61,21 @@ def _get_search_space_for_grid_search(hyperparameter_grid: dict) -> dict:
 
 
 class CategoricalEncoder(object):
+    """
+    Encoder only works on categorical columns. \
+        It encodes the categorical values into `int` values fro `0` `n - 1`, where `n` is the number of categories.
+    """
+
     def fit(self, data_frame: pd.DataFrame):
+        """
+        Creates attributes that map categorical values to integers and vice versa, separately for each column.
+
+        Args:
+            data_frame (pd.DataFrame): Data to fit mappings.
+
+        Returns:
+            CategoricalEncoder: Instance of itself.
+        """
 
         self._numerical2category = dict()
         self._category2numerical = dict()
@@ -69,6 +87,15 @@ class CategoricalEncoder(object):
         return self
 
     def transform(self, data_frame: pd.DataFrame) -> np.array:
+        """
+        Maps each column to their int representations.
+
+        Args:
+            data_frame (pd.DataFrame): To-be-encoded data
+
+        Returns:
+            np.array: Encoded data as matrix
+        """
 
         data_frame = data_frame.copy()
 
@@ -78,6 +105,15 @@ class CategoricalEncoder(object):
         return data_frame
 
     def inverse_transform(self, data_frame: pd.DataFrame) -> np.array:
+        """
+        Maps each int value to its categorical representations.
+
+        Args:
+            data_frame (pd.DataFrame): To-be-decoded data
+
+        Returns:
+            np.array: Decoded data as matrix
+        """
 
         data_frame = data_frame.copy()
 
@@ -87,5 +123,14 @@ class CategoricalEncoder(object):
         return data_frame
 
     def fit_transform(self, data_frame: pd.DataFrame) -> np.array:
-        self.fit(data_frame)
-        return self.transform(data_frame)
+        """
+        Combines fitting of representations and returns (a copy) of their encoded values.
+
+        Args:
+            data_frame (pd.DataFrame): To-be-fitted and transformed data
+
+        Returns:
+            np.array: Encoded data as matrix
+        """
+
+        return self.fit(data_frame).transform(data_frame)
