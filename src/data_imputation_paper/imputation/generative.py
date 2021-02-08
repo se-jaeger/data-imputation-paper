@@ -20,18 +20,50 @@ logger = logging.getLogger()
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 tf.get_logger().setLevel('WARN')
 
-# TODO: Further Steps:
-# set seeds everywhere
-
 
 class GAINImputer(BaseImputer):
 
     def __init__(
         self,
         num_data_columns: int,
-        hyperparameter_grid: Dict[str, Union[int, float]] = {},
+        hyperparameter_grid: Dict[str, Union[int, float, Dict[str, Union[int, float]]]] = {},
         seed: Optional[int] = None
     ):
+        """
+        Implementation of Generative Adversarial Imputation Nets (GAIN): https://arxiv.org/abs/1806.02920
+
+        Args:
+            num_data_columns (int): Number of columns in the to-be-imputed data. Necessary to build the GAIN model properly.
+            hyperparameter_grid (Dict[str, Union[int, float, Dict[str, Union[int, float]]]], optional): Provides the hyperparameter grid used for HPO.
+                The dictionary structure is as follows:
+                hyperparameter_grid = {
+                    "GAIN": {
+                        "alpha": [...],
+                        "hint_rate": [...],
+                        "noise": [...]
+                    },
+                    "training": {
+                        "batch_size": [...],
+                        "epochs": [...]
+                    },
+                    "generator": {
+                        "learning_rate": [...],
+                        "beta_1": [...],
+                        "beta_2": [...],
+                        "epsilon": [...],
+                        "amsgrad": [...]
+                    },
+                    "discriminator": {
+                        "learning_rate": [...],
+                        "beta_1": [...],
+                        "beta_2": [...],
+                        "epsilon": [...],
+                        "amsgrad": [...]
+                    }
+                }
+                Defaults to {}.
+            seed (Optional[int], optional): To make process as deterministic as possible. Defaults to None.
+        """
 
         super().__init__(seed=seed)
 
@@ -39,6 +71,9 @@ class GAINImputer(BaseImputer):
         self._hyperparameter_grid = hyperparameter_grid
 
     def _create_GAIN_model(self) -> None:
+        """
+        Helper method: creates the GAIN model based on the current hyperparameters.
+        """
 
         # GAIN inputs
         X = Input((self._num_data_columns,))
@@ -82,6 +117,16 @@ class GAINImputer(BaseImputer):
         self.imputer = Model(inputs=[X, M], outputs=[imputer_output])
 
     def _train_method(self, trial: optuna.trial.Trial, data: np.array) -> float:
+        """
+        Optuna's objective function. This is called multiple times by the Optuna framework. Goal is to minimize this method's return values
+
+        Args:
+            trial (optuna.trial.Trial): Optuna Trial, a process of evaluating an objective function
+            data (np.array): Train data
+
+        Returns:
+            float: Generator loss
+        """
 
         # Set hyperparameter once
         self._set_hyperparameters_for_optimization(trial)
@@ -135,7 +180,18 @@ class GAINImputer(BaseImputer):
 
         return generater_loss
 
-    def _prepare_GAIN_input_data(self, data: np.array):
+    def _prepare_GAIN_input_data(self, data: np.array) -> Tuple[np.array, np.array, np.array]:
+        """
+        Prepare data to use it as GAIN input.
+
+        Args:
+            data (np.array): Encoded and (0, 1) scaled data
+
+        Returns:
+            Tuple[np.array, np.array, np.array]: Three matrices all of the same shapes used as GAIN input:
+                `X` (data matrix), `M` (mask matrix), `H` (hint matrix)
+        """
+
         X_temp = np.nan_to_num(data, nan=0)
         Z_temp = np.random.uniform(0, self.hyperparameters["noise"], size=[data.shape[0], self._num_data_columns])
 
@@ -149,6 +205,13 @@ class GAINImputer(BaseImputer):
         return X, M, H
 
     def _set_hyperparameters_for_optimization(self, trial: optuna.trial.Trial) -> None:
+        """
+        Helper method: samples hyperparameters for a HPO process
+
+        Args:
+            trial (optuna.trial.Trial): Optuna Trial, a process of evaluating an objective function
+        """
+
         self.hyperparameters = {
             # GAIN
             "alpha": trial.suggest_discrete_uniform("alpha", 0, 9999999999, 1),
@@ -177,9 +240,16 @@ class GAINImputer(BaseImputer):
         }
 
     def _encode_data(self, data: pd.DataFrame) -> np.array:
+        """
+        Encode the input `DataFrame` into an `Array`. Categorical non numerical columns are first encoded, then the whole matrix
+        is scaled to be in range from `0` to `1`.
 
-        missing_mask = data[self._target_columns].isna()
-        column_indices_of_targets = [data.columns.get_loc(column) for column in self._target_columns]
+        Args:
+            data (pd.DataFrame): To-be-imputed data
+
+        Returns:
+            np.array: To-be-imputed encoded data
+        """
 
         if not self._fitted:
             if self._categorical_columns:
@@ -197,13 +267,20 @@ class GAINImputer(BaseImputer):
 
             data = self._data_scaler.transform(data)
 
-        # NOTE: setting (scattered) values on 2D-arrays is a bit more tricky than on DataFrames
-        for missing_mask_index, column_index in enumerate(column_indices_of_targets):
-            data[missing_mask.iloc[:, missing_mask_index], column_index] = np.nan
-
         return data
 
     def _decode_encoded_data(self, encoded_data: np.array, columns: pd.Index, indices: pd.Index) -> pd.DataFrame:
+        """
+        Decodes the imputed data. Takes care of the proper column names and indices of the data.
+
+        Args:
+            encoded_data (np.array): Imputed data
+            columns (pd.Index): column names of data
+            indices (pd.Index): indices of data
+
+        Returns:
+            pd.DataFrame: Imputed data as `DataFrame`
+        """
 
         data = self._data_scaler.inverse_transform(encoded_data)
         data = pd.DataFrame(data, columns=columns, index=indices)
@@ -229,6 +306,7 @@ class GAINImputer(BaseImputer):
 
         encoded_data = self._encode_data(data.copy())
 
+        # NOTE: We want to expose the best model so we need to save it temporarily
         def save_best_imputer(study, trial):
             if study.best_trial.number == trial.number:
                 # TODO: we can save here the best HPs
