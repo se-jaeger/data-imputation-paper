@@ -23,7 +23,8 @@ class Experiment(object):
         task_ids: List[str],
         missing_fractions: List[float],
         missing_types: List[str],
-        imputer: BaseImputer,
+        imputer_class: BaseImputer,
+        imputer_arguments: dict,
         num_repetitions: int,
         base_path: str = "results",
         seed: int = 42
@@ -32,14 +33,15 @@ class Experiment(object):
         self._task_ids = task_ids
         self._missing_fractions = missing_fractions
         self._missing_types = missing_types
-        self._imputer = imputer
+        self._imputer_class = imputer_class
+        self._imputer_arguments = imputer_arguments
         self._num_repetitions = num_repetitions
         self._seed = seed
         self._result: Dict[int, Dict[str, Dict[float, Dict[str, EvaluationResult]]]] = dict()
 
         self._base_path = Path(base_path)
 
-        imputer_class_name = str(self._imputer.__class__).split("'")[-2].split(".")[-1]
+        imputer_class_name = str(self._imputer_class).split("'")[-2].split(".")[-1]
         self._base_path = self._base_path / datetime.now().strftime("%Y-%m-%d_%H:%M") / imputer_class_name
 
     def run(self):
@@ -59,7 +61,7 @@ class Experiment(object):
                     ]
 
                     experiment_path = self._base_path / f"{task_id}" / missing_type / f"{missing_fraction}"
-                    evaluator = Evaluator(task, missing_values, self._imputer, experiment_path)
+                    evaluator = Evaluator(task, missing_values, self._imputer_class, self._imputer_arguments, experiment_path)
                     evaluator.evaluate(self._num_repetitions)
 
                     self._result[task_id][missing_type][missing_fraction] = evaluator._result

@@ -1,6 +1,6 @@
 import math
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
 from jenga.corruptions.generic import MissingValues
@@ -29,6 +29,7 @@ class EvaluationResult(object):
 
     def append(
         self,
+        target_column: str,
         train_data_imputed: pd.DataFrame,
         test_data_imputed: pd.DataFrame,
         train_imputed_mask: pd.Series,
@@ -39,10 +40,10 @@ class EvaluationResult(object):
             raise EvaluationError("Evaluation already finalized")
 
         self._update_results(
-            train=self._task.train_data.loc[train_imputed_mask, self._target_column],
-            train_imputed=train_data_imputed.loc[train_imputed_mask, self._target_column],
-            test=self._task.test_data.loc[test_imputed_mask, self._target_column],
-            test_imputed=test_data_imputed.loc[test_imputed_mask, self._target_column],
+            train=self._task.train_data.loc[train_imputed_mask, target_column],
+            train_imputed=train_data_imputed.loc[train_imputed_mask, target_column],
+            test=self._task.test_data.loc[test_imputed_mask, target_column],
+            test_imputed=test_data_imputed.loc[test_imputed_mask, target_column],
             imputation_type=self._imputation_task_type
         )
 
@@ -135,11 +136,19 @@ class EvaluationResult(object):
 
 class Evaluator(object):
 
-    def __init__(self, task: OpenMLTask, missing_values: List[MissingValues], imputer: BaseImputer, path: Optional[Path] = None):
+    def __init__(
+        self,
+        task: OpenMLTask,
+        missing_values: List[MissingValues],
+        imputer_class: Callable[..., BaseImputer],
+        imputer_args: dict,
+        path: Optional[Path] = None
+    ):
 
         self._task = task
         self._missing_values = missing_values
-        self._imputer = imputer
+        self._imputer_class = imputer_class
+        self._imputer_arguments = imputer_args
         self._result: Optional[Dict[str, EvaluationResult]] = None
         self._path = path
 
@@ -166,15 +175,15 @@ class Evaluator(object):
             for _ in range(num_repetitions):
                 missing_train, missing_test = self._apply_missing_values(self._task, self._missing_values)
 
-                # TODO: At least for GAIN, this one trains futher ...
-                # We need to reset it anyhow..
+                # NOTE: we need to reset the object to avoid fitting it further, so instantiate it here
+                self._imputer = self._imputer_class(**self._imputer_arguments)
                 self._imputer.fit(missing_train, [target_column], refit=True)
 
                 train_imputed, train_imputed_mask = self._imputer.transform(missing_train)
                 test_imputed, test_imputed_mask = self._imputer.transform(missing_test)
 
                 # NOTE: masks are DataFrames => append expects Series
-                result_temp.append(train_imputed, test_imputed, train_imputed_mask[target_column], test_imputed_mask[target_column])
+                result_temp.append(target_column, train_imputed, test_imputed, train_imputed_mask[target_column], test_imputed_mask[target_column])
 
             result[target_column] = result_temp.finalize()
 

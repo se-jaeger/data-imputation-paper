@@ -55,6 +55,17 @@ class BaseImputer(ABC):
 
     @abstractmethod
     def fit(self, data: pd.DataFrame, target_columns: List[str], refit: bool = False):
+        """
+        Fit the imputer based on given `data` to imputed the `target_columns` lated on.
+
+        Args:
+            data (pd.DataFrame): Data to train the imputer on.
+            target_columns (List[str]): To-be-imputed columns.
+
+        Raises:
+            ImputerError: If `target_columns` is not a list.
+            ImputerError: If element of `target_columns` is not column of `data`.
+        """
 
         self._target_columns = target_columns
         self._categorical_columns, self._numerical_columns = self._guess_dtypes(data)
