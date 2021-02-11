@@ -1,3 +1,4 @@
+import json
 import math
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
@@ -183,6 +184,7 @@ class Evaluator(object):
 
                 # NOTE: masks are DataFrames => append expects Series
                 result_temp.append(target_column, train_imputed, test_imputed, train_imputed_mask[target_column], test_imputed_mask[target_column])
+                self._best_hyperparameters[target_column].append(self._imputer.get_best_hyperparameters())
 
             result[target_column] = result_temp.finalize()
 
@@ -220,4 +222,5 @@ class Evaluator(object):
                 results_path.mkdir(parents=True, exist_ok=True)
 
                 for index, data_frame in enumerate(self._result[column].results):
-                    data_frame.to_csv(results_path / f"rep_{index}.csv", index=False)
+                    data_frame.to_csv(results_path / f"impute_performance_rep_{index}.csv", index=False)
+                    (results_path / f"best_hyperparameters_rep_{index}.json").write_text(json.dumps(self._best_hyperparameters[column]))

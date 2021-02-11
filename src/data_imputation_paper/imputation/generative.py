@@ -310,6 +310,7 @@ class GAINImputer(BaseImputer):
             if study.best_trial.number == trial.number:
                 # TODO: we can save here the best HPs
                 self.imputer.save(".model", include_optimizer=False)
+                self._best_hyperparameters = self.hyperparameters
 
         search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
@@ -325,6 +326,8 @@ class GAINImputer(BaseImputer):
 
     def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
+        super().transform(data=data)
+
         imputed_mask = data[self._target_columns].isna()
 
         encoded_data = self._encode_data(data.copy())
@@ -339,3 +342,6 @@ class GAINImputer(BaseImputer):
             result.loc[imputed_mask[column], column] = imputed_data_frame.loc[imputed_mask[column], column]
 
         return result, imputed_mask
+
+    def get_best_hyperparameters(self) -> dict:
+        return self._best_hyperparameters

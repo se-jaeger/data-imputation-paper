@@ -90,6 +90,15 @@ class BaseImputer(ABC):
             data[column] = data[column].astype(dtypes[column].name)
 
     @abstractmethod
+    def get_best_hyperparameters(self) -> dict:
+        """
+        Returns the hyperparameters found as best during fitting.
+
+        Returns:
+            dict: Best hyperparameters
+        """
+
+    @abstractmethod
     def fit(self, data: pd.DataFrame, target_columns: List[str]):
         """
         Fit the imputer based on given `data` to imputed the `target_columns` lated on.
@@ -129,7 +138,10 @@ class BaseImputer(ABC):
                 Second return value (index 1) is a mask representing which values are imputed. \
                 It is a `DataFrame` because argument `target_columns` for `fit` method uses `list` of column names.
         """
-        pass
+
+        # some basic error checking
+        if not self._fitted:
+            raise ImputerError("Imputer is not fitted.")
 
 
 class SklearnBaseImputer(BaseImputer):
@@ -254,7 +266,7 @@ class SklearnBaseImputer(BaseImputer):
 
         for column in self._target_columns:
             # NOTE: We use the whole available data.
-            # If there are missing values in predictor columns, they getting imputed beforehand to use them for fitting.
+            # If there are missing values in predictor columns, they getting imputed (marked) beforehand to use them for fitting.
 
             pipeline, hyperparameter_grid = self._get_pipeline_and_hyperparameter_grid(column)
             search = GridSearchCV(pipeline, hyperparameter_grid, cv=5, n_jobs=-1)
@@ -268,6 +280,8 @@ class SklearnBaseImputer(BaseImputer):
         return self
 
     def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+        super().transform(data=data)
 
         imputed_mask = data[self._target_columns].isna()
 
@@ -289,3 +303,22 @@ class SklearnBaseImputer(BaseImputer):
         self._restore_dtype(data, dtypes)
 
         return data, imputed_mask
+
+    def get_best_hyperparameters(self) -> dict:
+
+        if not self._fitted:
+            raise ImputerError("Imputer is not fitted.")
+
+        best_hyperparameters = dict()
+
+        for column in self._target_columns:
+            hyperparameters = [
+                (hyperparameter, value)
+                for hyperparameter, value in self._predictors[column].get_params().items()
+                if "_imputer__" in hyperparameter
+            ]
+
+            # remove leading strings that come from sklearn pipeline
+            best_hyperparameters[column] = {hyperparameter[hyperparameter.find("__") + 2:]: value for hyperparameter, value in hyperparameters}
+
+        return best_hyperparameters
