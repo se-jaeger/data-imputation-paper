@@ -1,17 +1,17 @@
 import logging
-import random
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
+
+from .utils import set_seed
 
 logger = logging.getLogger()
 
@@ -34,10 +34,7 @@ class BaseImputer(ABC):
         self._fitted = False
         self._seed = seed
 
-        if self._seed is not None:
-            tf.random.set_seed(seed)
-            random.seed(seed)
-            np.random.seed(seed)
+        set_seed(self._seed)
 
     @staticmethod
     def _guess_dtypes(data: pd.DataFrame) -> Tuple[List[str], List[str]]:

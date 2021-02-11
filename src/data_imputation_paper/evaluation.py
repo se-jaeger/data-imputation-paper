@@ -9,6 +9,7 @@ from jenga.tasks.openml import OpenMLTask
 from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error
 
 from .imputation._base import BaseImputer
+from .imputation.utils import set_seed
 
 
 class EvaluationError(Exception):
@@ -143,15 +144,23 @@ class Evaluator(object):
         missing_values: List[MissingValues],
         imputer_class: Callable[..., BaseImputer],
         imputer_args: dict,
-        path: Optional[Path] = None
+        path: Optional[Path] = None,
+        seed: Optional[int] = 42
     ):
 
         self._task = task
         self._missing_values = missing_values
         self._imputer_class = imputer_class
         self._imputer_arguments = imputer_args
-        self._result: Optional[Dict[str, EvaluationResult]] = None
         self._path = path
+        self._result: Optional[Dict[str, EvaluationResult]] = None
+        self._best_hyperparameters: Dict[str, List[dict]] = dict()
+        self._seed = seed
+
+        # Because we set determinism here, supres downstream determinism mechanisms
+        if self._seed:
+            set_seed(self._seed)
+            self._imputer_arguments.pop("seed", None)
 
     @staticmethod
     def report_results(result_dictionary: Dict[str, EvaluationResult]) -> None:

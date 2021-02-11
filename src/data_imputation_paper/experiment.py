@@ -9,6 +9,7 @@ from jenga.tasks.openml import OpenMLTask
 
 from .evaluation import EvaluationResult, Evaluator
 from .imputation._base import BaseImputer
+from .imputation.utils import set_seed
 
 logger = logging.getLogger()
 
@@ -44,6 +45,11 @@ class Experiment(object):
         imputer_class_name = str(self._imputer_class).split("'")[-2].split(".")[-1]
         self._base_path = self._base_path / datetime.now().strftime("%Y-%m-%d_%H:%M") / imputer_class_name
 
+        # Because we set determinism here, supres downstream determinism mechanisms
+        if self._seed:
+            set_seed(self._seed)
+            self._imputer_arguments.pop("seed", None)
+
     def run(self):
         for task_id in self._task_ids:
             self._result[task_id] = {}
@@ -61,7 +67,7 @@ class Experiment(object):
                     ]
 
                     experiment_path = self._base_path / f"{task_id}" / missing_type / f"{missing_fraction}"
-                    evaluator = Evaluator(task, missing_values, self._imputer_class, self._imputer_arguments, experiment_path)
+                    evaluator = Evaluator(task, missing_values, self._imputer_class, self._imputer_arguments, experiment_path, seed=None)
                     evaluator.evaluate(self._num_repetitions)
 
                     self._result[task_id][missing_type][missing_fraction] = evaluator._result

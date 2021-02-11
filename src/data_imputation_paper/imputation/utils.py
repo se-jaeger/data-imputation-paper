@@ -1,7 +1,16 @@
+import random
 from typing import Dict, List, Union
 
 import numpy as np
 import pandas as pd
+import tensorflow as tf
+
+
+def set_seed(seed: int) -> None:
+    if seed:
+        tf.random.set_seed(seed)
+        random.seed(seed)
+        np.random.seed(seed)
 
 
 def _get_search_space_for_grid_search(
