@@ -181,19 +181,20 @@ class Evaluator(object):
         for target_column in [missing_value.column for missing_value in self._missing_values]:
 
             result_temp = EvaluationResult(self._task, target_column)
+            self._best_hyperparameters[target_column] = []
 
             for _ in range(num_repetitions):
                 missing_train, missing_test = self._apply_missing_values(self._task, self._missing_values)
 
-                self._imputer = self._imputer_class(**self._imputer_arguments)
-                self._imputer.fit(missing_train, [target_column])
+                imputer = self._imputer_class(**self._imputer_arguments)
+                imputer.fit(missing_train, [target_column])
 
-                train_imputed, train_imputed_mask = self._imputer.transform(missing_train)
-                test_imputed, test_imputed_mask = self._imputer.transform(missing_test)
+                train_imputed, train_imputed_mask = imputer.transform(missing_train)
+                test_imputed, test_imputed_mask = imputer.transform(missing_test)
 
                 # NOTE: masks are DataFrames => append expects Series
                 result_temp.append(target_column, train_imputed, test_imputed, train_imputed_mask[target_column], test_imputed_mask[target_column])
-                self._best_hyperparameters[target_column].append(self._imputer.get_best_hyperparameters())
+                self._best_hyperparameters[target_column].append(imputer.get_best_hyperparameters())
 
             result[target_column] = result_temp.finalize()
 
