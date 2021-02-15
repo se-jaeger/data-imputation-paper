@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
+from jenga.basis import OpenMLTask
 from jenga.corruptions.generic import MissingValues
-from jenga.tasks.openml import OpenMLTask
 from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error
 
 from .imputation._base import BaseImputer
