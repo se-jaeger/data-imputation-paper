@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Callable, Dict, List, Tuple
 
 import joblib
-from jenga.basis import OpenMLTask
 from jenga.corruptions.generic import MissingValues
+from jenga.tasks.openml import OpenMLTask
 
 from .evaluation import EvaluationResult, Evaluator
 from .imputation._base import BaseImputer
