@@ -1,3 +1,4 @@
 [submodule "src/jenga"]
 	path = src/jenga
-	url = https://github.com/se-jaeger/jenga
+	url = https://github.com/schelterlabs/jenga.git
+	branch = refactoring
