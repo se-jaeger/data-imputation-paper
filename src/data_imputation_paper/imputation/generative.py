@@ -308,7 +308,6 @@ class GAINImputer(BaseImputer):
         # NOTE: We want to expose the best model so we need to save it temporarily
         def save_best_imputer(study, trial):
             if study.best_trial.number == trial.number:
-                # TODO: we can save here the best HPs
                 self.imputer.save(".model", include_optimizer=False)
                 self._best_hyperparameters = self.hyperparameters
 
