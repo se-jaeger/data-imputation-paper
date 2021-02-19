@@ -122,7 +122,9 @@ class AutoKerasImputer(BaseImputer):
                 )
     
             missing_mask = data[target].isna()
-            self._predictors[target].fit(data.loc[~missing_mask, feature_cols], data.loc[~missing_mask, target])
+            self._predictors[target].fit(x=data.loc[~missing_mask, feature_cols], 
+                                         y=data.loc[~missing_mask, target],
+                                         epochs=self.epochs)
 
         self._fitted = True
 
