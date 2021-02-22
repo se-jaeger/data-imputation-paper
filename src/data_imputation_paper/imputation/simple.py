@@ -65,4 +65,5 @@ class ModeImputer(SklearnBaseImputer):
         return data, imputed_mask
 
     def get_best_hyperparameters(self) -> dict:
-        return {}
+
+        return super().get_best_hyperparameters()
