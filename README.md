@@ -25,7 +25,7 @@ In order to set up the necessary environment:
    ```
 4. install `data-imputation-paper` with:
    ```bash
-   cd .../...
+   cd ../..
    python setup.py develop # or `install`
    ```
 
