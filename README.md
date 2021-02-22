@@ -21,6 +21,7 @@ In order to set up the necessary environment:
 4. install `jenga` with
    ```bash
    cd src/jenga
+   git checkout refactoring # checkout proper branch
    python setup.py develop
    ```
 4. install `data-imputation-paper` with:
