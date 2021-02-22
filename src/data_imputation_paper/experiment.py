@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Callable, Dict, List, Tuple
 
 import joblib
 from jenga.corruptions.generic import MissingValues
@@ -22,7 +22,7 @@ class Experiment(object):
 
     def __init__(
         self,
-        task_ids: List[str],
+        task_id_class_tuples: List[Tuple[int, Callable[..., OpenMLTask]]],
         missing_fractions: List[float],
         missing_types: List[str],
         imputer_class: BaseImputer,
@@ -32,7 +32,7 @@ class Experiment(object):
         seed: int = 42
     ):
 
-        self._task_ids = task_ids
+        self._task_id_class_tuples = task_id_class_tuples
         self._missing_fractions = missing_fractions
         self._missing_types = missing_types
         self._imputer_class = imputer_class
@@ -52,10 +52,10 @@ class Experiment(object):
             self._imputer_arguments.pop("seed", None)
 
     def run(self):
-        for task_id in self._task_ids:
+        for task_id, task_class in self._task_id_class_tuples:
             self._result[task_id] = {}
 
-            task = OpenMLTask(seed=self._seed, openml_id=task_id)
+            task = task_class(openml_id=task_id)
 
             for missing_type in self._missing_types:
                 self._result[task_id][missing_type] = {}
@@ -77,7 +77,7 @@ class Experiment(object):
         (self._base_path.parent / "evaluation_parameters.json").write_text(
             json.dumps(
                 {
-                    "task_ids": self._task_ids,
+                    "task_ids": [id for id, _ in self._task_id_class_tuples],
                     "missing_types": self._missing_types,
                     "missing_fractions": self._missing_fractions,
                     "target_columns": list(task.train_data.columns)  # TODO: If we change this above also change it here!
