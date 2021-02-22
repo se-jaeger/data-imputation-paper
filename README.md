@@ -1,42 +1,38 @@
 # data-imputation-paper
 
 
-
-
 ## Installation
-
-You need to initialize and clone the `jenga` submodule:
-```bash
-git submodule init
-git submodule update
-```
-
-Then run to install jenga (probably you want do this after create and activate an environment):
-```bash
-cd src/jenga
-python setup.py develop
-```
-
 
 In order to set up the necessary environment:
 
 1. create an environment `data-imputation-paper` with the help of [conda],
-   ```
+   ```bash
    conda env create -f environment.yaml
    ```
 2. activate the new environment with
-   ```
+   ```bash
    conda activate data-imputation-paper
    ```
-3. install `data-imputation-paper` with:
+3. initialize and clone the `jenga` submodule
+   ```bash
+   git submodule init
+   git submodule update
    ```
+4. install `jenga` with
+   ```bash
+   cd src/jenga
+   python setup.py develop
+   ```
+4. install `data-imputation-paper` with:
+   ```bash
+   cd .../...
    python setup.py develop # or `install`
    ```
 
 Optional and needed only once after `git clone`:
 
 4. install several [pre-commit] git hooks with:
-   ```
+   ```bash
    pre-commit install
    ```
    and checkout the configuration under `.pre-commit-config.yaml`.
