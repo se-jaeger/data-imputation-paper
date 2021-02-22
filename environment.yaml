@@ -3,7 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python ==3.8.*
+  - python>=3.8.*
   - pip
   - numpy
   - scipy
@@ -19,6 +19,7 @@ dependencies:
     - autokeras
     - flake8-mypy
     - pydocstyle
+    - tensorflow
   - jupyterlab
   - pytest
   - pytest-cov
