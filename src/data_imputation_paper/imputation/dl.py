@@ -74,7 +74,8 @@ class AutoKerasImputer(BaseImputer):
                 column_names=feature_cols,
                 overwrite=True,
                 max_trials=self.max_trials,
-                tuner=self.tuner
+                tuner=self.tuner,
+                directory="../models"
             )
 
             self._predictors[target_column].fit(

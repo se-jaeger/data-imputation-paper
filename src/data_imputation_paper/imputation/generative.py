@@ -318,8 +318,8 @@ class GAINImputer(BaseImputer):
             callbacks=[save_best_imputer]
         )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
-        self.imputer = tf.keras.models.load_model(".model", compile=False)
-        shutil.rmtree(".model", ignore_errors=True)
+        self.imputer = tf.keras.models.load_model("../models/GAIN", compile=False)
+        shutil.rmtree("../models/GAIN", ignore_errors=True)
         self._fitted = True
         return self
 
