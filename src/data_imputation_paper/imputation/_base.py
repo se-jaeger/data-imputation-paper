@@ -95,6 +95,11 @@ class BaseImputer(ABC):
             dict: Best hyperparameters
         """
 
+        if not self._fitted:
+            raise ImputerError("Imputer is not fitted.")
+
+        return {}
+
     @abstractmethod
     def fit(self, data: pd.DataFrame, target_columns: List[str]):
         """
@@ -303,8 +308,7 @@ class SklearnBaseImputer(BaseImputer):
 
     def get_best_hyperparameters(self) -> dict:
 
-        if not self._fitted:
-            raise ImputerError("Imputer is not fitted.")
+        super().get_best_hyperparameters()
 
         best_hyperparameters = dict()
 

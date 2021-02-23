@@ -3,7 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python ==3.8.*
+  - python>=3.8.*
   - pip
   - numpy
   - scipy
@@ -16,8 +16,10 @@ dependencies:
   # for development only (could also be kept in a separate environment file)
   - pip:
     - flake8
+    - autokeras
     - flake8-mypy
     - pydocstyle
+    - tensorflow
   - jupyterlab
   - pytest
   - pytest-cov
