@@ -306,9 +306,9 @@ class GAINImputer(BaseImputer):
         encoded_data = self._encode_data(data.copy())
 
         # NOTE: We want to expose the best model so we need to save it temporarily
-        def save_best_imputer(study, trial):
-            if study.best_trial.number == trial.number:
-                self.imputer.save(".model", include_optimizer=False)
+        def save_best_imputer(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+            if trial.value and trial.number == study.best_trial.number:
+                self.imputer.save("../models/GAIN", include_optimizer=False)
                 self._best_hyperparameters = self.hyperparameters
 
         search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
