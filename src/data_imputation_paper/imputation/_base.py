@@ -1,4 +1,5 @@
 import logging
+import warnings
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
 
@@ -14,6 +15,7 @@ from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
 from .utils import set_seed
 
 logger = logging.getLogger()
+warnings.filterwarnings("ignore")
 
 
 class ImputerError(Exception):

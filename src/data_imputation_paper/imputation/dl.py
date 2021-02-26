@@ -2,14 +2,12 @@ import logging
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-import tensorflow as tf
 from autokeras import StructuredDataClassifier, StructuredDataRegressor
 from tensorflow.keras import Model
 
 from ._base import BaseImputer
 
 logger = logging.getLogger()
-tf.get_logger().setLevel('ERROR')
 
 
 class AutoKerasImputer(BaseImputer):
