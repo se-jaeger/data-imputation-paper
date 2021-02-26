@@ -343,4 +343,7 @@ class GAINImputer(BaseImputer):
         return result, imputed_mask
 
     def get_best_hyperparameters(self) -> dict:
+
+        super().get_best_hyperparameters()
+
         return self._best_hyperparameters

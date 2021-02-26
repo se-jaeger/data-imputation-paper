@@ -1,9 +1,13 @@
 from typing import Dict, Optional
+import logging
 
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 
 from ._base import SklearnBaseImputer
+
+
+logger = logging.getLogger()
 
 
 class ForestImputer(SklearnBaseImputer):
