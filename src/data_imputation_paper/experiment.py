@@ -73,10 +73,18 @@ class Experiment(object):
                     ]
 
                     experiment_path = self._base_path / f"{task_id}" / missing_type / f"{missing_fraction}"
-                    evaluator = Evaluator(task, missing_values, self._imputer_class, self._imputer_arguments, experiment_path, seed=None)
-                    evaluator.evaluate(self._num_repetitions)
 
-                    self._result[task_id][missing_type][missing_fraction] = evaluator._result
+                    try:
+                        evaluator = Evaluator(task, missing_values, self._imputer_class, self._imputer_arguments, experiment_path, seed=None)
+                        evaluator.evaluate(self._num_repetitions)
+                        result = evaluator._result
+
+                    except Exception as error:
+                        experiment_path.mkdir(parents=True, exist_ok=True)
+                        Path(experiment_path / "error.txt").write_text(str(error))
+                        result = error
+
+                    self._result[task_id][missing_type][missing_fraction] = result
 
         joblib.dump(self._result, Path(self._base_path / f"{task_id}" / "result.joblib"))
         Path(self._base_path / f"{task_id}" / "evaluation_parameters.json").write_text(
