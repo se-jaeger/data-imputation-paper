@@ -122,7 +122,7 @@ class EvaluationResult(object):
                 raise EvaluationError(f"Found categorical imputation with {num_classes} categories")
 
         else:
-            raise EvaluationError(f"datatype of column '{self._target_column}' recognized")
+            raise EvaluationError(f"datatype of column '{self._target_column}' not recognized")
 
     # TODO: reduce code...
     def _update_results(
