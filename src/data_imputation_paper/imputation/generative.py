@@ -14,7 +14,7 @@ from tensorflow.keras.initializers import GlorotNormal
 from tensorflow.keras.layers import Dense, Input, concatenate
 from tensorflow.keras.optimizers import Adam
 
-from ._base import BaseImputer, ImputerError
+from ._base import BaseImputer
 from .utils import CategoricalEncoder, _get_search_space_for_grid_search
 
 logger = logging.getLogger()
@@ -26,7 +26,6 @@ class GAINImputer(BaseImputer):
 
     def __init__(
         self,
-        num_data_columns: int,
         hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {},
         seed: Optional[int] = None
     ):
@@ -69,7 +68,6 @@ class GAINImputer(BaseImputer):
         super().__init__(seed=seed)
 
         self._fitted = False
-        self._num_data_columns = num_data_columns
         self._hyperparameter_grid = hyperparameter_grid
 
     def _create_GAIN_model(self) -> None:
@@ -300,8 +298,7 @@ class GAINImputer(BaseImputer):
 
         super().fit(data=data, target_columns=target_columns)
 
-        if data.shape[1] != self._num_data_columns:
-            raise ImputerError(f"Given data has {data.shape[1]} columns, expected are {self._num_data_columns}. See constructor.")
+        self._num_data_columns = data.shape[1]
 
         encoded_data = self._encode_data(data.copy())
 
