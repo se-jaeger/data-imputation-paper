@@ -78,11 +78,10 @@ class Experiment(object):
 
                     self._result[task_id][missing_type][missing_fraction] = evaluator._result
 
-        joblib.dump(self._result, self._base_path.parent / "result.joblib")
-        (self._base_path.parent / "evaluation_parameters.json").write_text(
+        joblib.dump(self._result, Path(self._base_path / f"{task_id}" / "result.joblib"))
+        Path(self._base_path / f"{task_id}" / "evaluation_parameters.json").write_text(
             json.dumps(
                 {
-                    "task_ids": [id for id, _ in self._task_id_class_tuples],
                     "missing_types": self._missing_types,
                     "missing_fractions": self._missing_fractions,
                     "target_columns": list(task.train_data.columns)  # TODO: If we change this above also change it here!
