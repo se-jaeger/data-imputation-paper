@@ -2,14 +2,12 @@ import logging
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-import tensorflow as tf
 from autokeras import StructuredDataClassifier, StructuredDataRegressor
 from tensorflow.keras import Model
 
 from ._base import BaseImputer
 
 logger = logging.getLogger()
-tf.get_logger().setLevel('ERROR')
 
 
 class AutoKerasImputer(BaseImputer):
@@ -74,7 +72,8 @@ class AutoKerasImputer(BaseImputer):
                 column_names=feature_cols,
                 overwrite=True,
                 max_trials=self.max_trials,
-                tuner=self.tuner
+                tuner=self.tuner,
+                directory="../models"
             )
 
             self._predictors[target_column].fit(

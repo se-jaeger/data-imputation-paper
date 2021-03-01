@@ -14,7 +14,7 @@ from tensorflow.keras.initializers import GlorotNormal
 from tensorflow.keras.layers import Dense, Input, concatenate
 from tensorflow.keras.optimizers import Adam
 
-from ._base import BaseImputer, ImputerError
+from ._base import BaseImputer
 from .utils import CategoricalEncoder, _get_search_space_for_grid_search
 
 logger = logging.getLogger()
@@ -26,7 +26,6 @@ class GAINImputer(BaseImputer):
 
     def __init__(
         self,
-        num_data_columns: int,
         hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {},
         seed: Optional[int] = None
     ):
@@ -69,7 +68,6 @@ class GAINImputer(BaseImputer):
         super().__init__(seed=seed)
 
         self._fitted = False
-        self._num_data_columns = num_data_columns
         self._hyperparameter_grid = hyperparameter_grid
 
     def _create_GAIN_model(self) -> None:
@@ -300,15 +298,14 @@ class GAINImputer(BaseImputer):
 
         super().fit(data=data, target_columns=target_columns)
 
-        if data.shape[1] != self._num_data_columns:
-            raise ImputerError(f"Given data has {data.shape[1]} columns, expected are {self._num_data_columns}. See constructor.")
+        self._num_data_columns = data.shape[1]
 
         encoded_data = self._encode_data(data.copy())
 
         # NOTE: We want to expose the best model so we need to save it temporarily
-        def save_best_imputer(study, trial):
-            if study.best_trial.number == trial.number:
-                self.imputer.save(".model", include_optimizer=False)
+        def save_best_imputer(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+            if trial.value and trial.number == study.best_trial.number:
+                self.imputer.save("../models/GAIN", include_optimizer=False)
                 self._best_hyperparameters = self.hyperparameters
 
         search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
@@ -318,8 +315,8 @@ class GAINImputer(BaseImputer):
             callbacks=[save_best_imputer]
         )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
-        self.imputer = tf.keras.models.load_model(".model", compile=False)
-        shutil.rmtree(".model", ignore_errors=True)
+        self.imputer = tf.keras.models.load_model("../models/GAIN", compile=False)
+        shutil.rmtree("../models/GAIN", ignore_errors=True)
         self._fitted = True
         return self
 
