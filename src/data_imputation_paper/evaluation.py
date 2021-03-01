@@ -268,6 +268,7 @@ class Evaluator(object):
             for column in self._result.keys():
                 self._result[column].result.to_csv(self._path / f"impute_performance_{column}.csv")
                 self._result[column].downstream_performance.to_csv(self._path / f"downstream_performance_{column}.csv")
+                Path(self._path / f"best_hyperparameters_{column}.json").write_text(json.dumps(self._best_hyperparameters[column]))
 
                 results_path = self._path / column
                 results_path.mkdir(parents=True, exist_ok=True)
@@ -278,4 +279,4 @@ class Evaluator(object):
 
                     impute_data_frame.to_csv(results_path / f"impute_performance_rep_{index}.csv")
                     performance_data_frame.to_csv(results_path / f"downstream_performance_rep_{index}.csv")
-                    (results_path / f"best_hyperparameters_rep_{index}.json").write_text(json.dumps(self._best_hyperparameters[column]))
+                    Path(results_path / f"best_hyperparameters_rep_{index}.json").write_text(json.dumps(self._best_hyperparameters[column][index]))
