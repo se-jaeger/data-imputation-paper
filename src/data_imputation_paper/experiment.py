@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import joblib
 from jenga.corruptions.generic import MissingValues
@@ -29,6 +29,7 @@ class Experiment(object):
         imputer_arguments: dict,
         num_repetitions: int,
         base_path: str = "results",
+        timestamp: Optional[str] = None,
         seed: int = 42
     ):
 
@@ -38,13 +39,17 @@ class Experiment(object):
         self._imputer_class = imputer_class
         self._imputer_arguments = imputer_arguments
         self._num_repetitions = num_repetitions
+        self._timestamp = timestamp
         self._seed = seed
         self._result: Dict[int, Dict[str, Dict[float, Dict[str, EvaluationResult]]]] = dict()
 
         self._base_path = Path(base_path)
 
+        if self._timestamp is None:
+            self._timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M")
+
         imputer_class_name = str(self._imputer_class).split("'")[-2].split(".")[-1]
-        self._base_path = self._base_path / datetime.now().strftime("%Y-%m-%d_%H:%M") / imputer_class_name
+        self._base_path = self._base_path / self._timestamp / imputer_class_name
 
         # Because we set determinism here, supres downstream determinism mechanisms
         if self._seed:
