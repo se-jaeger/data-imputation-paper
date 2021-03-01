@@ -21,6 +21,7 @@ dependencies:
     - pydocstyle
     - tensorflow
     - openml
+    - typer
   - jupyterlab
   - pytest
   - pytest-cov
