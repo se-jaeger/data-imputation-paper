@@ -154,7 +154,7 @@ def main(
     imputerClass, imputer_arguments = get_imputer_class_and_arguments(imputer.lower())
 
     experiment = Experiment(
-        task_id_class_tuples=get_id_imputer_class_tuple(task_id),
+        task_id_class_tuples=[get_id_imputer_class_tuple(task_id)],
         missing_fractions=get_missing_fractions(missing_fractions),
         missing_types=get_missing_types(missing_types),
         imputer_class=imputerClass,
