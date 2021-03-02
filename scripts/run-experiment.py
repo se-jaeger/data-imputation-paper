@@ -1,4 +1,5 @@
 
+from pathlib import Path
 from typing import List, Optional, Tuple
 
 import typer
@@ -26,6 +27,15 @@ IMPUTER_CLASS = {
     "forest": ForestImputer,
     "dl": AutoKerasImputer,
     "gain": GAINImputer,
+    "vae": None  # TODO
+}
+
+IMPUTER_NAME = {
+    "mode": "ModeImputer",
+    "knn": "KNNImputer",
+    "forest": "ForestImputer",
+    "dl": "AutoKerasImputer",
+    "gain": "GAINImputer",
     "vae": None  # TODO
 }
 
@@ -140,7 +150,7 @@ def get_imputer_class_and_arguments(imputer_name: str) -> BaseImputer:
     if imputer_name not in IMPUTER_CLASS.keys():
         raise ValueError(f"imputer_name '{imputer_name}' not known. Choose one of: {', '.join(IMPUTER_CLASS.keys())}")
 
-    return IMPUTER_CLASS[imputer_name], IMPUTER_ARGUMENTS[imputer_name]
+    return IMPUTER_CLASS[imputer_name], IMPUTER_ARGUMENTS[imputer_name], IMPUTER_NAME[imputer_name]
 
 
 def main(
@@ -148,10 +158,16 @@ def main(
     imputer: str,
     experiment_name: str,
     missing_fractions: Optional[str] = typer.Option(None, help="comma-separated list"),
-    missing_types: Optional[str] = typer.Option(None, help="comma-separated list")
+    missing_types: Optional[str] = typer.Option(None, help="comma-separated list"),
+    base_path: str = "/results"
 ):
 
-    imputerClass, imputer_arguments = get_imputer_class_and_arguments(imputer.lower())
+    imputerClass, imputer_arguments, imputer_name = get_imputer_class_and_arguments(imputer.lower())
+
+    experiment_path = Path(base_path) / experiment_name / imputer_name / f"{task_id}"
+
+    if experiment_path.exists():
+        raise ValueError(f"Experiment at '{experiment_path}' already exist")
 
     experiment = Experiment(
         task_id_class_tuples=[get_id_imputer_class_tuple(task_id)],
@@ -160,7 +176,7 @@ def main(
         imputer_class=imputerClass,
         imputer_arguments=imputer_arguments,
         num_repetitions=3,
-        base_path="/results",
+        base_path=base_path,
         timestamp=experiment_name
     )
     experiment.run()
