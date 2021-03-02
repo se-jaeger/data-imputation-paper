@@ -1,0 +1,19 @@
+# Default values for data-imputation.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: registry.datexis.com
+  user: sjaeger
+  name: data-imputation
+  tag: alpha
+  pullPolicy: Always
+
+arguments:
+  task_id:
+  imputer:
+  experiment_name:
+  missing_fractions: 0.01,0.03,0.05,0.1,0.3,0.5,0.7,0.9
+  missing_types: MCAR,MNAR,MAR
