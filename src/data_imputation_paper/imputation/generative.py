@@ -8,10 +8,11 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import MinMaxScaler
+from tensorflow import keras
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.activations import relu, sigmoid
 from tensorflow.keras.initializers import GlorotNormal
-from tensorflow.keras.layers import Dense, Input, concatenate
+from tensorflow.keras.layers import Dense, Input, Layer, concatenate
 from tensorflow.keras.optimizers import Adam
 
 from ._base import BaseImputer, ImputerError
@@ -349,6 +350,17 @@ class GAINImputer(BaseImputer):
         return self._best_hyperparameters
 
 
+class VAESampling(Layer):
+    """Uses (z_mean, z_log_var) to sample z, the vector encoding a digit."""
+
+    def call(self, inputs):
+        z_mean, z_log_var = inputs
+        batch = tf.shape(z_mean)[0]
+        dim = tf.shape(z_mean)[1]
+        epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
+        return z_mean + tf.exp(0.5 * z_log_var) * epsilon
+
+
 class VAEImputer(BaseImputer):
 
     def __init__(
@@ -399,55 +411,44 @@ class VAEImputer(BaseImputer):
         self._num_data_columns = num_data_columns
         self._hyperparameter_grid = hyperparameter_grid
 
-    def _create_GAIN_model(self) -> None:
+    def _create_VAE_model(self) -> None:
         """
-        Helper method: creates the GAIN model based on the current hyperparameters.
+        Helper method: creates the VAE model based on the current hyperparameters.
         """
 
-        # GAIN inputs
-        X = Input((self._num_data_columns,))
-        M = Input((self._num_data_columns,))
-        H = Input((self._num_data_columns,))
+        latent_dim = 30
 
-        # GAIN structure
-        self.generator = Sequential(
-            [
-                Dense(self._num_data_columns*2, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(self._num_data_columns, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(self._num_data_columns, activation=sigmoid, kernel_initializer=GlorotNormal())
-            ]
+        # Build the encoder
+        encoder_inputs = Input((self._num_data_columns,))
+        x = Dense(500, activation=relu)(encoder_inputs)
+        x = Dense(120, activation=relu)(x)
+        z_mean = Dense(latent_dim, name="z_mean")(x)
+        z_log_var = Dense(latent_dim, name="z_log_var")(x)
+        z = VAESampling()([z_mean, z_log_var])
+
+        # Build the decoder
+        x = Dense(120, activation=relu)(z)
+        x = Dense(500, activation=relu)(x)
+        decoder_outputs = Dense(self._num_data_columns, activation=sigmoid)(x)
+
+        # VAE loss
+        reconstruction_loss = tf.reduce_mean(
+            tf.reduce_sum(
+                keras.losses.mean_squared_error(encoder_inputs, decoder_outputs)
+            )
         )
+        kl_loss = -0.5 * (1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var))
+        kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
+        total_loss = reconstruction_loss + kl_loss
 
-        self.discriminator = Sequential(
-            [
-                Dense(self._num_data_columns*2, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(self._num_data_columns, activation=relu, kernel_initializer=GlorotNormal()),
-                Dense(self._num_data_columns, activation=sigmoid, kernel_initializer=GlorotNormal())
-            ]
-        )
-
-        gain_input = concatenate([X, M], axis=1)
-        generater_output = self.generator(gain_input)
-        intermediate = X * M + generater_output * (1 - M)
-        intermediate_inputs = concatenate([intermediate, H], axis=1)
-        discriminator_output = self.discriminator(intermediate_inputs)
-
-        # GAIN loss
-        discriminator_loss = -tf.reduce_mean(M * tf.math.log(discriminator_output + 1e-8) + (1 - M) * tf.math.log(1. - discriminator_output + 1e-8))
-        generater_loss_temp = -tf.reduce_mean((1 - M) * tf.math.log(discriminator_output + 1e-8))
-
-        MSE_loss = tf.reduce_mean((M * X - M * generater_output)**2) / tf.reduce_mean(M)
-        generater_loss = generater_loss_temp + self.hyperparameters["alpha"] * MSE_loss
-
-        self.gain = Model(inputs=[X, M, H], outputs=[generater_loss, discriminator_loss])
-
-        # preserve original data and add generator output (i.e. imputed values)
-        imputer_output = M * X + (1 - M) * generater_output
-        self.imputer = Model(inputs=[X, M], outputs=[imputer_output])
+        # self.imputer = Model(inputs=encoder_inputs, outputs=[decoder_outputs, total_loss])
+        self.imputer = Model(inputs=encoder_inputs, outputs=decoder_outputs)  # -> .transform()
+        self.trainable_model = Model(inputs=encoder_inputs, outputs=total_loss)  # -> .fit()
 
     def _train_method(self, trial: optuna.trial.Trial, data: np.array) -> float:
         """
-        Optuna's objective function. This is called multiple times by the Optuna framework. Goal is to minimize this method's return values
+        Optuna's objective function. This is called multiple times by the Optuna framework.
+        Goal is to minimize this method's return values.
 
         Args:
             trial (optuna.trial.Trial): Optuna Trial, a process of evaluating an objective function
@@ -460,32 +461,30 @@ class VAEImputer(BaseImputer):
         # Set hyperparameter once
         self._set_hyperparameters_for_optimization(trial)
 
-        self._create_GAIN_model()
+        self._create_VAE_model()
 
-        generator_optimizer = Adam(**self.hyperparameters["generator_Adam"])
-        discriminator_optimizer = Adam(**self.hyperparameters["discriminator_Adam"])
-
-        generator_var_list = self.generator.trainable_weights
-        discriminator_var_list = self.discriminator.trainable_weights
+        # optimizer = Adam(**self.hyperparameters["Adam"])
 
         @tf.function
-        def train_step(X, M, H):
-            with tf.GradientTape(persistent=True) as tape:
-                generater_loss, discriminator_loss = self.gain([X, M, H])
-
-            generator_gradients = tape.gradient(generater_loss, generator_var_list)
-            generator_optimizer.apply_gradients(zip(generator_gradients, generator_var_list))
-
-            discriminator_gradients = tape.gradient(discriminator_loss, discriminator_var_list)
-            discriminator_optimizer.apply_gradients(zip(discriminator_gradients, discriminator_var_list))
-
-            return generater_loss, discriminator_loss
+        def train_step(self, data):
+            with tf.GradientTape() as tape:
+                reconstruction_loss, kl_loss, total_loss = self.vae(data)
+            grads = tape.gradient(total_loss, self.vae.trainable_weights)
+            self.optimizer.apply_gradients(zip(grads, self.vae.trainable_weights))
+            self.total_loss_tracker.update_state(total_loss)
+            self.reconstruction_loss_tracker.update_state(reconstruction_loss)
+            self.kl_loss_tracker.update_state(kl_loss)
+            return {
+                "loss": self.total_loss_tracker.result(),
+                "reconstruction_loss": self.reconstruction_loss_tracker.result(),
+                "kl_loss": self.kl_loss_tracker.result(),
+            }
 
         # ==== TODO: CV
         # TODO: CV splits..
         n_splits = 3
         k_fold = KFold(n_splits=n_splits, shuffle=True, random_state=self._seed)
-        cv_generator_loss = 0
+        cv_loss = 0
 
         for train_index, test_index in k_fold.split(data):
 
@@ -494,21 +493,21 @@ class VAEImputer(BaseImputer):
 
             for _ in range(self.hyperparameters["epochs"]):
                 for train_batch in train_data:
-                    X, M, H = self._prepare_GAIN_input_data(train_batch.numpy())
+                    X, M, H = self._prepare_VAE_input_data(train_batch.numpy())
                     train_step(X, M, H)
 
-            X, M, H = self._prepare_GAIN_input_data(data[test_index])
-            generater_loss, _ = self.gain([X, M, H])
-            cv_generator_loss += generater_loss
+            X, M, H = self._prepare_VAE_input_data(data[test_index])
+            loss = self.vae([X, M, H])["loss"]
+            cv_loss += loss
 
         # TODO: ==== then return mean value...
 
         # Optuna minimizes/maximizes this return value
-        return cv_generator_loss / n_splits
+        return cv_loss / n_splits
 
-    def _prepare_GAIN_input_data(self, data: np.array) -> Tuple[np.array, np.array, np.array]:
+    def _prepare_VAE_input_data(self, data: np.array) -> Tuple[np.array, np.array, np.array]:
         """
-        Prepare data to use it as GAIN input.
+        Prepare data to use it as VAE input.
 
         Args:
             data (np.array): Encoded and (0, 1) scaled data
@@ -517,18 +516,9 @@ class VAEImputer(BaseImputer):
             Tuple[np.array, np.array, np.array]: Three matrices all of the same shapes used as GAIN input: \
                 `X` (data matrix), `M` (mask matrix), `H` (hint matrix)
         """
-
-        X_temp = np.nan_to_num(data, nan=0)
-        Z_temp = np.random.uniform(0, self.hyperparameters["noise"], size=[data.shape[0], self._num_data_columns])
-
-        random_hints = np.random.uniform(0., 1., size=[data.shape[0], self._num_data_columns])
-        masked_random_hints = 1 * (random_hints < self.hyperparameters["hint_rate"])
-
-        M = 1 - np.isnan(data)
-        H = M * masked_random_hints
-        X = M * X_temp + (1 - M) * Z_temp
-
-        return X, M, H
+        # TODO how do other VAE papers handle this when used for imputation?
+        X = np.nan_to_num(data, nan=0)
+        return X
 
     def _set_hyperparameters_for_optimization(self, trial: optuna.trial.Trial) -> None:
         """
@@ -657,13 +647,16 @@ class VAEImputer(BaseImputer):
         imputed_mask = data[self._target_columns].isna()
 
         encoded_data = self._encode_data(data.copy())
-        X, M, _ = self._prepare_GAIN_input_data(encoded_data)
-        imputed = self.imputer([X, M]).numpy()
+
+        X = self._prepare_VAE_input_data(encoded_data)
+
+        # matrix im ursprünglichen shape, nicht nur missing imputed sondern auch urspünglich werte können geändert sein
+        imputed = self.imputer([X]).numpy()
 
         # presever everything but the missing values in target columns.
+        # wie bei gain die daten rauspicken die in transform als missing erkannnt/gesetzt wurden
         result = data.copy()
         imputed_data_frame = self._decode_encoded_data(imputed, data.columns, data.index)
-
         for column in imputed_mask.columns:
             result.loc[imputed_mask[column], column] = imputed_data_frame.loc[imputed_mask[column], column]
 
