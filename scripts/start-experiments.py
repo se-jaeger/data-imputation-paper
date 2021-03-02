@@ -31,7 +31,7 @@ name_arg = f"--set experiment_name={experiment_name}"
 types_arg = f"--set missing_types='{types_as_argument_string}'"
 fractions_arg = f"--set missing_fractions='{fractions_as_argument_string}'"
 
-for task_id in task_ids[:3]:
+for task_id in task_ids:
     for imputer in IMPUTER:
         command = f"{cmd} --set task_id={task_id} --set imputer={imputer} {name_arg} {types_arg} {fractions_arg} {template}"
         output = subprocess.run(command, shell=True, capture_output=True)
