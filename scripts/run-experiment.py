@@ -96,9 +96,9 @@ binary_path = Path("../data/raw/binary.txt")
 multi_path = Path("../data/raw/multi.txt")
 regression_path = Path("../data/raw/regression.txt")
 
-BINARY_TASK_IDS = binary_path.read_text().split(",")
-MULTI_TASK_IDS = multi_path.read_text().split(",")
-REGRESSION_TASK_IDS = regression_path.read_text().split(",")
+BINARY_TASK_IDS = [int(x) for x in binary_path.read_text().split(",")]
+MULTI_TASK_IDS = [int(x) for x in multi_path.read_text().split(",")]
+REGRESSION_TASK_IDS = [int(x) for x in regression_path.read_text().split(",")]
 
 
 def get_missing_fractions(missing_fractions) -> List[float]:
