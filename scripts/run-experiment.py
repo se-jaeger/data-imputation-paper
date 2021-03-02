@@ -96,10 +96,13 @@ IMPUTER_ARGUMENTS = {
     }
 }
 
-# TODO: read from file..
-BINARY_TASK_IDS = [0, 1, 2, 3, 4]
-MULTI_TASK_IDS = [5, 6, 7, 8]
-REGRESSION_TASK_IDS = [9, 10, 11, 12]
+binary_path = Path("../data/raw/binary.txt")
+multi_path = Path("../data/raw/multi.txt")
+regression_path = Path("../data/raw/regression.txt")
+
+BINARY_TASK_IDS = binary_path.read_text().split(",")
+MULTI_TASK_IDS = multi_path.read_text().split(",")
+REGRESSION_TASK_IDS = regression_path.read_text().split(",")
 
 
 def get_missing_fractions(missing_fractions) -> List[float]:
