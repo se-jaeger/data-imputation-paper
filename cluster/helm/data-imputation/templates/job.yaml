@@ -33,6 +33,9 @@ spec:
           volumeMounts:
             - mountPath: "/results"
               name: imputation-results
+          resources:
+            requests:
+              cpu: 2
       volumes:
         - name: imputation-results
           persistentVolumeClaim:
