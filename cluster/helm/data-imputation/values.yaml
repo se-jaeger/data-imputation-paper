@@ -15,5 +15,5 @@ arguments:
   task_id:
   imputer:
   experiment_name:
-  missing_fractions: 0.01,0.03,0.05,0.1,0.3,0.5,0.7,0.9
-  missing_types: MCAR,MNAR,MAR
+  missing_fractions:
+  missing_types:

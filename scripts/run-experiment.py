@@ -1,6 +1,6 @@
 
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 import typer
 from jenga.tasks.openml import (
@@ -16,10 +16,6 @@ from data_imputation_paper.imputation.dl import AutoKerasImputer
 from data_imputation_paper.imputation.generative import GAINImputer
 from data_imputation_paper.imputation.ml import ForestImputer, KNNImputer
 from data_imputation_paper.imputation.simple import ModeImputer
-
-# Default Values
-MISSING_FRACTIONS = [0.01, 0.03, 0.05, 0.1, 0.3, 0.5, 0.7, 0.9]
-MISSING_TYPES = ["MCAR", "MNAR", "MAR"]
 
 IMPUTER_CLASS = {
     "mode": ModeImputer,
@@ -106,10 +102,7 @@ REGRESSION_TASK_IDS = regression_path.read_text().split(",")
 
 
 def get_missing_fractions(missing_fractions) -> List[float]:
-    if missing_fractions is None:
-        return_value = MISSING_FRACTIONS
-    else:
-        return_value = [float(x) for x in missing_fractions.split(",")]
+    return_value = [float(x) for x in missing_fractions.split(",")]
 
     for val in return_value:
         if val < 0 or val >= 1:
@@ -119,13 +112,10 @@ def get_missing_fractions(missing_fractions) -> List[float]:
 
 
 def get_missing_types(missing_types) -> List[str]:
-    if missing_types is None:
-        return_value = MISSING_TYPES
-    else:
-        return_value = [str(x) for x in missing_types.upper().split(",")]
+    return_value = [str(x) for x in missing_types.upper().split(",")]
 
     for val in return_value:
-        if val not in MISSING_TYPES:
+        if val not in ["MCAR", "MNAR", "MAR"]:
             raise ValueError(f"'{val}' is not a valid missing_type")
 
     return return_value
@@ -160,8 +150,8 @@ def main(
     task_id: int,
     imputer: str,
     experiment_name: str,
-    missing_fractions: Optional[str] = typer.Option(None, help="comma-separated list"),
-    missing_types: Optional[str] = typer.Option(None, help="comma-separated list"),
+    missing_fractions: str = typer.Option(str, help="comma-separated list"),
+    missing_types: str = typer.Option(str, help="comma-separated list"),
     base_path: str = "/results"
 ):
 
