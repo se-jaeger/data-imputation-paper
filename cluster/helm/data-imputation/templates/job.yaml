@@ -1,12 +1,12 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "data-imputation.fullname" . }}-job
+  name: {{ include "data-imputation.fullname" . }}
   namespace: sjaeger
   labels:
     {{- include "data-imputation.labels" . | nindent 6 }}
 spec:
-  backoffLimit: 4
+  backoffLimit: 0
   template:
     metadata:
       name: {{ template "data-imputation.fullname" . }}
