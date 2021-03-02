@@ -23,13 +23,13 @@ spec:
           command:
             - python
             - run-experiment.py
-            - "{{ .Values.arguments.task_id }}"
-            - "{{ .Values.arguments.imputer }}"
-            - "{{ .Values.arguments.experiment_name }}"
+            - "{{ .Values.task_id }}"
+            - "{{ .Values.imputer }}"
+            - "{{ .Values.experiment_name }}"
             - --missing-fractions
-            - "{{ .Values.arguments.missing_fractions }}"
+            - "{{ .Values.missing_fractions }}"
             - --missing-types
-            - "{{ .Values.arguments.missing_types }}"
+            - "{{ .Values.missing_types }}"
           volumeMounts:
             - mountPath: "/results"
               name: imputation-results
