@@ -6,6 +6,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 import pandas as pd
 from jenga.corruptions.generic import MissingValues
 from jenga.tasks.openml import OpenMLTask
+from jenga.utils import BINARY_CLASSIFICATION, MULTI_CLASS_CLASSIFICATION, REGRESSION
 from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error
 
 from .imputation._base import BaseImputer
@@ -25,7 +26,17 @@ class EvaluationResult(object):
         self._target_column = target_column
         self._finalized = False
         self.results: List[pd.DataFrame] = []
+        self.downstream_performances: List[pd.DataFrame] = []
         self.repetitions = 0
+
+        if self._task._task_type == BINARY_CLASSIFICATION:
+            self._baseline_metric = "ROC/AUC"
+        elif self._task._task_type == MULTI_CLASS_CLASSIFICATION:
+            self._baseline_metric = "F1"
+        elif self._task._task_type == REGRESSION:
+            self._baseline_metric = "MSE"
+
+        self._baseline_performance = self._task.get_baseline_performance()
 
         self._set_imputation_task_type()
 
@@ -49,6 +60,16 @@ class EvaluationResult(object):
             imputation_type=self._imputation_task_type
         )
 
+        model = self._task.fit_baseline_model(train_data_imputed, self._task.train_labels)
+
+        if self._task._task_type == BINARY_CLASSIFICATION:
+            predictions = model.predict_proba(test_data_imputed)
+        else:
+            predictions = model.predict(test_data_imputed)
+
+        score = self._task.score_on_test_data(predictions)
+        self.downstream_performances.append(pd.DataFrame([[score, self._baseline_metric]], columns=["score", "metric"]))
+
         self.repetitions += 1
 
     def finalize(self):
@@ -64,6 +85,20 @@ class EvaluationResult(object):
                 collected_results.loc[metric].mean() for metric in indices
             ],
             index=indices
+        )
+
+        collected_scores = pd.concat(self.downstream_performances)
+        self.downstream_performance = pd.DataFrame(
+            {
+                "score": {
+                    "baseline": self._baseline_performance,
+                    "imputed": collected_scores["score"].mean()
+                },
+                "metric": {
+                    "baseline": self._baseline_metric,
+                    "imputed": self._baseline_metric
+                }
+            }
         )
 
         self._finalized = True
@@ -87,7 +122,7 @@ class EvaluationResult(object):
                 raise EvaluationError(f"Found categorical imputation with {num_classes} categories")
 
         else:
-            raise EvaluationError(f"datatype of column '{self._target_column}' recognized")
+            raise EvaluationError(f"datatype of column '{self._target_column}' not recognized")
 
     # TODO: reduce code...
     def _update_results(
@@ -157,6 +192,9 @@ class Evaluator(object):
         self._best_hyperparameters: Dict[str, List[dict]] = dict()
         self._seed = seed
 
+        # fit task's baseline model and get performance
+        self._task.fit_baseline_model()
+
         # Because we set determinism here, supres downstream determinism mechanisms
         if self._seed:
             set_seed(self._seed)
@@ -173,6 +211,8 @@ class Evaluator(object):
             print(f"Target Column: {key}")
             print(value.result)
             print()
+            print(value.downstream_performance)
+            print("\n")
 
     def evaluate(self, num_repetitions: int):
 
@@ -226,11 +266,17 @@ class Evaluator(object):
             self._path.mkdir(parents=True, exist_ok=True)
 
             for column in self._result.keys():
-                self._result[column].result.to_csv(self._path / f"{column}.csv", index=False)
+                self._result[column].result.to_csv(self._path / f"impute_performance_{column}.csv")
+                self._result[column].downstream_performance.to_csv(self._path / f"downstream_performance_{column}.csv")
+                Path(self._path / f"best_hyperparameters_{column}.json").write_text(json.dumps(self._best_hyperparameters[column]))
 
                 results_path = self._path / column
                 results_path.mkdir(parents=True, exist_ok=True)
 
-                for index, data_frame in enumerate(self._result[column].results):
-                    data_frame.to_csv(results_path / f"impute_performance_rep_{index}.csv", index=False)
-                    (results_path / f"best_hyperparameters_rep_{index}.json").write_text(json.dumps(self._best_hyperparameters[column]))
+                for index, (impute_data_frame, performance_data_frame) in enumerate(
+                    zip(self._result[column].results, self._result[column].downstream_performances)
+                ):
+
+                    impute_data_frame.to_csv(results_path / f"impute_performance_rep_{index}.csv")
+                    performance_data_frame.to_csv(results_path / f"downstream_performance_rep_{index}.csv")
+                    Path(results_path / f"best_hyperparameters_rep_{index}.json").write_text(json.dumps(self._best_hyperparameters[column][index]))

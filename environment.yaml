@@ -20,6 +20,8 @@ dependencies:
     - flake8-mypy
     - pydocstyle
     - tensorflow
+    - openml
+    - typer
   - jupyterlab
   - pytest
   - pytest-cov

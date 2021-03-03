@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "data-imputation.fullname" . }}
+  namespace: sjaeger
+  labels:
+    {{- include "data-imputation.labels" . | nindent 6 }}
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: {{ template "data-imputation.fullname" . }}
+      labels:
+        app: {{ template "data-imputation.fullname" . }}
+        chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+    spec:
+      containers:
+        - name: experiment
+          image: {{ .Values.image.repository }}/{{ .Values.image.user }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - python
+            - run-experiment.py
+            - "{{ .Values.task_id }}"
+            - "{{ .Values.imputer }}"
+            - "{{ .Values.experiment_name }}"
+            - --missing-fractions
+            - "{{ .Values.missing_fractions }}"
+            - --missing-types
+            - "{{ .Values.missing_types }}"
+          volumeMounts:
+            - mountPath: "/results"
+              name: imputation-results
+          resources:
+            requests:
+              cpu: 2
+      volumes:
+        - name: imputation-results
+          persistentVolumeClaim:
+            claimName: data-imputation-results
+      imagePullSecrets:
+        - name: private-registry-auth
+      restartPolicy: Never
