@@ -51,3 +51,7 @@ MANIFEST
 
 .linked_env
 .vscode
+
+notebooks/structured_data_classifier
+notebooks/structured_data_regressor
+notebooks/.model
