@@ -370,36 +370,24 @@ class VAEImputer(BaseImputer):
         seed: Optional[int] = None
     ):
         """
-        Implementation of Generative Adversarial Imputation Nets (GAIN): https://arxiv.org/abs/1806.02920
+        Implementation of Variational Autoencoder.
 
         Args:
-            num_data_columns (int): Number of columns in the to-be-imputed data. Necessary to build the GAIN model properly.
+            num_data_columns (int): Number of columns in the to-be-imputed data. Necessary to build the VAE model properly.
             hyperparameter_grid (Dict[str, Union[int, float, Dict[str, Union[int, float]]]], optional): \
                 Provides the hyperparameter grid used for HPO. The dictionary structure is as follows:
                 hyperparameter_grid = {
-                    "GAIN": {
-                        "alpha": [...],
-                        "hint_rate": [...],
-                        "noise": [...]
+                    "optimizer": {
+                        "learning_rate": [...],
+                        "beta_1": [...],
+                        "beta_2": [...],
+                        "epsilon": [...],
+                        "amsgrad": [...]
                     },
                     "training": {
                         "batch_size": [...],
                         "epochs": [...],
                     },
-                    "generator": {
-                        "learning_rate": [...],
-                        "beta_1": [...],
-                        "beta_2": [...],
-                        "epsilon": [...],
-                        "amsgrad": [...]
-                    },
-                    "discriminator": {
-                        "learning_rate": [...],
-                        "beta_1": [...],
-                        "beta_2": [...],
-                        "epsilon": [...],
-                        "amsgrad": [...]
-                    }
                 }
                 Defaults to {}.
             seed (Optional[int], optional): To make process as deterministic as possible. Defaults to None.
@@ -463,25 +451,17 @@ class VAEImputer(BaseImputer):
 
         self._create_VAE_model()
 
-        # optimizer = Adam(**self.hyperparameters["Adam"])
+        optimizer = Adam(**self.hyperparameters["Adam"])
 
         @tf.function
         def train_step(self, data):
             with tf.GradientTape() as tape:
-                reconstruction_loss, kl_loss, total_loss = self.vae(data)
-            grads = tape.gradient(total_loss, self.vae.trainable_weights)
-            self.optimizer.apply_gradients(zip(grads, self.vae.trainable_weights))
+                total_loss = self.trainable_model(data)
+            grads = tape.gradient(total_loss, self.trainable_model.trainable_weights)
+            optimizer.apply_gradients(zip(grads, self.trainable_model.trainable_weights))
             self.total_loss_tracker.update_state(total_loss)
-            self.reconstruction_loss_tracker.update_state(reconstruction_loss)
-            self.kl_loss_tracker.update_state(kl_loss)
-            return {
-                "loss": self.total_loss_tracker.result(),
-                "reconstruction_loss": self.reconstruction_loss_tracker.result(),
-                "kl_loss": self.kl_loss_tracker.result(),
-            }
+            return self.total_loss_tracker.result()
 
-        # ==== TODO: CV
-        # TODO: CV splits..
         n_splits = 3
         k_fold = KFold(n_splits=n_splits, shuffle=True, random_state=self._seed)
         cv_loss = 0
@@ -493,14 +473,12 @@ class VAEImputer(BaseImputer):
 
             for _ in range(self.hyperparameters["epochs"]):
                 for train_batch in train_data:
-                    X, M, H = self._prepare_VAE_input_data(train_batch.numpy())
-                    train_step(X, M, H)
+                    X = self._prepare_VAE_input_data(train_batch.numpy())
+                    train_step(X)
 
-            X, M, H = self._prepare_VAE_input_data(data[test_index])
-            loss = self.vae([X, M, H])["loss"]
+            X = self._prepare_VAE_input_data(data[test_index])
+            loss = self.trainable_model(X)["loss"]
             cv_loss += loss
-
-        # TODO: ==== then return mean value...
 
         # Optuna minimizes/maximizes this return value
         return cv_loss / n_splits
@@ -516,7 +494,7 @@ class VAEImputer(BaseImputer):
             Tuple[np.array, np.array, np.array]: Three matrices all of the same shapes used as GAIN input: \
                 `X` (data matrix), `M` (mask matrix), `H` (hint matrix)
         """
-        # TODO how do other VAE papers handle this when used for imputation?
+        # TODO how do other VAE-imputation papers prepare the input data?
         X = np.nan_to_num(data, nan=0)
         return X
 
@@ -529,24 +507,12 @@ class VAEImputer(BaseImputer):
         """
 
         self.hyperparameters = {
-            # GAIN
-            "alpha": trial.suggest_discrete_uniform("alpha", 0, 9999999999, 1),
-            "hint_rate": trial.suggest_discrete_uniform("hint_rate", 0, 1, 1),
-            "noise": trial.suggest_discrete_uniform("noise", 0, 1, 1),
-
             # training
             "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 1024, 1),
             "epochs": trial.suggest_discrete_uniform("epochs", 0, 10000, 1),
 
-            # optimizers
-            "generator_Adam": {
-                "learning_rate": trial.suggest_discrete_uniform("generator_learning_rate", 0, 1, 1),
-                "beta_1": trial.suggest_discrete_uniform("generator_beta_1", 0, 1, 1),
-                "beta_2": trial.suggest_discrete_uniform("generator_beta_2", 0, 1, 1),
-                "epsilon": trial.suggest_discrete_uniform("generator_epsilon", 0, 1, 1),
-                "amsgrad": trial.suggest_categorical("generator_amsgrad", [True, False])
-            },
-            "discriminator_Adam": {
+            # optimizer
+            "optimizer_Adam": {
                 "learning_rate": trial.suggest_discrete_uniform("discriminator_learning_rate", 0, 1, 1),
                 "beta_1": trial.suggest_discrete_uniform("discriminator_beta_1", 0, 1, 1),
                 "beta_2": trial.suggest_discrete_uniform("discriminator_beta_2", 0, 1, 1),
@@ -623,19 +589,19 @@ class VAEImputer(BaseImputer):
         encoded_data = self._encode_data(data.copy())
 
         # NOTE: We want to expose the best model so we need to save it temporarily
-        def save_best_imputer(study, trial):
+        def save_best_model(study, trial):
             if study.best_trial.number == trial.number:
-                self.imputer.save(".model", include_optimizer=False)
+                self.trainable_model.save(".model", include_optimizer=False)
                 self._best_hyperparameters = self.hyperparameters
 
         search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
         study.optimize(
             lambda trial: self._train_method(trial, encoded_data),
-            callbacks=[save_best_imputer]
+            callbacks=[save_best_model]
         )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
-        self.imputer = tf.keras.models.load_model(".model", compile=False)
+        self.trainable_model = tf.keras.models.load_model(".model", compile=False)
         shutil.rmtree(".model", ignore_errors=True)
         self._fitted = True
         return self
