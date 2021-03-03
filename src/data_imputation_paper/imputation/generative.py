@@ -1,5 +1,6 @@
 import logging
 import shutil
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -69,6 +70,7 @@ class GAINImputer(BaseImputer):
 
         self._fitted = False
         self._hyperparameter_grid = hyperparameter_grid
+        self._model_path = Path("../models/GAIN")
 
     def _create_GAIN_model(self) -> None:
         """
@@ -305,7 +307,7 @@ class GAINImputer(BaseImputer):
         # NOTE: We want to expose the best model so we need to save it temporarily
         def save_best_imputer(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
             if trial.value and trial.number == study.best_trial.number:
-                self.imputer.save("../models/GAIN", include_optimizer=False)
+                self.imputer.save(self._model_path, include_optimizer=False)
                 self._best_hyperparameters = self.hyperparameters
 
         search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
@@ -315,8 +317,10 @@ class GAINImputer(BaseImputer):
             callbacks=[save_best_imputer]
         )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
-        self.imputer = tf.keras.models.load_model("../models/GAIN", compile=False)
-        shutil.rmtree("../models/GAIN", ignore_errors=True)
+        if self._model_path.exists():
+            self.imputer = tf.keras.models.load_model(self._model_path, compile=False)
+            shutil.rmtree(self._model_path, ignore_errors=True)
+
         self._fitted = True
         return self
 
