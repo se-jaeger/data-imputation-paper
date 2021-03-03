@@ -406,6 +406,8 @@ class VAEImputer(BaseImputer):
 
         latent_dim = 30
 
+        # TODO(VAE): prepare for neural architecture search
+
         # Build the encoder
         encoder_inputs = Input((self._num_data_columns,))
         x = Dense(500, activation=relu)(encoder_inputs)
@@ -451,16 +453,15 @@ class VAEImputer(BaseImputer):
 
         self._create_VAE_model()
 
-        optimizer = Adam(**self.hyperparameters["Adam"])
+        optimizer = Adam(**self.hyperparameters["optimizer_Adam"])
 
         @tf.function
-        def train_step(self, data):
+        def train_step(data):
             with tf.GradientTape() as tape:
                 total_loss = self.trainable_model(data)
             grads = tape.gradient(total_loss, self.trainable_model.trainable_weights)
             optimizer.apply_gradients(zip(grads, self.trainable_model.trainable_weights))
-            self.total_loss_tracker.update_state(total_loss)
-            return self.total_loss_tracker.result()
+            return total_loss
 
         n_splits = 3
         k_fold = KFold(n_splits=n_splits, shuffle=True, random_state=self._seed)
@@ -477,7 +478,7 @@ class VAEImputer(BaseImputer):
                     train_step(X)
 
             X = self._prepare_VAE_input_data(data[test_index])
-            loss = self.trainable_model(X)["loss"]
+            loss = self.trainable_model(X)
             cv_loss += loss
 
         # Optuna minimizes/maximizes this return value
@@ -494,7 +495,7 @@ class VAEImputer(BaseImputer):
             Tuple[np.array, np.array, np.array]: Three matrices all of the same shapes used as GAIN input: \
                 `X` (data matrix), `M` (mask matrix), `H` (hint matrix)
         """
-        # TODO how do other VAE-imputation papers prepare the input data?
+        # TODO(VAE): how do other VAE-imputation papers prepare the input data?
         X = np.nan_to_num(data, nan=0)
         return X
 
