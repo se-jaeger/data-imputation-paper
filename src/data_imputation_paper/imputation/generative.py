@@ -397,6 +397,7 @@ class VAEImputer(BaseImputer):
 
         self._fitted = False
         self._hyperparameter_grid = hyperparameter_grid
+        self._model_path = Path("../models/VAE")
 
     def _create_VAE_model(self) -> None:
         """
@@ -583,13 +584,14 @@ class VAEImputer(BaseImputer):
 
         super().fit(data=data, target_columns=target_columns)
 
+        self._num_data_columns = data.shape[1]
 
         encoded_data = self._encode_data(data.copy())
 
         # NOTE: We want to expose the best model so we need to save it temporarily
         def save_best_model(study, trial):
             if study.best_trial.number == trial.number:
-                self.trainable_model.save(".model", include_optimizer=False)
+                self.imputer.save(self._model_path, include_optimizer=False)
                 self._best_hyperparameters = self.hyperparameters
 
         search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
@@ -599,8 +601,10 @@ class VAEImputer(BaseImputer):
             callbacks=[save_best_model]
         )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
-        self.trainable_model = tf.keras.models.load_model(".model", compile=False)
-        shutil.rmtree(".model", ignore_errors=True)
+        if self._model_path.exists():
+            self.imputer = tf.keras.models.load_model(self._model_path, compile=False)
+            shutil.rmtree(self._model_path, ignore_errors=True)
+
         self._fitted = True
         return self
 
