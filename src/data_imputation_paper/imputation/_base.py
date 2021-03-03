@@ -103,7 +103,7 @@ class BaseImputer(ABC):
     @abstractmethod
     def fit(self, data: pd.DataFrame, target_columns: List[str]):
         """
-        Fit the imputer based on given `data` to imputed the `target_columns` lated on.
+        Fit the imputer based on given `data` to imputed the `target_columns` later on.
 
         Args:
             data (pd.DataFrame): Data to train the imputer on.
