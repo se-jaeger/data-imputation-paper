@@ -20,6 +20,7 @@ dependencies:
     - flake8-mypy
     - pydocstyle
     - tensorflow
+    - rope
   - jupyterlab
   - pytest
   - pytest-cov
