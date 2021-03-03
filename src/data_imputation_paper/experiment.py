@@ -1,5 +1,6 @@
 import json
 import logging
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
@@ -79,9 +80,11 @@ class Experiment(object):
                         evaluator.evaluate(self._num_repetitions)
                         result = evaluator._result
 
-                    except Exception as error:
+                    except Exception:
+                        error = traceback.format_exc()
                         experiment_path.mkdir(parents=True, exist_ok=True)
                         Path(experiment_path / "error.txt").write_text(str(error))
+                        logger.exception(f"Tried to run - missing type: {missing_type} - missing fraction: {missing_fraction}")
                         result = error
 
                     self._result[task_id][missing_type][missing_fraction] = result
