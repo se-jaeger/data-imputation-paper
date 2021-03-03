@@ -66,4 +66,4 @@ class ModeImputer(SklearnBaseImputer):
 
     def get_best_hyperparameters(self) -> dict:
 
-        return super().get_best_hyperparameters()
+        return BaseImputer.get_best_hyperparameters(self)

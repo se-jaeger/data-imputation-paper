@@ -2,14 +2,12 @@ import logging
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-import tensorflow as tf
 from autokeras import StructuredDataClassifier, StructuredDataRegressor
 from tensorflow.keras import Model
 
 from ._base import BaseImputer
 
 logger = logging.getLogger()
-tf.get_logger().setLevel('ERROR')
 
 
 class AutoKerasImputer(BaseImputer):
@@ -74,7 +72,8 @@ class AutoKerasImputer(BaseImputer):
                 column_names=feature_cols,
                 overwrite=True,
                 max_trials=self.max_trials,
-                tuner=self.tuner
+                tuner=self.tuner,
+                directory="../models"
             )
 
             self._predictors[target_column].fit(
@@ -105,7 +104,7 @@ class AutoKerasImputer(BaseImputer):
             amount_missing_in_columns = missing_mask.sum()
 
             if amount_missing_in_columns > 0:
-                data.loc[missing_mask, target_column] = self._predictors[target_column].predict(data.loc[missing_mask, feature_cols])
+                data.loc[missing_mask, target_column] = self._predictors[target_column].predict(data.loc[missing_mask, feature_cols])[:, 0]
                 logger.debug(f'Imputed {amount_missing_in_columns} values in column {target_column}')
 
         self._restore_dtype(data, dtypes)

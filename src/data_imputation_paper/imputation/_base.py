@@ -1,4 +1,5 @@
 import logging
+import warnings
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
 
@@ -14,6 +15,7 @@ from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
 from .utils import set_seed
 
 logger = logging.getLogger()
+warnings.filterwarnings("ignore")
 
 
 class ImputerError(Exception):
@@ -203,14 +205,14 @@ class SklearnBaseImputer(BaseImputer):
         # that are use for prediction, i.e. predictor variables
         categorical_preprocessing = Pipeline(
             [
-                ('mark_missing', SimpleImputer(strategy='constant', fill_value='__NA__')),
+                ('mark_missing', SimpleImputer(strategy='most_frequent')),
                 ('encode', self._encoder)
             ]
         )
 
         numeric_preprocessing = Pipeline(
             [
-                ('mark_missing', SimpleImputer(strategy='mean')),  # NOTE: for paper: make clear we use mean imputation without further optimization.
+                ('mark_missing', SimpleImputer(strategy='mean')),
                 ('scale',  StandardScaler())
             ]
         )

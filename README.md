@@ -1,5 +1,9 @@
 # data-imputation-paper
 
+## Run Experiment
+
+The file `scripts/run-experiments.py` implements a simple CLI to run an experiment. It consists of exactly one `task_id` and one `imputer`. The arguments `missing_types`, and `missing_fractions` take a comma separated list, or omit to use default set. Use a good name that does not exist yet as `experiment_name` (e.g., timestamp) since it is used as base path to save the experiments.
+
 
 ## Installation
 
