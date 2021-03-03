@@ -104,7 +104,7 @@ class AutoKerasImputer(BaseImputer):
             amount_missing_in_columns = missing_mask.sum()
 
             if amount_missing_in_columns > 0:
-                data.loc[missing_mask, target_column] = self._predictors[target_column].predict(data.loc[missing_mask, feature_cols])
+                data.loc[missing_mask, target_column] = self._predictors[target_column].predict(data.loc[missing_mask, feature_cols])[:, 0]
                 logger.debug(f'Imputed {amount_missing_in_columns} values in column {target_column}')
 
         self._restore_dtype(data, dtypes)
