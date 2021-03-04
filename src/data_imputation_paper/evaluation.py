@@ -304,6 +304,6 @@ class Evaluator(object):
                 ):
 
                     impute_data_frame.to_csv(results_path / f"impute_performance_rep_{index}.csv")
-                    performance_data_frame.to_csv(results_path / f"downstream_performance_rep_{index}.csv")
+                    performance_data_frame.to_csv(results_path / f"downstream_performance_rep_{index}.csv", ignore_index=True)
                     Path(results_path / f"elapsed_train_time_rep_{index}.json").write_text(json.dumps(elapsed_train_time))
                     Path(results_path / f"best_hyperparameters_rep_{index}.json").write_text(json.dumps(best_hyperparameters))
