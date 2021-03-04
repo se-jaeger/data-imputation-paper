@@ -17,7 +17,11 @@ from tensorflow.keras.layers import Dense, Input, Layer, concatenate
 from tensorflow.keras.optimizers import Adam
 
 from ._base import BaseImputer
-from .utils import CategoricalEncoder, _get_search_space_for_grid_search
+from .utils import (
+    CategoricalEncoder,
+    _get_GAIN_search_space_for_grid_search,
+    _get_VAE_search_space_for_grid_search
+)
 
 logger = logging.getLogger()
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -327,7 +331,7 @@ class GAINImputer(GenerativeImputer):
                 self.imputer.save(self._model_path, include_optimizer=False)
                 self._best_hyperparameters = self.hyperparameters
 
-        search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
+        search_space = _get_GAIN_search_space_for_grid_search(self._hyperparameter_grid)
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
         study.optimize(
             lambda trial: self._train_method(trial, encoded_data),
@@ -525,11 +529,11 @@ class VAEImputer(GenerativeImputer):
 
             # optimizer
             "optimizer_Adam": {
-                "learning_rate": trial.suggest_discrete_uniform("discriminator_learning_rate", 0, 1, 1),
-                "beta_1": trial.suggest_discrete_uniform("discriminator_beta_1", 0, 1, 1),
-                "beta_2": trial.suggest_discrete_uniform("discriminator_beta_2", 0, 1, 1),
-                "epsilon": trial.suggest_discrete_uniform("discriminator_epsilon", 0, 1, 1),
-                "amsgrad": trial.suggest_categorical("discriminator_amsgrad", [True, False])
+                "learning_rate": trial.suggest_discrete_uniform("optimizer_learning_rate", 0, 1, 1),
+                "beta_1": trial.suggest_discrete_uniform("optimizer_beta_1", 0, 1, 1),
+                "beta_2": trial.suggest_discrete_uniform("optimizer_beta_2", 0, 1, 1),
+                "epsilon": trial.suggest_discrete_uniform("optimizer_epsilon", 0, 1, 1),
+                "amsgrad": trial.suggest_categorical("optimizer_amsgrad", [True, False])
             }
         }
 
@@ -547,7 +551,7 @@ class VAEImputer(GenerativeImputer):
                 self.imputer.save(self._model_path, include_optimizer=False)
                 self._best_hyperparameters = self.hyperparameters
 
-        search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
+        search_space = _get_VAE_search_space_for_grid_search(self._hyperparameter_grid)
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
         study.optimize(
             lambda trial: self._train_method(trial, encoded_data),
