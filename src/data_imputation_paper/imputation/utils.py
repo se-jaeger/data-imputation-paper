@@ -13,7 +13,7 @@ def set_seed(seed: int) -> None:
         np.random.seed(seed)
 
 
-def _get_search_space_for_grid_search(
+def _get_GAIN_search_space_for_grid_search(
     hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]]
 ) -> Dict[str, List[Union[int, float, bool]]]:
 
@@ -64,6 +64,48 @@ def _get_search_space_for_grid_search(
         **hyperparameters["training"],
         **{f"generator_{key}": value for key, value in hyperparameters["generator"].items()},
         **{f"discriminator_{key}": value for key, value in hyperparameters["discriminator"].items()}
+    )
+
+    return search_space
+
+
+def _get_VAE_search_space_for_grid_search(
+    hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]]
+) -> Dict[str, List[Union[int, float, bool]]]:
+
+    hyperparameters: Dict[str, Dict[str, List[Union[int, float, bool]]]] = dict()
+
+    vae_default_hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {
+        "training": {
+            "batch_size": [48],
+            "epochs": [10]
+        },
+        "optimizer": {
+            "learning_rate": [0.0005],
+            "beta_1": [0.9],
+            "beta_2": [0.999],
+            "epsilon": [1e-7],
+            "amsgrad": [False]
+        },
+    }
+
+    # If hyperparameter is given use it, else return default value. All others are ignored.
+    for hp_type in vae_default_hyperparameter_grid.keys():
+        hp_type = hp_type.lower()
+        hyperparameters[hp_type] = {}
+        for hp in vae_default_hyperparameter_grid[hp_type].keys():
+            hp = hp.lower()
+            hyperparameters[hp_type][hp] = hyperparameter_grid.get(
+                hp_type,
+                vae_default_hyperparameter_grid[hp_type]
+            ).get(
+                hp,
+                vae_default_hyperparameter_grid[hp_type][hp]
+            )
+
+    search_space = dict(
+        **hyperparameters["training"],
+        **{f"optimizer_{key}": value for key, value in hyperparameters["optimizer"].items()},
     )
 
     return search_space
