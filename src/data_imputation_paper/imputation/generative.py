@@ -589,8 +589,8 @@ class VAEImputer(BaseImputer):
         encoded_data = self._encode_data(data.copy())
 
         # NOTE: We want to expose the best model so we need to save it temporarily
-        def save_best_model(study, trial):
-            if study.best_trial.number == trial.number:
+        def save_best_imputer(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+            if trial.value and trial.number == study.best_trial.number:
                 self.imputer.save(self._model_path, include_optimizer=False)
                 self._best_hyperparameters = self.hyperparameters
 
@@ -598,7 +598,7 @@ class VAEImputer(BaseImputer):
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
         study.optimize(
             lambda trial: self._train_method(trial, encoded_data),
-            callbacks=[save_best_model]
+            callbacks=[save_best_imputer]
         )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
         if self._model_path.exists():
