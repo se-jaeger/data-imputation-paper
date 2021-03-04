@@ -17,8 +17,6 @@ def _get_GAIN_search_space_for_grid_search(
     hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]]
 ) -> Dict[str, List[Union[int, float, bool]]]:
 
-    hyperparameters: Dict[str, Dict[str, List[Union[int, float, bool]]]] = dict()
-
     gain_default_hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {
         "gain": {
             "alpha": [100],
@@ -45,19 +43,7 @@ def _get_GAIN_search_space_for_grid_search(
         }
     }
 
-    # If hyperparameter is given use it, else return default value. All others are ignored.
-    for hp_type in gain_default_hyperparameter_grid.keys():
-        hp_type = hp_type.lower()
-        hyperparameters[hp_type] = {}
-        for hp in gain_default_hyperparameter_grid[hp_type].keys():
-            hp = hp.lower()
-            hyperparameters[hp_type][hp] = hyperparameter_grid.get(
-                hp_type,
-                gain_default_hyperparameter_grid[hp_type]
-            ).get(
-                hp,
-                gain_default_hyperparameter_grid[hp_type][hp]
-            )
+    hyperparameters = _merge_given_HPs_with_defaults(hyperparameter_grid, gain_default_hyperparameter_grid)
 
     search_space = dict(
         **hyperparameters["gain"],
@@ -73,8 +59,6 @@ def _get_VAE_search_space_for_grid_search(
     hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]]
 ) -> Dict[str, List[Union[int, float, bool]]]:
 
-    hyperparameters: Dict[str, Dict[str, List[Union[int, float, bool]]]] = dict()
-
     vae_default_hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {
         "training": {
             "batch_size": [48],
@@ -89,19 +73,7 @@ def _get_VAE_search_space_for_grid_search(
         },
     }
 
-    # If hyperparameter is given use it, else return default value. All others are ignored.
-    for hp_type in vae_default_hyperparameter_grid.keys():
-        hp_type = hp_type.lower()
-        hyperparameters[hp_type] = {}
-        for hp in vae_default_hyperparameter_grid[hp_type].keys():
-            hp = hp.lower()
-            hyperparameters[hp_type][hp] = hyperparameter_grid.get(
-                hp_type,
-                vae_default_hyperparameter_grid[hp_type]
-            ).get(
-                hp,
-                vae_default_hyperparameter_grid[hp_type][hp]
-            )
+    hyperparameters = _merge_given_HPs_with_defaults(hyperparameter_grid, vae_default_hyperparameter_grid)
 
     search_space = dict(
         **hyperparameters["training"],
@@ -109,6 +81,29 @@ def _get_VAE_search_space_for_grid_search(
     )
 
     return search_space
+
+
+def _merge_given_HPs_with_defaults(
+    hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]],
+    default_hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]]
+) -> Dict[str, Dict[str, List[Union[int, float, bool]]]]:
+    """
+    If hyperparameter is given use it, else return default value. All others are ignored.
+    """
+    hyperparameters: Dict[str, Dict[str, List[Union[int, float, bool]]]] = dict()
+    for hp_type in default_hyperparameter_grid.keys():
+        hp_type = hp_type.lower()
+        hyperparameters[hp_type] = {}
+        for hp in default_hyperparameter_grid[hp_type].keys():
+            hp = hp.lower()
+            hyperparameters[hp_type][hp] = hyperparameter_grid.get(
+                hp_type,
+                default_hyperparameter_grid[hp_type]
+            ).get(
+                hp,
+                default_hyperparameter_grid[hp_type][hp]
+            )
+    return hyperparameters
 
 
 class CategoricalEncoder(object):
