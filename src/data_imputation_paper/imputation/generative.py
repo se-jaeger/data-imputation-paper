@@ -49,8 +49,6 @@ class GenerativeImputer(BaseImputer):
         """
 
         if not self._fitted:
-            print(self._categorical_columns)
-            print(self._numerical_columns)
             if self._categorical_columns:
 
                 self._data_encoder = CategoricalEncoder()
