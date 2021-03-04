@@ -1,5 +1,6 @@
 import json
 import math
+import time
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -27,6 +28,8 @@ class EvaluationResult(object):
         self._finalized = False
         self.results: List[pd.DataFrame] = []
         self.downstream_performances: List[pd.DataFrame] = []
+        self.elapsed_train_times: List[float] = []
+        self.best_hyperparameters: List[Dict[str, List[dict]]] = []
         self.repetitions = 0
 
         if self._task._task_type == BINARY_CLASSIFICATION:
@@ -46,7 +49,9 @@ class EvaluationResult(object):
         train_data_imputed: pd.DataFrame,
         test_data_imputed: pd.DataFrame,
         train_imputed_mask: pd.Series,
-        test_imputed_mask: pd.Series
+        test_imputed_mask: pd.Series,
+        elapsed_time: float,
+        best_hyperparameters: Dict[str, List[dict]]
     ):
 
         if self._finalized:
@@ -69,6 +74,8 @@ class EvaluationResult(object):
 
         score = self._task.score_on_test_data(predictions)
         self.downstream_performances.append(pd.DataFrame([[score, self._baseline_metric]], columns=["score", "metric"]))
+        self.elapsed_train_times.append(elapsed_time)
+        self.best_hyperparameters.append(best_hyperparameters)
 
         self.repetitions += 1
 
@@ -100,6 +107,8 @@ class EvaluationResult(object):
                 }
             }
         )
+
+        self.elapsed_train_time = sum(self.elapsed_train_times) / len(self.elapsed_train_times)
 
         self._finalized = True
 
@@ -189,7 +198,6 @@ class Evaluator(object):
         self._imputer_arguments = imputer_args
         self._path = path
         self._result: Optional[Dict[str, EvaluationResult]] = None
-        self._best_hyperparameters: Dict[str, List[dict]] = dict()
         self._seed = seed
 
         # fit task's baseline model and get performance
@@ -208,7 +216,7 @@ class Evaluator(object):
         print("All are in a round-robin fashion imputed and performances are as follows:\n")
 
         for key, value in result_dictionary.items():
-            print(f"Target Column: {key}")
+            print(f"Target Column: {key} - Necessary train time in seconds: {round(value.elapsed_train_time, 4)}")
             print(value.result)
             print()
             print(value.downstream_performance)
@@ -218,23 +226,35 @@ class Evaluator(object):
 
         result = {}
 
-        for target_column in [missing_value.column for missing_value in self._missing_values]:
+        for target_column in [missing_value.column for missing_value in self._missing_values]:  # TODO hier..
 
             result_temp = EvaluationResult(self._task, target_column)
-            self._best_hyperparameters[target_column] = []
 
             for _ in range(num_repetitions):
                 missing_train, missing_test = self._apply_missing_values(self._task, self._missing_values)
 
+                # TODO: Time measure
                 imputer = self._imputer_class(**self._imputer_arguments)
+
+                start_time = time.time()
                 imputer.fit(missing_train, [target_column])
+                elapsed_time = time.time() - start_time
+                # TODO: can we easily calculate the necessary time for 1 run?
+                # -> so we need to know how big the grid is.
 
                 train_imputed, train_imputed_mask = imputer.transform(missing_train)
                 test_imputed, test_imputed_mask = imputer.transform(missing_test)
 
                 # NOTE: masks are DataFrames => append expects Series
-                result_temp.append(target_column, train_imputed, test_imputed, train_imputed_mask[target_column], test_imputed_mask[target_column])
-                self._best_hyperparameters[target_column].append(imputer.get_best_hyperparameters())
+                result_temp.append(
+                    target_column,
+                    train_imputed,
+                    test_imputed,
+                    train_imputed_mask[target_column],
+                    test_imputed_mask[target_column],
+                    elapsed_time,
+                    imputer.get_best_hyperparameters()
+                )
 
             result[target_column] = result_temp.finalize()
 
@@ -268,15 +288,22 @@ class Evaluator(object):
             for column in self._result.keys():
                 self._result[column].result.to_csv(self._path / f"impute_performance_{column}.csv")
                 self._result[column].downstream_performance.to_csv(self._path / f"downstream_performance_{column}.csv")
-                Path(self._path / f"best_hyperparameters_{column}.json").write_text(json.dumps(self._best_hyperparameters[column]))
+                Path(self._path / f"best_hyperparameters_{column}.json").write_text(json.dumps(self._result[column].best_hyperparameters))
+                Path(self._path / f"elapsed_train_time_{column}.json").write_text(json.dumps(self._result[column].elapsed_train_times))
 
                 results_path = self._path / column
                 results_path.mkdir(parents=True, exist_ok=True)
 
-                for index, (impute_data_frame, performance_data_frame) in enumerate(
-                    zip(self._result[column].results, self._result[column].downstream_performances)
+                for index, (impute_data_frame, performance_data_frame, best_hyperparameters, elapsed_train_time) in enumerate(
+                    zip(
+                        self._result[column].results,
+                        self._result[column].downstream_performances,
+                        self._result[column].best_hyperparameters,
+                        self._result[column].elapsed_train_times
+                    )
                 ):
 
                     impute_data_frame.to_csv(results_path / f"impute_performance_rep_{index}.csv")
                     performance_data_frame.to_csv(results_path / f"downstream_performance_rep_{index}.csv")
-                    Path(results_path / f"best_hyperparameters_rep_{index}.json").write_text(json.dumps(self._best_hyperparameters[column][index]))
+                    Path(results_path / f"elapsed_train_time_rep_{index}.json").write_text(json.dumps(elapsed_train_time))
+                    Path(results_path / f"best_hyperparameters_rep_{index}.json").write_text(json.dumps(best_hyperparameters))
