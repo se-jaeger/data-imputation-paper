@@ -24,7 +24,86 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 tf.get_logger().setLevel('WARN')
 
 
-class GAINImputer(BaseImputer):
+class GenerativeImputer(BaseImputer):
+
+    def __init__(
+        self,
+        hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {},
+        seed: Optional[int] = None
+    ):
+
+        super().__init__(seed=seed)
+
+        self._hyperparameter_grid = hyperparameter_grid
+
+    def _encode_data(self, data: pd.DataFrame) -> np.array:
+        """
+        Encode the input `DataFrame` into an `Array`. Categorical non numerical columns are first encoded, \
+            then the whole matrix is scaled to be in range from `0` to `1`.
+
+        Args:
+            data (pd.DataFrame): To-be-imputed data
+
+        Returns:
+            np.array: To-be-imputed encoded data
+        """
+
+        if not self._fitted:
+            print(self._categorical_columns)
+            print(self._numerical_columns)
+            if self._categorical_columns:
+
+                self._data_encoder = CategoricalEncoder()
+                data[self._categorical_columns] = self._data_encoder.fit_transform(data[self._categorical_columns])
+
+            self._data_scaler = MinMaxScaler()
+            data = self._data_scaler.fit_transform(data)
+
+        else:
+            if self._categorical_columns:
+
+                data[self._categorical_columns] = self._data_encoder.transform(data[self._categorical_columns])
+
+            data = self._data_scaler.transform(data)
+
+        return data
+
+    def _decode_encoded_data(self, encoded_data: np.array, columns: pd.Index, indices: pd.Index) -> pd.DataFrame:
+        """
+        Decodes the imputed data. Takes care of the proper column names and indices of the data.
+
+        Args:
+            encoded_data (np.array): Imputed data
+            columns (pd.Index): column names of data
+            indices (pd.Index): indices of data
+
+        Returns:
+            pd.DataFrame: Imputed data as `DataFrame`
+        """
+
+        data = self._data_scaler.inverse_transform(encoded_data)
+        data = pd.DataFrame(data, columns=columns, index=indices)
+
+        if self._categorical_columns:
+
+            # round the encoded categories to next int. This is valid because we encode with OrdinalEncoder.
+            # clip in range 0..(n-1), where n is the number of categories.
+            for column in self._categorical_columns:
+                data[column] = data[column].round(0)
+                data[column] = data[column].clip(lower=0, upper=len(self._data_encoder._numerical2category[column].keys()) - 1)
+
+            data[self._categorical_columns] = self._data_encoder.inverse_transform(data[self._categorical_columns])
+
+        return data
+
+    def get_best_hyperparameters(self) -> dict:
+
+        super().get_best_hyperparameters()
+
+        return self._best_hyperparameters
+
+
+class GAINImputer(GenerativeImputer):
 
     def __init__(
         self,
@@ -67,10 +146,11 @@ class GAINImputer(BaseImputer):
             seed (Optional[int], optional): To make process as deterministic as possible. Defaults to None.
         """
 
-        super().__init__(seed=seed)
+        super().__init__(
+            hyperparameter_grid=hyperparameter_grid,
+            seed=seed
+        )
 
-        self._fitted = False
-        self._hyperparameter_grid = hyperparameter_grid
         self._model_path = Path("../models/GAIN")
 
     def _create_GAIN_model(self) -> None:
@@ -155,8 +235,6 @@ class GAINImputer(BaseImputer):
 
             return generater_loss, discriminator_loss
 
-        # ==== TODO: CV
-        # TODO: CV splits..
         n_splits = 3
         k_fold = KFold(n_splits=n_splits, shuffle=True, random_state=self._seed)
         cv_generator_loss = 0
@@ -174,8 +252,6 @@ class GAINImputer(BaseImputer):
             X, M, H = self._prepare_GAIN_input_data(data[test_index])
             generater_loss, _ = self.gain([X, M, H])
             cv_generator_loss += generater_loss
-
-        # TODO: ==== then return mean value...
 
         # Optuna minimizes/maximizes this return value
         return cv_generator_loss / n_splits
@@ -239,64 +315,6 @@ class GAINImputer(BaseImputer):
             }
         }
 
-    def _encode_data(self, data: pd.DataFrame) -> np.array:
-        """
-        Encode the input `DataFrame` into an `Array`. Categorical non numerical columns are first encoded, \
-            then the whole matrix is scaled to be in range from `0` to `1`.
-
-        Args:
-            data (pd.DataFrame): To-be-imputed data
-
-        Returns:
-            np.array: To-be-imputed encoded data
-        """
-
-        if not self._fitted:
-            if self._categorical_columns:
-
-                self._data_encoder = CategoricalEncoder()
-                data[self._categorical_columns] = self._data_encoder.fit_transform(data[self._categorical_columns])
-
-            self._data_scaler = MinMaxScaler()
-            data = self._data_scaler.fit_transform(data)
-
-        else:
-            if self._categorical_columns:
-
-                data[self._categorical_columns] = self._data_encoder.transform(data[self._categorical_columns])
-
-            data = self._data_scaler.transform(data)
-
-        return data
-
-    def _decode_encoded_data(self, encoded_data: np.array, columns: pd.Index, indices: pd.Index) -> pd.DataFrame:
-        """
-        Decodes the imputed data. Takes care of the proper column names and indices of the data.
-
-        Args:
-            encoded_data (np.array): Imputed data
-            columns (pd.Index): column names of data
-            indices (pd.Index): indices of data
-
-        Returns:
-            pd.DataFrame: Imputed data as `DataFrame`
-        """
-
-        data = self._data_scaler.inverse_transform(encoded_data)
-        data = pd.DataFrame(data, columns=columns, index=indices)
-
-        if self._categorical_columns:
-
-            # round the encoded categories to next int. This is valid because we encode with OrdinalEncoder.
-            # clip in range 0..(n-1), where n is the number of categories.
-            for column in self._categorical_columns:
-                data[column] = data[column].round(0)
-                data[column] = data[column].clip(lower=0, upper=len(self._data_encoder._numerical2category[column].keys()) - 1)
-
-            data[self._categorical_columns] = self._data_encoder.inverse_transform(data[self._categorical_columns])
-
-        return data
-
     def fit(self, data: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
 
         super().fit(data=data, target_columns=target_columns)
@@ -344,12 +362,6 @@ class GAINImputer(BaseImputer):
 
         return result, imputed_mask
 
-    def get_best_hyperparameters(self) -> dict:
-
-        super().get_best_hyperparameters()
-
-        return self._best_hyperparameters
-
 
 class VAESampling(Layer):
     """Uses (z_mean, z_log_var) to sample z, the vector encoding a digit."""
@@ -362,7 +374,7 @@ class VAESampling(Layer):
         return z_mean + tf.exp(0.5 * z_log_var) * epsilon
 
 
-class VAEImputer(BaseImputer):
+class VAEImputer(GenerativeImputer):
 
     def __init__(
         self,
@@ -393,10 +405,11 @@ class VAEImputer(BaseImputer):
             seed (Optional[int], optional): To make process as deterministic as possible. Defaults to None.
         """
 
-        super().__init__(seed=seed)
+        super().__init__(
+            hyperparameter_grid=hyperparameter_grid,
+            seed=seed
+        )
 
-        self._fitted = False
-        self._hyperparameter_grid = hyperparameter_grid
         self._model_path = Path("../models/VAE")
 
     def _create_VAE_model(self) -> None:
@@ -522,64 +535,6 @@ class VAEImputer(BaseImputer):
             }
         }
 
-    def _encode_data(self, data: pd.DataFrame) -> np.array:
-        """
-        Encode the input `DataFrame` into an `Array`. Categorical non numerical columns are first encoded, \
-            then the whole matrix is scaled to be in range from `0` to `1`.
-
-        Args:
-            data (pd.DataFrame): To-be-imputed data
-
-        Returns:
-            np.array: To-be-imputed encoded data
-        """
-
-        if not self._fitted:
-            if self._categorical_columns:
-
-                self._data_encoder = CategoricalEncoder()
-                data[self._categorical_columns] = self._data_encoder.fit_transform(data[self._categorical_columns])
-
-            self._data_scaler = MinMaxScaler()
-            data = self._data_scaler.fit_transform(data)
-
-        else:
-            if self._categorical_columns:
-
-                data[self._categorical_columns] = self._data_encoder.transform(data[self._categorical_columns])
-
-            data = self._data_scaler.transform(data)
-
-        return data
-
-    def _decode_encoded_data(self, encoded_data: np.array, columns: pd.Index, indices: pd.Index) -> pd.DataFrame:
-        """
-        Decodes the imputed data. Takes care of the proper column names and indices of the data.
-
-        Args:
-            encoded_data (np.array): Imputed data
-            columns (pd.Index): column names of data
-            indices (pd.Index): indices of data
-
-        Returns:
-            pd.DataFrame: Imputed data as `DataFrame`
-        """
-
-        data = self._data_scaler.inverse_transform(encoded_data)
-        data = pd.DataFrame(data, columns=columns, index=indices)
-
-        if self._categorical_columns:
-
-            # round the encoded categories to next int. This is valid because we encode with OrdinalEncoder.
-            # clip in range 0..(n-1), where n is the number of categories.
-            for column in self._categorical_columns:
-                data[column] = data[column].round(0)
-                data[column] = data[column].clip(lower=0, upper=len(self._data_encoder._numerical2category[column].keys()) - 1)
-
-            data[self._categorical_columns] = self._data_encoder.inverse_transform(data[self._categorical_columns])
-
-        return data
-
     def fit(self, data: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
 
         super().fit(data=data, target_columns=target_columns)
@@ -629,9 +584,3 @@ class VAEImputer(BaseImputer):
             result.loc[imputed_mask[column], column] = imputed_data_frame.loc[imputed_mask[column], column]
 
         return result, imputed_mask
-
-    def get_best_hyperparameters(self) -> dict:
-
-        super().get_best_hyperparameters()
-
-        return self._best_hyperparameters
