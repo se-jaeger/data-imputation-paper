@@ -14,13 +14,10 @@ MISSING_FRACTIONS = [0.005, 0.01, 0.03, 0.05, 0.1, 0.3, 0.5]
 MISSING_TYPES = ["MCAR", "MNAR", "MAR"]
 IMPUTER = ["mode", "knn", "forest", "dl", "gain", "vae"]
 
-binary_path = Path("../data/raw/binary.txt")
-multi_path = Path("../data/raw/multi.txt")
-regression_path = Path("../data/raw/regression.txt")
+binary_task_ids = Path("../data/raw/binary.txt").read_text().split(",")
+multi_task_ids = Path("../data/raw/multi.txt").read_text().split(",")
+regression_task_ids = Path("../data/raw/regression.txt").read_text().split(",")
 
-binary_task_ids = binary_path.read_text().split(",")
-multi_task_ids = multi_path.read_text().split(",")
-regression_task_ids = regression_path.read_text().split(",")
 task_ids = [*binary_task_ids, *multi_task_ids, *regression_task_ids]
 task_ids = [binary_task_ids[0], multi_task_ids[0], regression_task_ids[0]]
 
