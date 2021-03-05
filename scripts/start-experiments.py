@@ -9,7 +9,7 @@ experiment_name = "test"
 # Default Values
 MISSING_FRACTIONS = [0.005, 0.01, 0.03, 0.05, 0.1, 0.3, 0.5]
 MISSING_TYPES = ["MCAR", "MNAR", "MAR"]
-IMPUTER = ["mode", "knn", "forest", "dl", "gain"]  # TODO: add VAE
+IMPUTER = ["mode", "knn", "forest", "dl", "gain", "vae"]
 
 binary_path = Path("../data/raw/binary.txt")
 multi_path = Path("../data/raw/multi.txt")

@@ -32,7 +32,7 @@ IMPUTER_NAME = {
     "forest": "ForestImputer",
     "dl": "AutoKerasImputer",
     "gain": "GAINImputer",
-    "vae": None  # TODO
+    "vae": "VAEImputer"
 }
 
 # TODO...
@@ -88,7 +88,17 @@ IMPUTER_ARGUMENTS = {
         }
     },
     "vae": {
-        # TODO
+        "optimizer": {
+            "learning_rate": [0.001],
+            "beta_1": [0.9],
+            "beta_2": [0.999],
+            "epsilon": [1e-7],
+            "amsgrad": [False]
+        },
+        "training": {
+            "batch_size": [64],
+            "epochs": [10],
+        },
     }
 }
 
