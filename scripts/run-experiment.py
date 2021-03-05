@@ -13,7 +13,7 @@ from jenga.tasks.openml import (
 from data_imputation_paper.experiment import Experiment
 from data_imputation_paper.imputation._base import BaseImputer
 from data_imputation_paper.imputation.dl import AutoKerasImputer
-from data_imputation_paper.imputation.generative import GAINImputer
+from data_imputation_paper.imputation.generative import GAINImputer, VAEImputer
 from data_imputation_paper.imputation.ml import ForestImputer, KNNImputer
 from data_imputation_paper.imputation.simple import ModeImputer
 
@@ -23,7 +23,7 @@ IMPUTER_CLASS = {
     "forest": ForestImputer,
     "dl": AutoKerasImputer,
     "gain": GAINImputer,
-    "vae": None  # TODO
+    "vae": VAEImputer
 }
 
 IMPUTER_NAME = {
@@ -40,25 +40,25 @@ IMPUTER_ARGUMENTS = {
     "mode": {},  # NOTE: there are no arguments here..
     "knn": {
         "hyperparameter_grid_categorical_imputer": {
-            "n_neighbors": [3, 5]
+            "n_neighbors": [1, 3, 5]
         },
         "hyperparameter_grid_numerical_imputer": {
-            "n_neighbors": [3, 5]
+            "n_neighbors": [1, 3, 5]
         }
     },
     "forest": {
         "hyperparameter_grid_categorical_imputer": {
-            "n_estimators": [50, 100]
+            "n_estimators": [10, 50, 100]
         },
         "hyperparameter_grid_numerical_imputer": {
-            "n_estimators": [50, 100]
+            "n_estimators": [10, 50, 100]
         }
     },
     "dl": {
         "max_trials": 10,
         "tuner": None,
         "validation_split": 0.2,
-        "epochs": 10
+        "epochs": 50
     },
     "gain": {
         "hyperparameter_grid": {
@@ -88,27 +88,25 @@ IMPUTER_ARGUMENTS = {
         }
     },
     "vae": {
-        "optimizer": {
-            "learning_rate": [0.001],
-            "beta_1": [0.9],
-            "beta_2": [0.999],
-            "epsilon": [1e-7],
-            "amsgrad": [False]
-        },
-        "training": {
-            "batch_size": [64],
-            "epochs": [10],
-        },
+        "hyperparameter_grid": {
+            "optimizer": {
+                "learning_rate": [0.001],
+                "beta_1": [0.9],
+                "beta_2": [0.999],
+                "epsilon": [1e-7],
+                "amsgrad": [False]
+            },
+            "training": {
+                "batch_size": [64],
+                "epochs": [10],
+            },
+        }
     }
 }
 
-binary_path = Path("../data/raw/binary.txt")
-multi_path = Path("../data/raw/multi.txt")
-regression_path = Path("../data/raw/regression.txt")
-
-BINARY_TASK_IDS = [int(x) for x in binary_path.read_text().split(",")]
-MULTI_TASK_IDS = [int(x) for x in multi_path.read_text().split(",")]
-REGRESSION_TASK_IDS = [int(x) for x in regression_path.read_text().split(",")]
+BINARY_TASK_IDS = [int(x) for x in Path("../data/raw/binary.txt").read_text().split(",")]
+MULTI_TASK_IDS = [int(x) for x in Path("../data/raw/multi.txt").read_text().split(",")]
+REGRESSION_TASK_IDS = [int(x) for x in Path("../data/raw/regression.txt").read_text().split(",")]
 
 
 def get_missing_fractions(missing_fractions) -> List[float]:
