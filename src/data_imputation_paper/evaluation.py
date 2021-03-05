@@ -32,12 +32,11 @@ class EvaluationResult(object):
         self.best_hyperparameters: List[Dict[str, List[dict]]] = []
         self.repetitions = 0
 
-        if self._task._task_type == BINARY_CLASSIFICATION:
-            self._baseline_metric = "ROC/AUC"
-        elif self._task._task_type == MULTI_CLASS_CLASSIFICATION:
-            self._baseline_metric = "F1"
+        if self._task._task_type == BINARY_CLASSIFICATION or self._task._task_type == MULTI_CLASS_CLASSIFICATION:
+            self._baseline_metric = ("F1_micro", "F1_macro", "F1_weighted")
+
         elif self._task._task_type == REGRESSION:
-            self._baseline_metric = "MSE"
+            self._baseline_metric = ("MAE", "MSE", "RMSE")
 
         self._baseline_performance = self._task.get_baseline_performance()
 
@@ -48,6 +47,7 @@ class EvaluationResult(object):
         target_column: str,
         train_data_imputed: pd.DataFrame,
         test_data_imputed: pd.DataFrame,
+        test_data_corrupted: pd.DataFrame,
         train_imputed_mask: pd.Series,
         test_imputed_mask: pd.Series,
         elapsed_time: float,
@@ -65,15 +65,34 @@ class EvaluationResult(object):
             imputation_type=self._imputation_task_type
         )
 
-        model = self._task.fit_baseline_model(train_data_imputed, self._task.train_labels)
+        predictions_on_corrupted = self._task._baseline_model.predict(test_data_corrupted)
+        score_on_corrupted = self._task.score_on_test_data(predictions_on_corrupted)
 
-        if self._task._task_type == BINARY_CLASSIFICATION:
-            predictions = model.predict_proba(test_data_imputed)
-        else:
-            predictions = model.predict(test_data_imputed)
+        predictions_on_imputed = self._task._baseline_model.predict(test_data_imputed)
+        score_on_imputed = self._task.score_on_test_data(predictions_on_imputed)
 
-        score = self._task.score_on_test_data(predictions)
-        self.downstream_performances.append(pd.DataFrame([[score, self._baseline_metric]], columns=["score", "metric"]))
+        self.downstream_performances.append(
+            pd.DataFrame(
+                {
+                    "baseline": {
+                        self._baseline_metric[0]: self._baseline_performance[0],
+                        self._baseline_metric[1]: self._baseline_performance[1],
+                        self._baseline_metric[2]: self._baseline_performance[2]
+                    },
+                    "corrupted": {
+                        self._baseline_metric[0]: score_on_corrupted[0],
+                        self._baseline_metric[1]: score_on_corrupted[1],
+                        self._baseline_metric[2]: score_on_corrupted[2]
+                    },
+                    "imputed": {
+                        self._baseline_metric[0]: score_on_imputed[0],
+                        self._baseline_metric[1]: score_on_imputed[1],
+                        self._baseline_metric[2]: score_on_imputed[2]
+                    }
+                }
+            )
+        )
+
         self.elapsed_train_times.append(elapsed_time)
         self.best_hyperparameters.append(best_hyperparameters)
 
@@ -84,29 +103,20 @@ class EvaluationResult(object):
         if self._finalized:
             raise EvaluationError("Evaluation already finalized")
 
-        collected_results = pd.concat(self.results)
-        indices = collected_results.index.unique()
+        results_reduced = []
+        for all_list in [self.results, self.downstream_performances]:
+            collected_results = pd.concat(all_list)
+            metrics = collected_results.index.unique()
 
-        self.result = pd.DataFrame(
-            [
-                collected_results.loc[metric].mean() for metric in indices
-            ],
-            index=indices
-        )
-
-        collected_scores = pd.concat(self.downstream_performances)
-        self.downstream_performance = pd.DataFrame(
-            {
-                "score": {
-                    "baseline": self._baseline_performance,
-                    "imputed": collected_scores["score"].mean()
-                },
-                "metric": {
-                    "baseline": self._baseline_metric,
-                    "imputed": self._baseline_metric
-                }
-            }
-        )
+            results_reduced.append(
+                pd.DataFrame(
+                    [
+                        collected_results.loc[metric].mean() for metric in metrics
+                    ],
+                    index=metrics
+                )
+            )
+        self.result, self.downstream_performance = results_reduced
 
         self.elapsed_train_time = sum(self.elapsed_train_times) / len(self.elapsed_train_times)
 
@@ -233,27 +243,25 @@ class Evaluator(object):
             for _ in range(num_repetitions):
                 missing_train, missing_test = self._apply_missing_values(self._task, self._missing_values)
 
-                # TODO: Time measure
                 imputer = self._imputer_class(**self._imputer_arguments)
 
                 start_time = time.time()
-                imputer.fit(missing_train, [target_column])
+                imputer.fit(self._task.train_data.copy(), [target_column])
                 elapsed_time = time.time() - start_time
-                # TODO: can we easily calculate the necessary time for 1 run?
-                # -> so we need to know how big the grid is.
 
                 train_imputed, train_imputed_mask = imputer.transform(missing_train)
                 test_imputed, test_imputed_mask = imputer.transform(missing_test)
 
                 # NOTE: masks are DataFrames => append expects Series
                 result_temp.append(
-                    target_column,
-                    train_imputed,
-                    test_imputed,
-                    train_imputed_mask[target_column],
-                    test_imputed_mask[target_column],
-                    elapsed_time,
-                    imputer.get_best_hyperparameters()
+                    target_column=target_column,
+                    train_data_imputed=train_imputed,
+                    test_data_imputed=test_imputed,
+                    test_data_corrupted=missing_test,
+                    train_imputed_mask=train_imputed_mask[target_column],
+                    test_imputed_mask=test_imputed_mask[target_column],
+                    elapsed_time=elapsed_time,
+                    best_hyperparameters=imputer.get_best_hyperparameters()
                 )
 
             result[target_column] = result_temp.finalize()
@@ -304,6 +312,6 @@ class Evaluator(object):
                 ):
 
                     impute_data_frame.to_csv(results_path / f"impute_performance_rep_{index}.csv")
-                    performance_data_frame.to_csv(results_path / f"downstream_performance_rep_{index}.csv", index=True)
+                    performance_data_frame.to_csv(results_path / f"downstream_performance_rep_{index}.csv")
                     Path(results_path / f"elapsed_train_time_rep_{index}.json").write_text(json.dumps(elapsed_train_time))
                     Path(results_path / f"best_hyperparameters_rep_{index}.json").write_text(json.dumps(best_hyperparameters))
