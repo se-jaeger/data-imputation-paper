@@ -162,6 +162,7 @@ def main(
     experiment_name: str,
     missing_fractions: str = typer.Option(str, help="comma-separated list"),
     missing_types: str = typer.Option(str, help="comma-separated list"),
+    num_repetitions: int = 10,
     base_path: str = "/results"
 ):
 
@@ -178,7 +179,7 @@ def main(
         missing_types=get_missing_types(missing_types),
         imputer_class=imputerClass,
         imputer_arguments=imputer_arguments,
-        num_repetitions=3,
+        num_repetitions=num_repetitions,
         base_path=base_path,
         timestamp=experiment_name
     )

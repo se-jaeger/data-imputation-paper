@@ -7,6 +7,9 @@ experiment_name = "test"
 
 
 # Default Values
+num_repetitions = 5
+base_path = "/results"
+
 MISSING_FRACTIONS = [0.005, 0.01, 0.03, 0.05, 0.1, 0.3, 0.5]
 MISSING_TYPES = ["MCAR", "MNAR", "MAR"]
 IMPUTER = ["mode", "knn", "forest", "dl", "gain", "vae"]
@@ -31,9 +34,12 @@ template = "../cluster/helm/data-imputation"
 name_arg = f"--set experiment_name={experiment_name}"
 types_arg = f"--set missing_types='{types_as_argument_string}'"
 fractions_arg = f"--set missing_fractions='{fractions_as_argument_string}'"
+num_repetitions_arg = f"--set num_repetitions='{num_repetitions}'"
+base_path_arg = f"--set base_path='{base_path}'"
 
 for task_id in task_ids:
     for imputer in IMPUTER:
-        command = f"{cmd} --set task_id={task_id} --set imputer={imputer} {name_arg} {types_arg} {fractions_arg} {template}"
+        command = f"{cmd} --set task_id={task_id} --set imputer={imputer} {name_arg} {types_arg} \
+            {fractions_arg} {num_repetitions_arg} {base_path_arg} {template}"
         output = subprocess.run(command, shell=True, capture_output=True)
         print(f"Started id: {task_id:<5} - imputer: {imputer:<6} - Kubernets Job name: {output.stdout.decode('utf-8').splitlines()[0][6:]}")
