@@ -129,6 +129,16 @@ def get_missing_types(missing_types) -> List[str]:
     return return_value
 
 
+def get_strategies(strategies) -> List[str]:
+    return_value = [str(x) for x in strategies.lower().split(",")]
+
+    for val in return_value:
+        if val not in ["single_single", "multiple_multiple", "single_all", "multiple_all"]:
+            raise ValueError(f"'{val}' is not a valid strategies")
+
+    return return_value
+
+
 def get_id_imputer_class_tuple(task_id: int) -> Tuple[int, OpenMLTask]:
 
     if task_id in BINARY_TASK_IDS:
@@ -160,6 +170,7 @@ def main(
     experiment_name: str,
     missing_fractions: str = typer.Option(str, help="comma-separated list"),
     missing_types: str = typer.Option(str, help="comma-separated list"),
+    strategies: str = typer.Option(str, help="comma-separated list"),
     num_repetitions: int = 10,
     base_path: str = "/results"
 ):
@@ -175,6 +186,7 @@ def main(
         task_id_class_tuples=[get_id_imputer_class_tuple(task_id)],
         missing_fractions=get_missing_fractions(missing_fractions),
         missing_types=get_missing_types(missing_types),
+        strategies=get_strategies(strategies),
         imputer_class=imputerClass,
         imputer_arguments=imputer_arguments,
         num_repetitions=num_repetitions,
