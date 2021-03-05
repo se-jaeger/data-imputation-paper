@@ -332,7 +332,10 @@ class GAINImputer(GenerativeImputer):
                 self._best_hyperparameters = self.hyperparameters
 
         search_space = _get_GAIN_search_space_for_grid_search(self._hyperparameter_grid)
-        study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
+        study = optuna.create_study(
+            sampler=optuna.samplers.GridSampler(search_space),
+            direction="minimize"
+        )
         study.optimize(
             lambda trial: self._train_method(trial, encoded_data),
             callbacks=[save_best_imputer]
@@ -419,21 +422,45 @@ class VAEImputer(GenerativeImputer):
         Helper method: creates the VAE model based on the current hyperparameters.
         """
 
-        latent_dim = 30
+        latent_dim = self.hyperparameters["latent_dim_rel_size"] * self._num_data_columns
 
-        # TODO(VAE): prepare for neural architecture search
+        n_layers = self.hyperparameters["n_layers"]
 
         # Build the encoder
         encoder_inputs = Input((self._num_data_columns,))
-        x = Dense(500, activation=relu)(encoder_inputs)
-        x = Dense(120, activation=relu)(x)
+        if n_layers == 0:
+            x = encoder_inputs
+        for i in range(n_layers):
+            layer = i + 1
+            if i == 0:
+                x = Dense(
+                    self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns,
+                    activation=relu
+                )(encoder_inputs)
+            else:
+                x = Dense(
+                    self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns,
+                    activation=relu
+                )(x)
         z_mean = Dense(latent_dim, name="z_mean")(x)
         z_log_var = Dense(latent_dim, name="z_log_var")(x)
         z = VAESampling()([z_mean, z_log_var])
 
         # Build the decoder
-        x = Dense(120, activation=relu)(z)
-        x = Dense(500, activation=relu)(x)
+        if n_layers == 0:
+            x = z
+        for i in range(n_layers):
+            layer = n_layers - i
+            if i == 0:
+                x = Dense(
+                    self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns,
+                    activation=relu
+                )(z)
+            else:
+                x = Dense(
+                    self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns,
+                    activation=relu
+                )(x)
         decoder_outputs = Dense(self._num_data_columns, activation=sigmoid)(x)
 
         # VAE loss
@@ -522,7 +549,7 @@ class VAEImputer(GenerativeImputer):
             trial (optuna.trial.Trial): Optuna Trial, a process of evaluating an objective function
         """
 
-        self.hyperparameters = {
+        hyperparameters = {
             # training
             "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 1024, 1),
             "epochs": trial.suggest_discrete_uniform("epochs", 0, 10000, 1),
@@ -534,8 +561,32 @@ class VAEImputer(GenerativeImputer):
                 "beta_2": trial.suggest_discrete_uniform("optimizer_beta_2", 0, 1, 1),
                 "epsilon": trial.suggest_discrete_uniform("optimizer_epsilon", 0, 1, 1),
                 "amsgrad": trial.suggest_categorical("optimizer_amsgrad", [True, False])
-            }
+            },
         }
+
+        # neural architecture
+        # TODO(VAE): this currently always suggests `{'latent_dim_rel_size': 0.5, 'n_layers': 0}`
+        n_layers = trial.suggest_int("n_layers", 0, 2)
+        neural_architecture = {
+            "latent_dim_rel_size": trial.suggest_float("latent_dim_rel_size", 0.1, 1),
+            "n_layers": n_layers,
+        }
+        for i in range(n_layers):
+            neural_architecture[f"layer_{i}_rel_size"] = trial.suggest_float("layer_{i}_rel_size", 0.5, 1)
+        hyperparameters = {**hyperparameters, **neural_architecture}
+
+        # neural_architecture = {
+        #     "latent_dim_rel_size": 0.5,
+        #     "n_layers": 1,
+        #     "layer_1_rel_size": 0.5,
+        #     "layer_2_rel_size": 0.25,
+        # }
+        # hyperparameters = {**hyperparameters, **neural_architecture}
+
+        print(neural_architecture)
+        # print(hyperparameters)
+
+        self.hyperparameters = hyperparameters
 
     def fit(self, data: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
 
