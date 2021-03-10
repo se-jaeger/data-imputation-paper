@@ -2,6 +2,7 @@ import json
 import math
 import time
 from pathlib import Path
+from statistics import mean, stdev
 from typing import Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -130,7 +131,8 @@ class EvaluationResult(object):
         self.result, self.downstream_performance = results_mean_list
         self.result_std, self.downstream_performance_std = results_std_list
 
-        self.elapsed_train_time = sum(self.elapsed_train_times) / len(self.elapsed_train_times)
+        self.elapsed_train_time = mean(self.elapsed_train_times)
+        self.elapsed_train_time_std = stdev(self.elapsed_train_times)
 
         self._finalized = True
 
@@ -345,8 +347,13 @@ class Evaluator(object):
                 self._result[column].result_std.to_csv(self._path / f"impute_performance_std_{column}.csv")
                 self._result[column].downstream_performance_std.to_csv(self._path / f"downstream_performance_std_{column}.csv")
 
+                Path(self._path / f"elapsed_train_time_{column}.json").write_text(json.dumps(
+                    {
+                        "mean": self._result[column].elapsed_train_time,
+                        "std": self._result[column].elapsed_train_time_std
+                    }
+                ))
                 Path(self._path / f"best_hyperparameters_{column}.json").write_text(json.dumps(self._result[column].best_hyperparameters))
-                Path(self._path / f"elapsed_train_time_{column}.json").write_text(json.dumps(self._result[column].elapsed_train_times))
 
                 results_path = self._path / column
                 results_path.mkdir(parents=True, exist_ok=True)
