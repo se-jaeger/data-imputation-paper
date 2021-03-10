@@ -339,23 +339,26 @@ class Evaluator(object):
 
             for column in self._result.keys():
 
+                # '/' in column screw up the file paths
+                column_string = column.replace("/", ":")
+
                 # Mean results
-                self._result[column].result.to_csv(self._path / f"impute_performance_mean_{column}.csv")
-                self._result[column].downstream_performance.to_csv(self._path / f"downstream_performance_mean_{column}.csv")
+                self._result[column].result.to_csv(self._path / f"impute_performance_mean_{column_string}.csv")
+                self._result[column].downstream_performance.to_csv(self._path / f"downstream_performance_mean_{column_string}.csv")
 
                 # Standard deviation results
-                self._result[column].result_std.to_csv(self._path / f"impute_performance_std_{column}.csv")
-                self._result[column].downstream_performance_std.to_csv(self._path / f"downstream_performance_std_{column}.csv")
+                self._result[column].result_std.to_csv(self._path / f"impute_performance_std_{column_string}.csv")
+                self._result[column].downstream_performance_std.to_csv(self._path / f"downstream_performance_std_{column_string}.csv")
 
-                Path(self._path / f"elapsed_train_time_{column}.json").write_text(json.dumps(
+                Path(self._path / f"elapsed_train_time_{column_string}.json").write_text(json.dumps(
                     {
                         "mean": self._result[column].elapsed_train_time,
                         "std": self._result[column].elapsed_train_time_std
                     }
                 ))
-                Path(self._path / f"best_hyperparameters_{column}.json").write_text(json.dumps(self._result[column].best_hyperparameters))
+                Path(self._path / f"best_hyperparameters_{column_string}.json").write_text(json.dumps(self._result[column].best_hyperparameters))
 
-                results_path = self._path / column
+                results_path = self._path / column_string
                 results_path.mkdir(parents=True, exist_ok=True)
 
                 for index, (impute_data_frame, performance_data_frame, best_hyperparameters, elapsed_train_time) in enumerate(
