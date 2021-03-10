@@ -570,27 +570,15 @@ class VAEImputer(GenerativeImputer):
         }
 
         # neural architecture
-        # TODO(VAE): this currently always suggests `{'latent_dim_rel_size': 0.5, 'n_layers': 0}`
         n_layers = trial.suggest_int("n_layers", 0, 2)
         neural_architecture = {
-            "latent_dim_rel_size": trial.suggest_float("latent_dim_rel_size", 0.1, 1),
+            "latent_dim_rel_size": trial.suggest_float("latent_dim_rel_size", 0, 1),
             "n_layers": n_layers,
         }
         for i in range(n_layers):
             layer = i + 1
-            neural_architecture[f"layer_{layer}_rel_size"] = trial.suggest_float(f"layer_{layer}_rel_size", 0.5, 1)
+            neural_architecture[f"layer_{layer}_rel_size"] = trial.suggest_float(f"layer_{layer}_rel_size", 0, 1)
         hyperparameters = {**hyperparameters, **neural_architecture}
-
-        # neural_architecture = {
-        #     "latent_dim_rel_size": 0.5,
-        #     "n_layers": 1,
-        #     "layer_1_rel_size": 0.5,
-        #     "layer_2_rel_size": 0.25,
-        # }
-        # hyperparameters = {**hyperparameters, **neural_architecture}
-
-        print(neural_architecture)
-        # print(hyperparameters)
 
         self.hyperparameters = hyperparameters
 

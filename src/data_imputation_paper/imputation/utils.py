@@ -73,18 +73,10 @@ def _get_VAE_search_space_for_grid_search(
         },
         "neural_architecture": {
             "latent_dim_rel_size": [0.5],
-            "n_layers": [1],
-            "layer_1_rel_size": [0.5],
-            # TODO(VAE): how to handle variable n_layers here?
-            # "layer_2_rel_size": [0.25],
+            "n_layers": [2],
+            "layer_1_rel_size": [1],
+            "layer_2_rel_size": [0.5],
         },
-        # NOTE: Camino's values (http://arxiv.org/abs/1902.10666)
-        # neural_architecture = {
-        #     "latent_dim_rel_size": [0.1, 0.5, 1],
-        #     "n_layers": [0, 1, 2],
-        #     "layer_1_rel_size": [0.5, 1],
-        #     "layer_2_rel_size": [0.5],
-        # }
     }
 
     hyperparameters = _merge_given_HPs_with_defaults(hyperparameter_grid, vae_default_hyperparameter_grid)
