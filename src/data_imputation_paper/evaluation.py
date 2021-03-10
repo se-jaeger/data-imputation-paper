@@ -103,12 +103,13 @@ class EvaluationResult(object):
         if self._finalized:
             raise EvaluationError("Evaluation already finalized")
 
-        results_reduced = []
+        results_mean_list = []
+        results_std_list = []
         for all_list in [self.results, self.downstream_performances]:
             collected_results = pd.concat(all_list)
             metrics = collected_results.index.unique()
 
-            results_reduced.append(
+            results_mean_list.append(
                 pd.DataFrame(
                     [
                         collected_results.loc[metric].mean() for metric in metrics
@@ -116,7 +117,18 @@ class EvaluationResult(object):
                     index=metrics
                 )
             )
-        self.result, self.downstream_performance = results_reduced
+
+            results_std_list.append(
+                pd.DataFrame(
+                    [
+                        collected_results.loc[metric].std() for metric in metrics
+                    ],
+                    index=metrics
+                )
+            )
+
+        self.result, self.downstream_performance = results_mean_list
+        self.result_std, self.downstream_performance_std = results_std_list
 
         self.elapsed_train_time = sum(self.elapsed_train_times) / len(self.elapsed_train_times)
 
@@ -324,8 +336,15 @@ class Evaluator(object):
             self._path.mkdir(parents=True, exist_ok=True)
 
             for column in self._result.keys():
-                self._result[column].result.to_csv(self._path / f"impute_performance_{column}.csv")
-                self._result[column].downstream_performance.to_csv(self._path / f"downstream_performance_{column}.csv")
+
+                # Mean results
+                self._result[column].result.to_csv(self._path / f"impute_performance_mean_{column}.csv")
+                self._result[column].downstream_performance.to_csv(self._path / f"downstream_performance_mean_{column}.csv")
+
+                # Standard deviation results
+                self._result[column].result_std.to_csv(self._path / f"impute_performance_std_{column}.csv")
+                self._result[column].downstream_performance_std.to_csv(self._path / f"downstream_performance_std_{column}.csv")
+
                 Path(self._path / f"best_hyperparameters_{column}.json").write_text(json.dumps(self._result[column].best_hyperparameters))
                 Path(self._path / f"elapsed_train_time_{column}.json").write_text(json.dumps(self._result[column].elapsed_train_times))
 
