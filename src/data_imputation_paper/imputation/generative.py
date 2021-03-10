@@ -35,6 +35,7 @@ class GenerativeImputer(BaseImputer):
         super().__init__(seed=seed)
 
         self._hyperparameter_grid = hyperparameter_grid
+        self._best_hyperparameters = None
 
     def _encode_data(self, data: pd.DataFrame) -> np.array:
         """
@@ -93,6 +94,11 @@ class GenerativeImputer(BaseImputer):
             data[self._categorical_columns] = self._data_encoder.inverse_transform(data[self._categorical_columns])
 
         return data
+
+    def _save_best_imputer(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+        if (trial.value and trial.number == study.best_trial.number) or self._best_hyperparameters is None:
+            self.imputer.save(self._model_path, include_optimizer=False)
+            self._best_hyperparameters = self.hyperparameters
 
     def get_best_hyperparameters(self) -> dict:
 
@@ -321,17 +327,11 @@ class GAINImputer(GenerativeImputer):
 
         encoded_data = self._encode_data(data.copy())
 
-        # NOTE: We want to expose the best model so we need to save it temporarily
-        def save_best_imputer(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
-            if trial.value and trial.number == study.best_trial.number:
-                self.imputer.save(self._model_path, include_optimizer=False)
-                self._best_hyperparameters = self.hyperparameters
-
         search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
         study.optimize(
             lambda trial: self._train_method(trial, encoded_data),
-            callbacks=[save_best_imputer]
+            callbacks=[self._save_best_imputer]
         )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
         if self._model_path.exists():
@@ -541,17 +541,11 @@ class VAEImputer(GenerativeImputer):
 
         encoded_data = self._encode_data(data.copy())
 
-        # NOTE: We want to expose the best model so we need to save it temporarily
-        def save_best_imputer(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
-            if trial.value and trial.number == study.best_trial.number:
-                self.imputer.save(self._model_path, include_optimizer=False)
-                self._best_hyperparameters = self.hyperparameters
-
         search_space = _get_search_space_for_grid_search(self._hyperparameter_grid)
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
         study.optimize(
             lambda trial: self._train_method(trial, encoded_data),
-            callbacks=[save_best_imputer]
+            callbacks=[self._save_best_imputer]
         )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
         if self._model_path.exists():
