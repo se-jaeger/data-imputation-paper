@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -91,11 +92,19 @@ class Experiment(object):
                         experiment_path = self._base_path / f"{task_id}" / missing_type / f"{missing_fraction}" / f"{strategy}"
 
                         try:
+                            # NOTE: randomly sample target column or a random number of random target columns
+                            if "single" in strategy:
+                                target_column = random.choice(task.train_data.columns)
+
+                            else:
+                                how_many = random.choice(range(len(task.train_data.columns) - 1))
+                                target_column = random.choices(task.train_data.columns, k=how_many)
+
                             evaluator = strategy_to_EvaluatorClass[strategy](
                                 task=task,
                                 missing_fraction=missing_fraction,
                                 missing_type=missing_type,
-                                target_column=task.train_data.columns.tolist()[0] if "single" in strategy else task.train_data.columns.tolist()[:2],  # TODO We need to find a way to sample here!
+                                target_column=target_column,
                                 imputer_class=self._imputer_class,
                                 imputer_args=self._imputer_arguments,
                                 path=experiment_path,
