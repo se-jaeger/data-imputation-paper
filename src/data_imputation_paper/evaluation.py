@@ -1,6 +1,8 @@
 import json
 import math
+import time
 from pathlib import Path
+from statistics import mean, stdev
 from typing import Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -27,14 +29,15 @@ class EvaluationResult(object):
         self._finalized = False
         self.results: List[pd.DataFrame] = []
         self.downstream_performances: List[pd.DataFrame] = []
+        self.elapsed_train_times: List[float] = []
+        self.best_hyperparameters: List[Dict[str, List[dict]]] = []
         self.repetitions = 0
 
-        if self._task._task_type == BINARY_CLASSIFICATION:
-            self._baseline_metric = "ROC/AUC"
-        elif self._task._task_type == MULTI_CLASS_CLASSIFICATION:
-            self._baseline_metric = "F1"
+        if self._task._task_type == BINARY_CLASSIFICATION or self._task._task_type == MULTI_CLASS_CLASSIFICATION:
+            self._baseline_metric = ("F1_micro", "F1_macro", "F1_weighted")
+
         elif self._task._task_type == REGRESSION:
-            self._baseline_metric = "MSE"
+            self._baseline_metric = ("MAE", "MSE", "RMSE")
 
         self._baseline_performance = self._task.get_baseline_performance()
 
@@ -45,8 +48,11 @@ class EvaluationResult(object):
         target_column: str,
         train_data_imputed: pd.DataFrame,
         test_data_imputed: pd.DataFrame,
+        test_data_corrupted: pd.DataFrame,
         train_imputed_mask: pd.Series,
-        test_imputed_mask: pd.Series
+        test_imputed_mask: pd.Series,
+        elapsed_time: float,
+        best_hyperparameters: Dict[str, List[dict]]
     ):
 
         if self._finalized:
@@ -60,15 +66,36 @@ class EvaluationResult(object):
             imputation_type=self._imputation_task_type
         )
 
-        model = self._task.fit_baseline_model(train_data_imputed, self._task.train_labels)
+        predictions_on_corrupted = self._task._baseline_model.predict(test_data_corrupted)
+        score_on_corrupted = self._task.score_on_test_data(predictions_on_corrupted)
 
-        if self._task._task_type == BINARY_CLASSIFICATION:
-            predictions = model.predict_proba(test_data_imputed)
-        else:
-            predictions = model.predict(test_data_imputed)
+        predictions_on_imputed = self._task._baseline_model.predict(test_data_imputed)
+        score_on_imputed = self._task.score_on_test_data(predictions_on_imputed)
 
-        score = self._task.score_on_test_data(predictions)
-        self.downstream_performances.append(pd.DataFrame([[score, self._baseline_metric]], columns=["score", "metric"]))
+        self.downstream_performances.append(
+            pd.DataFrame(
+                {
+                    "baseline": {
+                        self._baseline_metric[0]: self._baseline_performance[0],
+                        self._baseline_metric[1]: self._baseline_performance[1],
+                        self._baseline_metric[2]: self._baseline_performance[2]
+                    },
+                    "corrupted": {
+                        self._baseline_metric[0]: score_on_corrupted[0],
+                        self._baseline_metric[1]: score_on_corrupted[1],
+                        self._baseline_metric[2]: score_on_corrupted[2]
+                    },
+                    "imputed": {
+                        self._baseline_metric[0]: score_on_imputed[0],
+                        self._baseline_metric[1]: score_on_imputed[1],
+                        self._baseline_metric[2]: score_on_imputed[2]
+                    }
+                }
+            )
+        )
+
+        self.elapsed_train_times.append(elapsed_time)
+        self.best_hyperparameters.append(best_hyperparameters)
 
         self.repetitions += 1
 
@@ -77,29 +104,35 @@ class EvaluationResult(object):
         if self._finalized:
             raise EvaluationError("Evaluation already finalized")
 
-        collected_results = pd.concat(self.results)
-        indices = collected_results.index.unique()
+        results_mean_list = []
+        results_std_list = []
+        for all_list in [self.results, self.downstream_performances]:
+            collected_results = pd.concat(all_list)
+            metrics = collected_results.index.unique()
 
-        self.result = pd.DataFrame(
-            [
-                collected_results.loc[metric].mean() for metric in indices
-            ],
-            index=indices
-        )
+            results_mean_list.append(
+                pd.DataFrame(
+                    [
+                        collected_results.loc[metric].mean() for metric in metrics
+                    ],
+                    index=metrics
+                )
+            )
 
-        collected_scores = pd.concat(self.downstream_performances)
-        self.downstream_performance = pd.DataFrame(
-            {
-                "score": {
-                    "baseline": self._baseline_performance,
-                    "imputed": collected_scores["score"].mean()
-                },
-                "metric": {
-                    "baseline": self._baseline_metric,
-                    "imputed": self._baseline_metric
-                }
-            }
-        )
+            results_std_list.append(
+                pd.DataFrame(
+                    [
+                        collected_results.loc[metric].std() for metric in metrics
+                    ],
+                    index=metrics
+                )
+            )
+
+        self.result, self.downstream_performance = results_mean_list
+        self.result_std, self.downstream_performance_std = results_std_list
+
+        self.elapsed_train_time = mean(self.elapsed_train_times)
+        self.elapsed_train_time_std = stdev(self.elapsed_train_times)
 
         self._finalized = True
 
@@ -176,21 +209,30 @@ class Evaluator(object):
     def __init__(
         self,
         task: OpenMLTask,
-        missing_values: List[MissingValues],
+        missing_fraction: float,
+        missing_type: str,
+        target_columns: List[str],
         imputer_class: Callable[..., BaseImputer],
         imputer_args: dict,
+        discard_in_columns: Optional[List[str]] = None,
         path: Optional[Path] = None,
         seed: Optional[int] = 42
     ):
 
         self._task = task
-        self._missing_values = missing_values
+        self._missing_fraction = missing_fraction
+        self._missing_type = missing_type
+        self._target_columns = target_columns
         self._imputer_class = imputer_class
         self._imputer_arguments = imputer_args
+        self._discard_in_columns = discard_in_columns if discard_in_columns is not None else self._target_columns
         self._path = path
         self._result: Optional[Dict[str, EvaluationResult]] = None
-        self._best_hyperparameters: Dict[str, List[dict]] = dict()
         self._seed = seed
+
+        for target_column in self._target_columns:
+            if target_column not in self._discard_in_columns:
+                raise EvaluationError("All target_columns must be in discard_in_columns")
 
         # fit task's baseline model and get performance
         self._task.fit_baseline_model()
@@ -208,7 +250,7 @@ class Evaluator(object):
         print("All are in a round-robin fashion imputed and performances are as follows:\n")
 
         for key, value in result_dictionary.items():
-            print(f"Target Column: {key}")
+            print(f"Target Column: {key} - Necessary train time in seconds: {round(value.elapsed_train_time, 4)}")
             print(value.result)
             print()
             print(value.downstream_performance)
@@ -218,23 +260,39 @@ class Evaluator(object):
 
         result = {}
 
-        for target_column in [missing_value.column for missing_value in self._missing_values]:
+        for target_column in self._target_columns:
 
             result_temp = EvaluationResult(self._task, target_column)
-            self._best_hyperparameters[target_column] = []
 
             for _ in range(num_repetitions):
-                missing_train, missing_test = self._apply_missing_values(self._task, self._missing_values)
+
+                train_data_corrupted, test_data_corrupted = self._discard_values(
+                    task=self._task,
+                    to_discard_columns=self._discard_in_columns,
+                    missing_fraction=self._missing_fraction,
+                    missing_type=self._missing_type,
+                )
 
                 imputer = self._imputer_class(**self._imputer_arguments)
-                imputer.fit(missing_train, [target_column])
 
-                train_imputed, train_imputed_mask = imputer.transform(missing_train)
-                test_imputed, test_imputed_mask = imputer.transform(missing_test)
+                start_time = time.time()
+                imputer.fit(self._task.train_data.copy(), [target_column])
+                elapsed_time = time.time() - start_time
+
+                train_imputed, train_imputed_mask = imputer.transform(train_data_corrupted)
+                test_imputed, test_imputed_mask = imputer.transform(test_data_corrupted)
 
                 # NOTE: masks are DataFrames => append expects Series
-                result_temp.append(target_column, train_imputed, test_imputed, train_imputed_mask[target_column], test_imputed_mask[target_column])
-                self._best_hyperparameters[target_column].append(imputer.get_best_hyperparameters())
+                result_temp.append(
+                    target_column=target_column,
+                    train_data_imputed=train_imputed,
+                    test_data_imputed=test_imputed,
+                    test_data_corrupted=test_data_corrupted,
+                    train_imputed_mask=train_imputed_mask[target_column],
+                    test_imputed_mask=test_imputed_mask[target_column],
+                    elapsed_time=elapsed_time,
+                    best_hyperparameters=imputer.get_best_hyperparameters()
+                )
 
             result[target_column] = result_temp.finalize()
 
@@ -250,8 +308,22 @@ class Evaluator(object):
         else:
             self.report_results(self._result)
 
-    def _apply_missing_values(self, task: OpenMLTask, missing_values: List[MissingValues]) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def _discard_values(
+        self,
+        task: OpenMLTask,
+        to_discard_columns: List[str],
+        missing_fraction: float,
+        missing_type: str,
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
+        columns = to_discard_columns
+        fraction = missing_fraction / len(columns)
+
+        missing_values = []
+        for column in columns:
+            missing_values.append(MissingValues(column=column, fraction=fraction, missingness=missing_type))
+
+        # Apply all
         train_data = task.train_data.copy()
         test_data = task.test_data.copy()
 
@@ -266,17 +338,159 @@ class Evaluator(object):
             self._path.mkdir(parents=True, exist_ok=True)
 
             for column in self._result.keys():
-                self._result[column].result.to_csv(self._path / f"impute_performance_{column}.csv")
-                self._result[column].downstream_performance.to_csv(self._path / f"downstream_performance_{column}.csv")
-                Path(self._path / f"best_hyperparameters_{column}.json").write_text(json.dumps(self._best_hyperparameters[column]))
 
-                results_path = self._path / column
+                # '/' in column screw up the file paths
+                column_string = column.replace("/", ":")
+
+                # Mean results
+                self._result[column].result.to_csv(self._path / f"impute_performance_mean_{column_string}.csv")
+                self._result[column].downstream_performance.to_csv(self._path / f"downstream_performance_mean_{column_string}.csv")
+
+                # Standard deviation results
+                self._result[column].result_std.to_csv(self._path / f"impute_performance_std_{column_string}.csv")
+                self._result[column].downstream_performance_std.to_csv(self._path / f"downstream_performance_std_{column_string}.csv")
+
+                Path(self._path / f"elapsed_train_time_{column_string}.json").write_text(json.dumps(
+                    {
+                        "mean": self._result[column].elapsed_train_time,
+                        "std": self._result[column].elapsed_train_time_std
+                    }
+                ))
+                Path(self._path / f"best_hyperparameters_{column_string}.json").write_text(json.dumps(self._result[column].best_hyperparameters))
+
+                results_path = self._path / column_string
                 results_path.mkdir(parents=True, exist_ok=True)
 
-                for index, (impute_data_frame, performance_data_frame) in enumerate(
-                    zip(self._result[column].results, self._result[column].downstream_performances)
+                for index, (impute_data_frame, performance_data_frame, best_hyperparameters, elapsed_train_time) in enumerate(
+                    zip(
+                        self._result[column].results,
+                        self._result[column].downstream_performances,
+                        self._result[column].best_hyperparameters,
+                        self._result[column].elapsed_train_times
+                    )
                 ):
 
                     impute_data_frame.to_csv(results_path / f"impute_performance_rep_{index}.csv")
                     performance_data_frame.to_csv(results_path / f"downstream_performance_rep_{index}.csv")
-                    Path(results_path / f"best_hyperparameters_rep_{index}.json").write_text(json.dumps(self._best_hyperparameters[column][index]))
+                    Path(results_path / f"elapsed_train_time_rep_{index}.json").write_text(json.dumps(elapsed_train_time))
+                    Path(results_path / f"best_hyperparameters_rep_{index}.json").write_text(json.dumps(best_hyperparameters))
+
+
+class SingleColumnEvaluator(Evaluator):
+    """
+    Evaluate Missing Value effects on single column.
+    """
+
+    def __init__(
+        self,
+        task: OpenMLTask,
+        missing_fraction: float,
+        missing_type: str,
+        target_column: str,
+        imputer_class: Callable[..., BaseImputer],
+        imputer_args: dict,
+        path: Optional[Path] = None,
+        seed: Optional[int] = 42
+    ):
+
+        super().__init__(
+            task=task,
+            missing_fraction=missing_fraction,
+            missing_type=missing_type,
+            target_columns=[target_column],
+            imputer_class=imputer_class,
+            imputer_args=imputer_args,
+            discard_in_columns=[target_column],
+            path=path,
+            seed=seed
+        )
+
+
+class MultipleColumnsEvaluator(Evaluator):
+    """
+    Evaluate Missing Value effects on multiple columns.
+    """
+
+    def __init__(
+        self,
+        task: OpenMLTask,
+        missing_fraction: float,
+        missing_type: str,
+        target_column: List[str],
+        imputer_class: Callable[..., BaseImputer],
+        imputer_args: dict,
+        path: Optional[Path] = None,
+        seed: Optional[int] = 42
+    ):
+
+        super().__init__(
+            task=task,
+            missing_fraction=missing_fraction,
+            missing_type=missing_type,
+            target_columns=target_column,
+            imputer_class=imputer_class,
+            imputer_args=imputer_args,
+            discard_in_columns=target_column,
+            path=path,
+            seed=seed
+        )
+
+
+class SingleColumnAllMissingEvaluator(Evaluator):
+    """
+    Evaluate Missing Value effects on single column when all columns contain missing values.
+    """
+
+    def __init__(
+        self,
+        task: OpenMLTask,
+        missing_fraction: float,
+        missing_type: str,
+        target_column: str,
+        imputer_class: Callable[..., BaseImputer],
+        imputer_args: dict,
+        path: Optional[Path] = None,
+        seed: Optional[int] = 42
+    ):
+
+        super().__init__(
+            task=task,
+            missing_fraction=missing_fraction,
+            missing_type=missing_type,
+            target_columns=[target_column],
+            imputer_class=imputer_class,
+            imputer_args=imputer_args,
+            discard_in_columns=task.train_data.columns.tolist(),
+            path=path,
+            seed=seed
+        )
+
+
+class MultipleColumnsAllMissingEvaluator(Evaluator):
+    """
+    Evaluate Missing Value effects on multiple columns when all columns contain missing values.
+    """
+
+    def __init__(
+        self,
+        task: OpenMLTask,
+        missing_fraction: float,
+        missing_type: str,
+        target_column: List[str],
+        imputer_class: Callable[..., BaseImputer],
+        imputer_args: dict,
+        path: Optional[Path] = None,
+        seed: Optional[int] = 42
+    ):
+
+        super().__init__(
+            task=task,
+            missing_fraction=missing_fraction,
+            missing_type=missing_type,
+            target_columns=target_column,
+            imputer_class=imputer_class,
+            imputer_args=imputer_args,
+            discard_in_columns=task.train_data.columns.tolist(),
+            path=path,
+            seed=seed
+        )

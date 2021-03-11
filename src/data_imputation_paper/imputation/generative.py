@@ -10,6 +10,7 @@ import tensorflow as tf
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow import keras
+from tensorflow.compat.v1 import logging as tf_logging
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.activations import relu, sigmoid
 from tensorflow.keras.initializers import GlorotNormal
@@ -26,6 +27,7 @@ from .utils import (
 logger = logging.getLogger()
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 tf.get_logger().setLevel('WARN')
+tf_logging.set_verbosity(tf_logging.ERROR)
 
 
 class GenerativeImputer(BaseImputer):
@@ -39,6 +41,7 @@ class GenerativeImputer(BaseImputer):
         super().__init__(seed=seed)
 
         self._hyperparameter_grid = hyperparameter_grid
+        self._best_hyperparameters = None
 
     def _encode_data(self, data: pd.DataFrame) -> np.array:
         """
@@ -97,6 +100,11 @@ class GenerativeImputer(BaseImputer):
             data[self._categorical_columns] = self._data_encoder.inverse_transform(data[self._categorical_columns])
 
         return data
+
+    def _save_best_imputer(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+        if (trial.value and trial.number == study.best_trial.number) or self._best_hyperparameters is None:
+            self.imputer.save(self._model_path, include_optimizer=False)
+            self._best_hyperparameters = self.hyperparameters
 
     def get_best_hyperparameters(self) -> dict:
 
@@ -218,8 +226,8 @@ class GAINImputer(GenerativeImputer):
 
         self._create_GAIN_model()
 
-        generator_optimizer = Adam(**self.hyperparameters["generator_Adam"])
-        discriminator_optimizer = Adam(**self.hyperparameters["discriminator_Adam"])
+        generator_optimizer = Adam(**self.hyperparameters["generator_Adam"], clipvalue=1)
+        discriminator_optimizer = Adam(**self.hyperparameters["discriminator_Adam"], clipvalue=1)
 
         generator_var_list = self.generator.trainable_weights
         discriminator_var_list = self.discriminator.trainable_weights
@@ -325,17 +333,11 @@ class GAINImputer(GenerativeImputer):
 
         encoded_data = self._encode_data(data.copy())
 
-        # NOTE: We want to expose the best model so we need to save it temporarily
-        def save_best_imputer(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
-            if trial.value and trial.number == study.best_trial.number:
-                self.imputer.save(self._model_path, include_optimizer=False)
-                self._best_hyperparameters = self.hyperparameters
-
         search_space = _get_GAIN_search_space_for_grid_search(self._hyperparameter_grid)
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
         study.optimize(
             lambda trial: self._train_method(trial, encoded_data),
-            callbacks=[save_best_imputer]
+            callbacks=[self._save_best_imputer]
         )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
         if self._model_path.exists():
@@ -419,21 +421,40 @@ class VAEImputer(GenerativeImputer):
         Helper method: creates the VAE model based on the current hyperparameters.
         """
 
-        latent_dim = 30
-
-        # TODO(VAE): prepare for neural architecture search
+        latent_dim = int(
+            round(
+                self.hyperparameters["latent_dim_rel_size"] * self._num_data_columns, 0
+            )
+        )
+        n_layers = self.hyperparameters["n_layers"]
 
         # Build the encoder
         encoder_inputs = Input((self._num_data_columns,))
-        x = Dense(500, activation=relu)(encoder_inputs)
-        x = Dense(120, activation=relu)(x)
+        if n_layers == 0:
+            x = encoder_inputs
+        else:
+            for i in range(n_layers):
+                layer = i + 1
+                units = self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns
+                if i == 0:
+                    x = Dense(units, activation=relu)(encoder_inputs)
+                else:
+                    x = Dense(units, activation=relu)(x)
         z_mean = Dense(latent_dim, name="z_mean")(x)
         z_log_var = Dense(latent_dim, name="z_log_var")(x)
         z = VAESampling()([z_mean, z_log_var])
 
         # Build the decoder
-        x = Dense(120, activation=relu)(z)
-        x = Dense(500, activation=relu)(x)
+        if n_layers == 0:
+            x = z
+        else:
+            for i in range(n_layers):
+                layer = n_layers - i
+                units = self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns
+                if i == 0:
+                    x = Dense(units, activation=relu)(z)
+                else:
+                    x = Dense(units, activation=relu)(x)
         decoder_outputs = Dense(self._num_data_columns, activation=sigmoid)(x)
 
         # VAE loss
@@ -522,7 +543,7 @@ class VAEImputer(GenerativeImputer):
             trial (optuna.trial.Trial): Optuna Trial, a process of evaluating an objective function
         """
 
-        self.hyperparameters = {
+        hyperparameters = {
             # training
             "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 1024, 1),
             "epochs": trial.suggest_discrete_uniform("epochs", 0, 10000, 1),
@@ -534,8 +555,21 @@ class VAEImputer(GenerativeImputer):
                 "beta_2": trial.suggest_discrete_uniform("optimizer_beta_2", 0, 1, 1),
                 "epsilon": trial.suggest_discrete_uniform("optimizer_epsilon", 0, 1, 1),
                 "amsgrad": trial.suggest_categorical("optimizer_amsgrad", [True, False])
-            }
+            },
         }
+
+        # neural architecture
+        n_layers = trial.suggest_int("n_layers", 0, 2)
+        neural_architecture = {
+            "latent_dim_rel_size": trial.suggest_float("latent_dim_rel_size", 0, 1),
+            "n_layers": n_layers,
+        }
+        for i in range(n_layers):
+            layer = i + 1
+            neural_architecture[f"layer_{layer}_rel_size"] = trial.suggest_float(f"layer_{layer}_rel_size", 0, 1)
+        hyperparameters = {**hyperparameters, **neural_architecture}
+
+        self.hyperparameters = hyperparameters
 
     def fit(self, data: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
 
@@ -545,17 +579,11 @@ class VAEImputer(GenerativeImputer):
 
         encoded_data = self._encode_data(data.copy())
 
-        # NOTE: We want to expose the best model so we need to save it temporarily
-        def save_best_imputer(study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
-            if trial.value and trial.number == study.best_trial.number:
-                self.imputer.save(self._model_path, include_optimizer=False)
-                self._best_hyperparameters = self.hyperparameters
-
         search_space = _get_VAE_search_space_for_grid_search(self._hyperparameter_grid)
         study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space), direction="minimize")
         study.optimize(
             lambda trial: self._train_method(trial, encoded_data),
-            callbacks=[save_best_imputer]
+            callbacks=[self._save_best_imputer]
         )  # NOTE: n_jobs=-1 causes troubles because TensorFlow shares the graph across processes
 
         if self._model_path.exists():
@@ -574,12 +602,9 @@ class VAEImputer(GenerativeImputer):
         encoded_data = self._encode_data(data.copy())
 
         X = self._prepare_VAE_input_data(encoded_data)
-
-        # matrix im ursprünglichen shape, nicht nur missing imputed sondern auch urspünglich werte können geändert sein
         imputed = self.imputer([X]).numpy()
 
         # presever everything but the missing values in target columns.
-        # wie bei gain die daten rauspicken die in transform als missing erkannnt/gesetzt wurden
         result = data.copy()
         imputed_data_frame = self._decode_encoded_data(imputed, data.columns, data.index)
         for column in imputed_mask.columns:

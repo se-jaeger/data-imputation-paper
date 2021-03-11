@@ -30,8 +30,14 @@ spec:
             - "{{ .Values.missing_fractions }}"
             - --missing-types
             - "{{ .Values.missing_types }}"
+            - --strategies
+            - "{{ .Values.strategies }}"
+            - --num-repetitions
+            - "{{ .Values.num_repetitions }}"
+            - --base-path
+            - "{{ .Values.base_path }}"
           volumeMounts:
-            - mountPath: "/results"
+            - mountPath: "{{ .Values.base_path }}"
               name: imputation-results
           resources:
             requests:

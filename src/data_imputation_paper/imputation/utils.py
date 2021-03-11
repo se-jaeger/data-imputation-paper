@@ -24,18 +24,18 @@ def _get_GAIN_search_space_for_grid_search(
             "noise": [0.01]
         },
         "training": {
-            "batch_size": [48],
+            "batch_size": [64],
             "epochs": [10]
         },
         "generator": {
-            "learning_rate": [0.0005],
+            "learning_rate": [0.00005],
             "beta_1": [0.9],
             "beta_2": [0.999],
             "epsilon": [1e-7],
             "amsgrad": [False]
         },
         "discriminator": {
-            "learning_rate": [0.00005],
+            "learning_rate": [0.000005],
             "beta_1": [0.9],
             "beta_2": [0.999],
             "epsilon": [1e-7],
@@ -71,6 +71,12 @@ def _get_VAE_search_space_for_grid_search(
             "epsilon": [1e-7],
             "amsgrad": [False]
         },
+        "neural_architecture": {
+            "latent_dim_rel_size": [0.5],
+            "n_layers": [2],
+            "layer_1_rel_size": [1],
+            "layer_2_rel_size": [0.5],
+        },
     }
 
     hyperparameters = _merge_given_HPs_with_defaults(hyperparameter_grid, vae_default_hyperparameter_grid)
@@ -78,6 +84,7 @@ def _get_VAE_search_space_for_grid_search(
     search_space = dict(
         **hyperparameters["training"],
         **{f"optimizer_{key}": value for key, value in hyperparameters["optimizer"].items()},
+        **hyperparameters["neural_architecture"],
     )
 
     return search_space

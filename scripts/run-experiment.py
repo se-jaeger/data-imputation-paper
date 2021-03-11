@@ -13,7 +13,7 @@ from jenga.tasks.openml import (
 from data_imputation_paper.experiment import Experiment
 from data_imputation_paper.imputation._base import BaseImputer
 from data_imputation_paper.imputation.dl import AutoKerasImputer
-from data_imputation_paper.imputation.generative import GAINImputer
+from data_imputation_paper.imputation.generative import GAINImputer, VAEImputer
 from data_imputation_paper.imputation.ml import ForestImputer, KNNImputer
 from data_imputation_paper.imputation.simple import ModeImputer
 
@@ -23,7 +23,7 @@ IMPUTER_CLASS = {
     "forest": ForestImputer,
     "dl": AutoKerasImputer,
     "gain": GAINImputer,
-    "vae": None  # TODO
+    "vae": VAEImputer
 }
 
 IMPUTER_NAME = {
@@ -40,75 +40,65 @@ IMPUTER_ARGUMENTS = {
     "mode": {},  # NOTE: there are no arguments here..
     "knn": {
         "hyperparameter_grid_categorical_imputer": {
-            "n_neighbors": [3, 5]
+            "n_neighbors": [1, 3, 5]
         },
         "hyperparameter_grid_numerical_imputer": {
-            "n_neighbors": [3, 5]
+            "n_neighbors": [1, 3, 5]
         }
     },
     "forest": {
         "hyperparameter_grid_categorical_imputer": {
-            "n_estimators": [50, 100]
+            "n_estimators": [10, 50, 100]
         },
         "hyperparameter_grid_numerical_imputer": {
-            "n_estimators": [50, 100]
+            "n_estimators": [10, 50, 100]
         }
     },
     "dl": {
-        "max_trials": 10,
+        "max_trials": 50,
         "tuner": None,
         "validation_split": 0.2,
-        "epochs": 10
+        "epochs": 5
     },
     "gain": {
         "hyperparameter_grid": {
             "gain": {
-                "alpha": [100],
-                "hint_rate": [0.9],
-                "noise": [0.01]
+                "alpha": [0.1, 1, 5, 10],
+                "hint_rate": [0.7, 0.8, 0.9]
             },
             "training": {
-                "batch_size": [48],
-                "epochs": [10]
+                "epochs": [5, 15]
             },
             "generator": {
-                "learning_rate": [0.0005],
-                "beta_1": [0.9],
-                "beta_2": [0.999],
-                "epsilon": [1e-7],
-                "amsgrad": [False]
+                "learning_rate": [0.0005, 0.000005],
             },
             "discriminator": {
-                "learning_rate": [0.00005],
-                "beta_1": [0.9],
-                "beta_2": [0.999],
-                "epsilon": [1e-7],
-                "amsgrad": [False]
+                "learning_rate": [0.0005, 0.000005],
+
             }
         }
     },
     "vae": {
         "optimizer": {
-            "learning_rate": [0.001],
-            "beta_1": [0.9],
-            "beta_2": [0.999],
-            "epsilon": [1e-7],
-            "amsgrad": [False]
+            "learning_rate": [0.001]
         },
         "training": {
             "batch_size": [64],
             "epochs": [10],
         },
+        # NOTE: Camino's values (http://arxiv.org/abs/1902.10666)
+        "neural_architecture": {
+            "latent_dim_rel_size": [0.1, 0.5, 1],
+            "n_layers": [0, 1, 2],
+            "layer_1_rel_size": [0.5, 1],
+            "layer_2_rel_size": [0.5],
+        }
     }
 }
 
-binary_path = Path("../data/raw/binary.txt")
-multi_path = Path("../data/raw/multi.txt")
-regression_path = Path("../data/raw/regression.txt")
-
-BINARY_TASK_IDS = [int(x) for x in binary_path.read_text().split(",")]
-MULTI_TASK_IDS = [int(x) for x in multi_path.read_text().split(",")]
-REGRESSION_TASK_IDS = [int(x) for x in regression_path.read_text().split(",")]
+BINARY_TASK_IDS = [int(x) for x in Path("../data/raw/binary.txt").read_text().split(",")]
+MULTI_TASK_IDS = [int(x) for x in Path("../data/raw/multi.txt").read_text().split(",")]
+REGRESSION_TASK_IDS = [int(x) for x in Path("../data/raw/regression.txt").read_text().split(",")]
 
 
 def get_missing_fractions(missing_fractions) -> List[float]:
@@ -127,6 +117,16 @@ def get_missing_types(missing_types) -> List[str]:
     for val in return_value:
         if val not in ["MCAR", "MNAR", "MAR"]:
             raise ValueError(f"'{val}' is not a valid missing_type")
+
+    return return_value
+
+
+def get_strategies(strategies) -> List[str]:
+    return_value = [str(x) for x in strategies.lower().split(",")]
+
+    for val in return_value:
+        if val not in ["single_single", "multiple_multiple", "single_all", "multiple_all"]:
+            raise ValueError(f"'{val}' is not a valid strategies")
 
     return return_value
 
@@ -162,6 +162,8 @@ def main(
     experiment_name: str,
     missing_fractions: str = typer.Option(str, help="comma-separated list"),
     missing_types: str = typer.Option(str, help="comma-separated list"),
+    strategies: str = typer.Option(str, help="comma-separated list"),
+    num_repetitions: int = 10,
     base_path: str = "/results"
 ):
 
@@ -176,9 +178,10 @@ def main(
         task_id_class_tuples=[get_id_imputer_class_tuple(task_id)],
         missing_fractions=get_missing_fractions(missing_fractions),
         missing_types=get_missing_types(missing_types),
+        strategies=get_strategies(strategies),
         imputer_class=imputerClass,
         imputer_arguments=imputer_arguments,
-        num_repetitions=3,
+        num_repetitions=num_repetitions,
         base_path=base_path,
         timestamp=experiment_name
     )

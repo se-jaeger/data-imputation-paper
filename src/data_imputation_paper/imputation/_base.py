@@ -176,7 +176,7 @@ class SklearnBaseImputer(BaseImputer):
         if encode_as not in valid_encodings:
             raise ImputerError(f"parameter 'encode_as' need to be one of: {', '.join(valid_encodings)}")
 
-        self._encoder = OneHotEncoder(handle_unknown='ignore') if encode_as == "one-hot" else OrdinalEncoder(handle_unknown='ignore')
+        self._encoder = OneHotEncoder(handle_unknown='ignore', sparse=False) if encode_as == "one-hot" else OrdinalEncoder(handle_unknown='ignore')
 
         super().__init__(seed=seed)
 
@@ -213,7 +213,6 @@ class SklearnBaseImputer(BaseImputer):
         numeric_preprocessing = Pipeline(
             [
                 ('mark_missing', SimpleImputer(strategy='mean')),
-                ('scale',  StandardScaler())
             ]
         )
 
@@ -232,6 +231,7 @@ class SklearnBaseImputer(BaseImputer):
             pipeline = Pipeline(
                 [
                     ('features', feature_transformation),
+                    ('scale',  StandardScaler()),
                     ('categorical_imputer', self._categorical_imputer[0])
                 ]
             )
@@ -253,6 +253,7 @@ class SklearnBaseImputer(BaseImputer):
             pipeline = Pipeline(
                 [
                     ('features', feature_transformation),
+                    ('scale',  StandardScaler()),
                     ('numerical_imputer', self._numerical_imputer[0])
                 ]
             )
