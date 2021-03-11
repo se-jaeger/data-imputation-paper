@@ -10,10 +10,10 @@ experiment_name = "1"
 num_repetitions = 5
 base_path = "/results"
 
-MISSING_FRACTIONS = [0.005, 0.01, 0.03, 0.05, 0.1, 0.3, 0.5]
+MISSING_FRACTIONS = [0.01, 0.05, 0.1, 0.3, 0.5]
 MISSING_TYPES = ["MCAR", "MNAR", "MAR"]
 IMPUTER = ["mode", "knn", "forest", "dl", "gain", "vae"]
-STRATEGIES = ["single_single", "multiple_multiple", "single_all", "multiple_all"]
+STRATEGIES = ["single_single", "single_all"]
 
 binary_task_ids = Path("../data/raw/binary.txt").read_text().split(",")
 multi_task_ids = Path("../data/raw/multi.txt").read_text().split(",")
