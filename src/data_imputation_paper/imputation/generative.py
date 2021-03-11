@@ -220,8 +220,8 @@ class GAINImputer(GenerativeImputer):
 
         self._create_GAIN_model()
 
-        generator_optimizer = Adam(**self.hyperparameters["generator_Adam"])
-        discriminator_optimizer = Adam(**self.hyperparameters["discriminator_Adam"])
+        generator_optimizer = Adam(**self.hyperparameters["generator_Adam"], clipvalue=1)
+        discriminator_optimizer = Adam(**self.hyperparameters["discriminator_Adam"], clipvalue=1)
 
         generator_var_list = self.generator.trainable_weights
         discriminator_var_list = self.discriminator.trainable_weights
