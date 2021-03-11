@@ -13,11 +13,9 @@ def set_seed(seed: int) -> None:
         np.random.seed(seed)
 
 
-def _get_search_space_for_grid_search(
+def _get_GAIN_search_space_for_grid_search(
     hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]]
 ) -> Dict[str, List[Union[int, float, bool]]]:
-
-    hyperparameters: Dict[str, Dict[str, List[Union[int, float, bool]]]] = dict()
 
     gain_default_hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {
         "gain": {
@@ -45,19 +43,7 @@ def _get_search_space_for_grid_search(
         }
     }
 
-    # If hyperparameter is given use it, else return default value. All others are ignored.
-    for hp_type in gain_default_hyperparameter_grid.keys():
-        hp_type = hp_type.lower()
-        hyperparameters[hp_type] = {}
-        for hp in gain_default_hyperparameter_grid[hp_type].keys():
-            hp = hp.lower()
-            hyperparameters[hp_type][hp] = hyperparameter_grid.get(
-                hp_type,
-                gain_default_hyperparameter_grid[hp_type]
-            ).get(
-                hp,
-                gain_default_hyperparameter_grid[hp_type][hp]
-            )
+    hyperparameters = _merge_given_HPs_with_defaults(hyperparameter_grid, gain_default_hyperparameter_grid)
 
     search_space = dict(
         **hyperparameters["gain"],
@@ -67,6 +53,64 @@ def _get_search_space_for_grid_search(
     )
 
     return search_space
+
+
+def _get_VAE_search_space_for_grid_search(
+    hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]]
+) -> Dict[str, List[Union[int, float, bool]]]:
+
+    vae_default_hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {
+        "training": {
+            "batch_size": [48],
+            "epochs": [10]
+        },
+        "optimizer": {
+            "learning_rate": [0.0005],
+            "beta_1": [0.9],
+            "beta_2": [0.999],
+            "epsilon": [1e-7],
+            "amsgrad": [False]
+        },
+        "neural_architecture": {
+            "latent_dim_rel_size": [0.5],
+            "n_layers": [2],
+            "layer_1_rel_size": [1],
+            "layer_2_rel_size": [0.5],
+        },
+    }
+
+    hyperparameters = _merge_given_HPs_with_defaults(hyperparameter_grid, vae_default_hyperparameter_grid)
+
+    search_space = dict(
+        **hyperparameters["training"],
+        **{f"optimizer_{key}": value for key, value in hyperparameters["optimizer"].items()},
+        **hyperparameters["neural_architecture"],
+    )
+
+    return search_space
+
+
+def _merge_given_HPs_with_defaults(
+    hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]],
+    default_hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]]
+) -> Dict[str, Dict[str, List[Union[int, float, bool]]]]:
+    """
+    If hyperparameter is given use it, else return default value. All others are ignored.
+    """
+    hyperparameters: Dict[str, Dict[str, List[Union[int, float, bool]]]] = dict()
+    for hp_type in default_hyperparameter_grid.keys():
+        hp_type = hp_type.lower()
+        hyperparameters[hp_type] = {}
+        for hp in default_hyperparameter_grid[hp_type].keys():
+            hp = hp.lower()
+            hyperparameters[hp_type][hp] = hyperparameter_grid.get(
+                hp_type,
+                default_hyperparameter_grid[hp_type]
+            ).get(
+                hp,
+                default_hyperparameter_grid[hp_type][hp]
+            )
+    return hyperparameters
 
 
 class CategoricalEncoder(object):
