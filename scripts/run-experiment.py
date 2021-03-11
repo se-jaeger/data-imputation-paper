@@ -55,35 +55,26 @@ IMPUTER_ARGUMENTS = {
         }
     },
     "dl": {
-        "max_trials": 10,
+        "max_trials": 50,
         "tuner": None,
         "validation_split": 0.2,
-        "epochs": 50
+        "epochs": 5
     },
     "gain": {
         "hyperparameter_grid": {
             "gain": {
-                "alpha": [100],
-                "hint_rate": [0.9],
-                "noise": [0.01]
+                "alpha": [0.1, 1, 5, 10],
+                "hint_rate": [0.7, 0.8, 0.9]
             },
             "training": {
-                "batch_size": [48],
-                "epochs": [10]
+                "epochs": [5, 15]
             },
             "generator": {
-                "learning_rate": [0.0005],
-                "beta_1": [0.9],
-                "beta_2": [0.999],
-                "epsilon": [1e-7],
-                "amsgrad": [False]
+                "learning_rate": [0.0005, 0.000005],
             },
             "discriminator": {
-                "learning_rate": [0.00005],
-                "beta_1": [0.9],
-                "beta_2": [0.999],
-                "epsilon": [1e-7],
-                "amsgrad": [False]
+                "learning_rate": [0.0005, 0.000005],
+
             }
         }
     },
@@ -91,10 +82,6 @@ IMPUTER_ARGUMENTS = {
         "hyperparameter_grid": {
             "optimizer": {
                 "learning_rate": [0.001],
-                "beta_1": [0.9],
-                "beta_2": [0.999],
-                "epsilon": [1e-7],
-                "amsgrad": [False]
             },
             "training": {
                 "batch_size": [64],

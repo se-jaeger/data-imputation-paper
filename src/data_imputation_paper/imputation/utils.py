@@ -26,18 +26,18 @@ def _get_search_space_for_grid_search(
             "noise": [0.01]
         },
         "training": {
-            "batch_size": [48],
+            "batch_size": [64],
             "epochs": [10]
         },
         "generator": {
-            "learning_rate": [0.0005],
+            "learning_rate": [0.00005],
             "beta_1": [0.9],
             "beta_2": [0.999],
             "epsilon": [1e-7],
             "amsgrad": [False]
         },
         "discriminator": {
-            "learning_rate": [0.00005],
+            "learning_rate": [0.000005],
             "beta_1": [0.9],
             "beta_2": [0.999],
             "epsilon": [1e-7],
