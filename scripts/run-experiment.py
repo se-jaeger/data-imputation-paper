@@ -72,28 +72,16 @@ IMPUTER_ARGUMENTS = {
                 "epochs": [10]
             },
             "generator": {
-                "learning_rate": [0.0005],
-                "beta_1": [0.9],
-                "beta_2": [0.999],
-                "epsilon": [1e-7],
-                "amsgrad": [False]
+                "learning_rate": [0.0005]
             },
             "discriminator": {
-                "learning_rate": [0.00005],
-                "beta_1": [0.9],
-                "beta_2": [0.999],
-                "epsilon": [1e-7],
-                "amsgrad": [False]
+                "learning_rate": [0.00005]
             }
         }
     },
     "vae": {
         "optimizer": {
-            "learning_rate": [0.001],
-            "beta_1": [0.9],
-            "beta_2": [0.999],
-            "epsilon": [1e-7],
-            "amsgrad": [False]
+            "learning_rate": [0.001]
         },
         "training": {
             "batch_size": [64],
