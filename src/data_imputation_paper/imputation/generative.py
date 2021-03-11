@@ -436,16 +436,11 @@ class VAEImputer(GenerativeImputer):
         else:
             for i in range(n_layers):
                 layer = i + 1
+                units = self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns
                 if i == 0:
-                    x = Dense(
-                        self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns,
-                        activation=relu
-                    )(encoder_inputs)
+                    x = Dense(units, activation=relu)(encoder_inputs)
                 else:
-                    x = Dense(
-                        self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns,
-                        activation=relu
-                    )(x)
+                    x = Dense(units, activation=relu)(x)
         z_mean = Dense(latent_dim, name="z_mean")(x)
         z_log_var = Dense(latent_dim, name="z_log_var")(x)
         z = VAESampling()([z_mean, z_log_var])
@@ -456,16 +451,11 @@ class VAEImputer(GenerativeImputer):
         else:
             for i in range(n_layers):
                 layer = n_layers - i
+                units = self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns
                 if i == 0:
-                    x = Dense(
-                        self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns,
-                        activation=relu
-                    )(z)
+                    x = Dense(units, activation=relu)(z)
                 else:
-                    x = Dense(
-                        self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns,
-                        activation=relu
-                    )(x)
+                    x = Dense(units, activation=relu)(x)
         decoder_outputs = Dense(self._num_data_columns, activation=sigmoid)(x)
 
         # VAE loss
