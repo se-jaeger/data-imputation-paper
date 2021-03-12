@@ -113,6 +113,29 @@ class GenerativeImputer(BaseImputer):
         return self._best_hyperparameters
 
 
+class EarlyStoppingExceeded(Exception):
+    pass
+
+
+class EarlyStopping:
+
+    def __init__(self, early_stop: int):
+        self.best_loss = None
+        self.early_stop_count = 0
+        self.early_stop = early_stop
+
+    def update(self, new_loss: float):
+        if self.best_loss is None:
+            self.best_loss = new_loss
+        elif self.best_loss > new_loss:
+            self.best_loss = new_loss
+            self.early_stop_count = 0
+        else:
+            self.early_stop_count += 1
+            if self.early_stop_count >= self.early_stop:
+                raise EarlyStoppingExceeded()
+
+
 class GAINImputer(GenerativeImputer):
 
     def __init__(
@@ -135,7 +158,8 @@ class GAINImputer(GenerativeImputer):
                     },
                     "training": {
                         "batch_size": [...],
-                        "epochs": [...],
+                        "max_epochs": [...],
+                        "early_stop": [...],
                     },
                     "generator": {
                         "learning_rate": [...],
@@ -254,10 +278,19 @@ class GAINImputer(GenerativeImputer):
             train = tf.data.Dataset.from_tensor_slices(data[train_index])
             train_data = train.batch(self.hyperparameters["batch_size"])
 
-            for _ in range(self.hyperparameters["epochs"]):
+            early_stopping = EarlyStopping(self.hyperparameters["early_stop"])
+
+            for _ in range(self.hyperparameters["max_epochs"]):
                 for train_batch in train_data:
                     X, M, H = self._prepare_GAIN_input_data(train_batch.numpy())
                     train_step(X, M, H)
+
+                X_train, M_train, H_train = self._prepare_GAIN_input_data(data[train_index])
+                epoch_loss, _ = self.gain([X_train, M_train, H_train])
+                try:
+                    early_stopping.update(epoch_loss)
+                except EarlyStoppingExceeded:
+                    break
 
             X, M, H = self._prepare_GAIN_input_data(data[test_index])
             generater_loss, _ = self.gain([X, M, H])
@@ -306,7 +339,8 @@ class GAINImputer(GenerativeImputer):
 
             # training
             "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 1024, 1),
-            "epochs": trial.suggest_discrete_uniform("epochs", 0, 10000, 1),
+            "max_epochs": trial.suggest_discrete_uniform("max_epochs", 0, 10000, 1),
+            "early_stop": trial.suggest_discrete_uniform("early_stop", 0, 1000, 1),
 
             # optimizers
             "generator_Adam": {
@@ -400,8 +434,15 @@ class VAEImputer(GenerativeImputer):
                     },
                     "training": {
                         "batch_size": [...],
-                        "epochs": [...],
+                        "max_epochs": [...],
+                        "early_stop": [...],
                     },
+                    "neural_architecture": {
+                        "latent_dim_rel_size": [...],
+                        "n_layers": [...],
+                        "layer_1_rel_size": [...],
+                        "layer_2_rel_size": [...],
+            }
                 }
                 Defaults to {}.
             seed (Optional[int], optional): To make process as deterministic as possible. Defaults to None.
@@ -506,10 +547,19 @@ class VAEImputer(GenerativeImputer):
             train = tf.data.Dataset.from_tensor_slices(data[train_index])
             train_data = train.batch(self.hyperparameters["batch_size"])
 
-            for _ in range(self.hyperparameters["epochs"]):
+            early_stopping = EarlyStopping(self.hyperparameters["early_stop"])
+
+            for i in range(self.hyperparameters["max_epochs"]):
                 for train_batch in train_data:
                     X = self._prepare_VAE_input_data(train_batch.numpy())
                     train_step(X)
+
+                X_train = self._prepare_VAE_input_data(data[train_index])
+                epoch_loss = self.trainable_model(X_train)
+                try:
+                    early_stopping.update(epoch_loss)
+                except EarlyStoppingExceeded:
+                    break
 
             X = self._prepare_VAE_input_data(data[test_index])
             loss = self.trainable_model(X)
@@ -544,7 +594,8 @@ class VAEImputer(GenerativeImputer):
         hyperparameters = {
             # training
             "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 1024, 1),
-            "epochs": trial.suggest_discrete_uniform("epochs", 0, 10000, 1),
+            "max_epochs": trial.suggest_discrete_uniform("max_epochs", 0, 10000, 1),
+            "early_stop": trial.suggest_discrete_uniform("early_stop", 0, 1000, 1),
 
             # optimizer
             "optimizer_Adam": {

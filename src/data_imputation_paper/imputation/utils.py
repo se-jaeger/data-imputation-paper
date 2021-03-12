@@ -25,7 +25,8 @@ def _get_GAIN_search_space_for_grid_search(
         },
         "training": {
             "batch_size": [64],
-            "epochs": [10]
+            "max_epochs": [25],
+            "early_stop": [3]
         },
         "generator": {
             "learning_rate": [0.00005],
@@ -62,7 +63,8 @@ def _get_VAE_search_space_for_grid_search(
     vae_default_hyperparameter_grid: Dict[str, Dict[str, List[Union[int, float, bool]]]] = {
         "training": {
             "batch_size": [48],
-            "epochs": [10]
+            "max_epochs": [25],
+            "early_stop": [3]
         },
         "optimizer": {
             "learning_rate": [0.0005],

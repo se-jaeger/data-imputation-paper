@@ -67,7 +67,7 @@ IMPUTER_ARGUMENTS = {
                 "hint_rate": [0.7, 0.8, 0.9]
             },
             "training": {
-                "epochs": [5, 15]
+                "max_epochs": [5, 15]
             },
             "generator": {
                 "learning_rate": [0.0005, 0.000005],
@@ -85,14 +85,14 @@ IMPUTER_ARGUMENTS = {
             },
             "training": {
                 "batch_size": [64],
-                "epochs": [10],
+                "max_epochs": [10],
             },
             # NOTE: Camino's values (http://arxiv.org/abs/1902.10666)
             "neural_architecture": {
-                "latent_dim_rel_size": [0.5, 1],
+                "latent_dim_rel_size": [0.5, 0.25],
                 "n_layers": [0, 1, 2],
-                "layer_1_rel_size": [0.5, 1],
-                "layer_2_rel_size": [0.5],
+                "layer_1_rel_size": [0.75, 0.5],
+                "layer_2_rel_size": [0.25],
             }
         }
     }
