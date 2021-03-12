@@ -1,5 +1,6 @@
 import json
 import math
+import random
 import time
 from pathlib import Path
 from statistics import mean, stdev
@@ -9,6 +10,7 @@ import pandas as pd
 from jenga.corruptions.generic import MissingValues
 from jenga.tasks.openml import OpenMLTask
 from jenga.utils import BINARY_CLASSIFICATION, MULTI_CLASS_CLASSIFICATION, REGRESSION
+from numpy import nan
 from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error
 
 from .imputation._base import BaseImputer
@@ -272,6 +274,13 @@ class Evaluator(object):
                     missing_fraction=self._missing_fraction,
                     missing_type=self._missing_type,
                 )
+
+                # Fix that sometimes there are no missing values in the target column -> raises exception later on
+                if not train_data_corrupted[target_column].isna().any():
+                    train_data_corrupted.loc[random.choice(train_data_corrupted.index), target_column] = nan
+
+                if not test_data_corrupted[target_column].isna().any():
+                    test_data_corrupted.loc[random.choice(test_data_corrupted.index), target_column] = nan
 
                 imputer = self._imputer_class(**self._imputer_arguments)
 
