@@ -372,9 +372,7 @@ class VAESampling(Layer):
 
     def call(self, inputs):
         z_mean, z_log_var = inputs
-        batch = tf.shape(z_mean)[0]
-        dim = tf.shape(z_mean)[1]
-        epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
+        epsilon = tf.keras.backend.random_normal(shape=tf.shape(z_mean))
         return z_mean + tf.exp(0.5 * z_log_var) * epsilon
 
 
@@ -435,7 +433,7 @@ class VAEImputer(GenerativeImputer):
         else:
             for i in range(n_layers):
                 layer = i + 1
-                units = self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns
+                units = int(round(self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns, 0))
                 if i == 0:
                     x = Dense(units, activation=relu)(encoder_inputs)
                 else:
@@ -450,7 +448,7 @@ class VAEImputer(GenerativeImputer):
         else:
             for i in range(n_layers):
                 layer = n_layers - i
-                units = self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns
+                units = int(round(self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns, 0))
                 if i == 0:
                     x = Dense(units, activation=relu)(z)
                 else:

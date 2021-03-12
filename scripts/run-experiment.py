@@ -79,19 +79,21 @@ IMPUTER_ARGUMENTS = {
         }
     },
     "vae": {
-        "optimizer": {
-            "learning_rate": [0.001]
-        },
-        "training": {
-            "batch_size": [64],
-            "epochs": [10],
-        },
-        # NOTE: Camino's values (http://arxiv.org/abs/1902.10666)
-        "neural_architecture": {
-            "latent_dim_rel_size": [0.1, 0.5, 1],
-            "n_layers": [0, 1, 2],
-            "layer_1_rel_size": [0.5, 1],
-            "layer_2_rel_size": [0.5],
+        "hyperparameter_grid": {
+            "optimizer": {
+                "learning_rate": [0.001]
+            },
+            "training": {
+                "batch_size": [64],
+                "epochs": [10],
+            },
+            # NOTE: Camino's values (http://arxiv.org/abs/1902.10666)
+            "neural_architecture": {
+                "latent_dim_rel_size": [0.5, 1],
+                "n_layers": [0, 1, 2],
+                "layer_1_rel_size": [0.5, 1],
+                "layer_2_rel_size": [0.5],
+            }
         }
     }
 }
@@ -163,7 +165,7 @@ def main(
     missing_fractions: str = typer.Option(str, help="comma-separated list"),
     missing_types: str = typer.Option(str, help="comma-separated list"),
     strategies: str = typer.Option(str, help="comma-separated list"),
-    num_repetitions: int = 10,
+    num_repetitions: int = 5,
     base_path: str = "/results"
 ):
 
@@ -183,7 +185,8 @@ def main(
         imputer_arguments=imputer_arguments,
         num_repetitions=num_repetitions,
         base_path=base_path,
-        timestamp=experiment_name
+        timestamp=experiment_name,
+        fully_observed=False if "corrupted" in experiment_name else True
     )
     experiment.run()
 
