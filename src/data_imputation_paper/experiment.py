@@ -9,25 +9,10 @@ from typing import Callable, Dict, List, Optional, Tuple
 import joblib
 from jenga.tasks.openml import OpenMLTask
 
-from .evaluation import (
-    EvaluationResult,
-    MultipleColumnsAllMissingEvaluator,
-    MultipleColumnsEvaluator,
-    SingleColumnAllMissingEvaluator,
-    SingleColumnEvaluator
-)
 from .imputation._base import BaseImputer
 from .imputation.utils import set_seed
 
 logger = logging.getLogger()
-
-
-strategy_to_EvaluatorClass = {
-    "single_single": SingleColumnEvaluator,
-    "multiple_multiple": MultipleColumnsEvaluator,
-    "single_all": SingleColumnAllMissingEvaluator,
-    "multiple_all": MultipleColumnsAllMissingEvaluator
-}
 
 
 class Experiment(object):
@@ -43,8 +28,33 @@ class Experiment(object):
         num_repetitions: int,
         base_path: str = "results",
         timestamp: Optional[str] = None,
+        fully_observed: bool = True,
         seed: int = 42
     ):
+
+        if fully_observed:
+            from .evaluation import (
+                EvaluationResult,
+                MultipleColumnsAllMissingEvaluator,
+                MultipleColumnsEvaluator,
+                SingleColumnAllMissingEvaluator,
+                SingleColumnEvaluator
+            )
+        else:
+            from .evaluation_corrupted import (
+                EvaluationResult,
+                MultipleColumnsAllMissingEvaluator,
+                MultipleColumnsEvaluator,
+                SingleColumnAllMissingEvaluator,
+                SingleColumnEvaluator
+            )
+
+        self.strategy_to_EvaluatorClass = {
+            "single_single": SingleColumnEvaluator,
+            "multiple_multiple": MultipleColumnsEvaluator,
+            "single_all": SingleColumnAllMissingEvaluator,
+            "multiple_all": MultipleColumnsAllMissingEvaluator
+        }
 
         self._task_id_class_tuples = task_id_class_tuples
         self._missing_fractions = missing_fractions
@@ -57,7 +67,7 @@ class Experiment(object):
         self._seed = seed
         self._result: Dict[int, Dict[str, Dict[float, Dict[str, EvaluationResult]]]] = dict()
 
-        valid_strategies = strategy_to_EvaluatorClass.keys()
+        valid_strategies = self.strategy_to_EvaluatorClass.keys()
         for strategy in self._strategies:
             if strategy not in valid_strategies:
                 raise Exception(f"'{strategy}' is not a valid strategy. Need to be in {', '.join(valid_strategies)}")
@@ -100,7 +110,7 @@ class Experiment(object):
                                 how_many = random.choice(range(len(task.train_data.columns) - 1))
                                 target_column = random.choices(task.train_data.columns, k=how_many)
 
-                            evaluator = strategy_to_EvaluatorClass[strategy](
+                            evaluator = self.strategy_to_EvaluatorClass[strategy](
                                 task=task,
                                 missing_fraction=missing_fraction,
                                 missing_type=missing_type,

@@ -185,7 +185,8 @@ def main(
         imputer_arguments=imputer_arguments,
         num_repetitions=num_repetitions,
         base_path=base_path,
-        timestamp=experiment_name
+        timestamp=experiment_name,
+        fully_observed=False if "corrupted" in experiment_name else True
     )
     experiment.run()
 
