@@ -79,19 +79,21 @@ IMPUTER_ARGUMENTS = {
         }
     },
     "vae": {
-        "optimizer": {
-            "learning_rate": [0.001]
-        },
-        "training": {
-            "batch_size": [64],
-            "epochs": [10],
-        },
-        # NOTE: Camino's values (http://arxiv.org/abs/1902.10666)
-        "neural_architecture": {
-            "latent_dim_rel_size": [0.1, 0.5, 1],
-            "n_layers": [0, 1, 2],
-            "layer_1_rel_size": [0.5, 1],
-            "layer_2_rel_size": [0.5],
+        "hyperparameter_grid": {
+            "optimizer": {
+                "learning_rate": [0.001]
+            },
+            "training": {
+                "batch_size": [64],
+                "epochs": [10],
+            },
+            # NOTE: Camino's values (http://arxiv.org/abs/1902.10666)
+            "neural_architecture": {
+                "latent_dim_rel_size": [0.5, 1],
+                "n_layers": [0, 1, 2],
+                "layer_1_rel_size": [0.5, 1],
+                "layer_2_rel_size": [0.5],
+            }
         }
     }
 }
