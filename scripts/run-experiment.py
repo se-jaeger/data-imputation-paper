@@ -165,7 +165,7 @@ def main(
     missing_fractions: str = typer.Option(str, help="comma-separated list"),
     missing_types: str = typer.Option(str, help="comma-separated list"),
     strategies: str = typer.Option(str, help="comma-separated list"),
-    num_repetitions: int = 10,
+    num_repetitions: int = 5,
     base_path: str = "/results"
 ):
 
