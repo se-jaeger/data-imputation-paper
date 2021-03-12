@@ -58,7 +58,7 @@ IMPUTER_ARGUMENTS = {
         "max_trials": 50,
         "tuner": None,
         "validation_split": 0.2,
-        "epochs": 10
+        "epochs": 50
     },
     "gain": {
         "hyperparameter_grid": {
@@ -76,10 +76,6 @@ IMPUTER_ARGUMENTS = {
     },
     "vae": {
         "hyperparameter_grid": {
-            "optimizer": {
-                "learning_rate": [0.001]
-            },
-            # NOTE: Camino's values (http://arxiv.org/abs/1902.10666)
             "neural_architecture": {
                 "latent_dim_rel_size": [0.5, 0.2],
                 "n_layers": [0, 1, 2],

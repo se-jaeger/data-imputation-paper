@@ -41,7 +41,7 @@ spec:
               name: imputation-results
           resources:
             requests:
-              cpu: 2
+              cpu: 5
       volumes:
         - name: imputation-results
           persistentVolumeClaim:
