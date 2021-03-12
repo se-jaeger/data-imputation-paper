@@ -37,7 +37,7 @@ IMPUTER_NAME = {
 
 # TODO...
 IMPUTER_ARGUMENTS = {
-    "mode": {},  # NOTE: there are no arguments here..
+    "mode": {},
     "knn": {
         "hyperparameter_grid_categorical_imputer": {
             "n_neighbors": [1, 3, 5]
@@ -58,7 +58,7 @@ IMPUTER_ARGUMENTS = {
         "max_trials": 50,
         "tuner": None,
         "validation_split": 0.2,
-        "epochs": 5
+        "epochs": 10
     },
     "gain": {
         "hyperparameter_grid": {
@@ -66,15 +66,11 @@ IMPUTER_ARGUMENTS = {
                 "alpha": [0.1, 1, 5, 10],
                 "hint_rate": [0.7, 0.8, 0.9]
             },
-            "training": {
-                "epochs": [5, 15]
-            },
             "generator": {
-                "learning_rate": [0.0005, 0.000005],
+                "learning_rate": [0.0001, 0.0005],
             },
             "discriminator": {
-                "learning_rate": [0.0005, 0.000005],
-
+                "learning_rate": [0.00001, 0.00005],
             }
         }
     },
@@ -83,16 +79,12 @@ IMPUTER_ARGUMENTS = {
             "optimizer": {
                 "learning_rate": [0.001]
             },
-            "training": {
-                "batch_size": [64],
-                "epochs": [10],
-            },
             # NOTE: Camino's values (http://arxiv.org/abs/1902.10666)
             "neural_architecture": {
-                "latent_dim_rel_size": [0.5, 1],
+                "latent_dim_rel_size": [0.5, 0.2],
                 "n_layers": [0, 1, 2],
-                "layer_1_rel_size": [0.5, 1],
-                "layer_2_rel_size": [0.5],
+                "layer_1_rel_size": [0.75, 0.5],
+                "layer_2_rel_size": [0.25],
             }
         }
     }

@@ -28,14 +28,14 @@ def _get_GAIN_search_space_for_grid_search(
             "epochs": [10]
         },
         "generator": {
-            "learning_rate": [0.00005],
+            "learning_rate": [0.0005],
             "beta_1": [0.9],
             "beta_2": [0.999],
             "epsilon": [1e-7],
             "amsgrad": [False]
         },
         "discriminator": {
-            "learning_rate": [0.000005],
+            "learning_rate": [0.00005],
             "beta_1": [0.9],
             "beta_2": [0.999],
             "epsilon": [1e-7],
@@ -65,18 +65,18 @@ def _get_VAE_search_space_for_grid_search(
             "epochs": [10]
         },
         "optimizer": {
-            "learning_rate": [0.0005],
+            "learning_rate": [0.001],
             "beta_1": [0.9],
             "beta_2": [0.999],
             "epsilon": [1e-7],
             "amsgrad": [False]
         },
         "neural_architecture": {
-            "latent_dim_rel_size": [0.5],
-            "n_layers": [2],
-            "layer_1_rel_size": [1],
-            "layer_2_rel_size": [0.5],
-        },
+                "latent_dim_rel_size": [0.5, 0.2],
+                "n_layers": [0, 1, 2],
+                "layer_1_rel_size": [0.75, 0.5],
+                "layer_2_rel_size": [0.25],
+            }
     }
 
     hyperparameters = _merge_given_HPs_with_defaults(hyperparameter_grid, vae_default_hyperparameter_grid)
