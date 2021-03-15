@@ -104,7 +104,8 @@ class Experiment(object):
                         try:
                             # NOTE: randomly sample target column or a random number of random target columns
                             columns = task.train_data.columns.tolist()
-                            columns.remove("date")  # Quickfix because date type is not supported
+                            if "date" in columns:  # Quickfix because date type is not supported
+                                columns.remove("date")
 
                             if "single" in strategy:
                                 target_column = random.choice(columns)
