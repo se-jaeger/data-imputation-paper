@@ -103,12 +103,15 @@ class Experiment(object):
 
                         try:
                             # NOTE: randomly sample target column or a random number of random target columns
+                            columns = task.train_data.columns.tolist()
+                            columns.remove("date")  # Quickfix because date type is not supported
+
                             if "single" in strategy:
-                                target_column = random.choice(task.train_data.columns)
+                                target_column = random.choice(columns)
 
                             else:
-                                how_many = random.choice(range(len(task.train_data.columns) - 1))
-                                target_column = random.choices(task.train_data.columns, k=how_many)
+                                how_many = random.choice(range(len(columns) - 1))
+                                target_column = random.choices(columns, k=how_many)
 
                             evaluator = self.strategy_to_EvaluatorClass[strategy](
                                 task=task,
