@@ -1,5 +1,6 @@
 import json
 import math
+import random
 import time
 from pathlib import Path
 from statistics import mean, stdev
@@ -267,6 +268,13 @@ class Evaluator(object):
                     missing_fraction=self._missing_fraction,
                     missing_type=self._missing_type,
                 )
+
+                # Fix that sometimes there are no missing values in the target column -> raises exception later on
+                if not train_data_corrupted[target_column].isna().any():
+                    train_data_corrupted.loc[random.choice(train_data_corrupted.index), target_column] = nan
+
+                if not test_data_corrupted[target_column].isna().any():
+                    test_data_corrupted.loc[random.choice(test_data_corrupted.index), target_column] = nan
 
                 if result_temp._baseline_performance is None:
                     # fit task's baseline model and get performance
