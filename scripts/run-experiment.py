@@ -63,8 +63,8 @@ IMPUTER_ARGUMENTS = {
     "gain": {
         "hyperparameter_grid": {
             "gain": {
-                "alpha": [0.1, 1, 5, 10],
-                "hint_rate": [0.7, 0.8, 0.9]
+                "alpha": [1, 10],
+                "hint_rate": [0.7, 0.9]
             },
             "generator": {
                 "learning_rate": [0.0001, 0.0005],
@@ -77,10 +77,10 @@ IMPUTER_ARGUMENTS = {
     "vae": {
         "hyperparameter_grid": {
             "neural_architecture": {
-                "latent_dim_rel_size": [0.5, 0.2],
+                "latent_dim_rel_size": [0.2],
                 "n_layers": [0, 1, 2],
-                "layer_1_rel_size": [0.75, 0.5],
-                "layer_2_rel_size": [0.25],
+                "layer_1_rel_size": [0.5],
+                "layer_2_rel_size": [0.3],
             }
         }
     }
