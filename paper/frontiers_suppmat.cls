@@ -474,7 +474,7 @@
   \parbox[t]{15pc}{%
     \helvetica
     \hfil
-    \flushleft  \includegraphics[width=12pc,angle=0]{./logo1.eps}
+    \flushleft  \includegraphics[width=12pc,angle=0]{./figures/logo1.eps}
 
 
 }}
