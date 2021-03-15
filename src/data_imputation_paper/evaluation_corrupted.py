@@ -41,7 +41,7 @@ class EvaluationResult(object):
         elif self._task._task_type == REGRESSION:
             self._baseline_metric = ("MAE", "MSE", "RMSE")
 
-        self._baseline_performance = self._task.get_baseline_performance()
+        self._baseline_performance = None
 
         self._set_imputation_task_type()
 
@@ -68,9 +68,6 @@ class EvaluationResult(object):
             imputation_type=self._imputation_task_type
         )
 
-        predictions_on_corrupted = self._task._baseline_model.predict(test_data_corrupted)
-        score_on_corrupted = self._task.score_on_test_data(predictions_on_corrupted)
-
         predictions_on_imputed = self._task._baseline_model.predict(test_data_imputed)
         score_on_imputed = self._task.score_on_test_data(predictions_on_imputed)
 
@@ -83,9 +80,9 @@ class EvaluationResult(object):
                         self._baseline_metric[2]: self._baseline_performance[2]
                     },
                     "corrupted": {
-                        self._baseline_metric[0]: score_on_corrupted[0],
-                        self._baseline_metric[1]: score_on_corrupted[1],
-                        self._baseline_metric[2]: score_on_corrupted[2]
+                        self._baseline_metric[0]: 0,
+                        self._baseline_metric[1]: 0,
+                        self._baseline_metric[2]: 0
                     },
                     "imputed": {
                         self._baseline_metric[0]: score_on_imputed[0],
@@ -236,9 +233,6 @@ class Evaluator(object):
             if target_column not in self._discard_in_columns:
                 raise EvaluationError("All target_columns must be in discard_in_columns")
 
-        # fit task's baseline model and get performance
-        self._task.fit_baseline_model()
-
         # Because we set determinism here, supres downstream determinism mechanisms
         if self._seed:
             set_seed(self._seed)
@@ -282,10 +276,18 @@ class Evaluator(object):
                 if not test_data_corrupted[target_column].isna().any():
                     test_data_corrupted.loc[random.choice(test_data_corrupted.index), target_column] = nan
 
+                if result_temp._baseline_performance is None:
+                    # fit task's baseline model and get performance
+                    base_model = self._task.fit_baseline_model(train_data_corrupted.copy(), self._task.train_labels)
+                    self._task._baseline_model = base_model
+
+                    predictions = self._task._baseline_model.predict(test_data_corrupted)
+                    result_temp._baseline_performance = self._task.score_on_test_data(predictions)
+
                 imputer = self._imputer_class(**self._imputer_arguments)
 
                 start_time = time.time()
-                imputer.fit(self._task.train_data.copy(), [target_column])
+                imputer.fit(train_data_corrupted.copy(), [target_column])
                 elapsed_time = time.time() - start_time
 
                 train_imputed, train_imputed_mask = imputer.transform(train_data_corrupted)
