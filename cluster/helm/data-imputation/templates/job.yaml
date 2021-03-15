@@ -41,7 +41,10 @@ spec:
               name: imputation-results
           resources:
             requests:
-              cpu: 5
+              cpu: 3
+            limits:
+              cpu: 3
+      priorityClassName: unimportant
       volumes:
         - name: imputation-results
           persistentVolumeClaim:
