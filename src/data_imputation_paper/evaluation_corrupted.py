@@ -9,6 +9,7 @@ import pandas as pd
 from jenga.corruptions.generic import MissingValues
 from jenga.tasks.openml import OpenMLTask
 from jenga.utils import BINARY_CLASSIFICATION, MULTI_CLASS_CLASSIFICATION, REGRESSION
+from numpy import nan
 from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error
 
 from .imputation._base import BaseImputer
@@ -169,14 +170,14 @@ class EvaluationResult(object):
                 pd.DataFrame(
                     {
                         "train": {
-                            "MAE": mean_absolute_error(train, train_imputed),
-                            "MSE": mean_squared_error(train, train_imputed),
-                            "RMSE": math.sqrt(mean_squared_error(train, train_imputed))
+                            "MAE": mean_absolute_error(train, train_imputed) if ~train_imputed.isna().any() else nan,
+                            "MSE": mean_squared_error(train, train_imputed) if ~train_imputed.isna().any() else nan,
+                            "RMSE": math.sqrt(mean_squared_error(train, train_imputed)) if ~train_imputed.isna().any() else nan
                         },
                         "test": {
-                            "MAE": mean_absolute_error(test, test_imputed),
-                            "MSE": mean_squared_error(test, test_imputed),
-                            "RMSE": math.sqrt(mean_squared_error(test, test_imputed))
+                            "MAE": mean_absolute_error(test, test_imputed) if ~test_imputed.isna().any() else nan,
+                            "MSE": mean_squared_error(test, test_imputed) if ~test_imputed.isna().any() else nan,
+                            "RMSE": math.sqrt(mean_squared_error(test, test_imputed)) if ~test_imputed.isna().any() else nan
                         }
                     }
                 )
@@ -187,14 +188,14 @@ class EvaluationResult(object):
                 pd.DataFrame(
                     {
                         "train": {
-                            "F1_micro": f1_score(train, train_imputed, average="micro"),
-                            "F1_macro": f1_score(train, train_imputed, average="macro"),
-                            "F1_weighted": f1_score(train, train_imputed, average="weighted"),
+                            "F1_micro": f1_score(train, train_imputed, average="micro") if ~train_imputed.isna().any() else nan,
+                            "F1_macro": f1_score(train, train_imputed, average="macro") if ~train_imputed.isna().any() else nan,
+                            "F1_weighted": f1_score(train, train_imputed, average="weighted") if ~train_imputed.isna().any() else nan,
                         },
                         "test": {
-                            "F1_micro": f1_score(test, test_imputed, average="micro"),
-                            "F1_macro": f1_score(test, test_imputed, average="macro"),
-                            "F1_weighted": f1_score(test, test_imputed, average="weighted"),
+                            "F1_micro": f1_score(test, test_imputed, average="micro") if ~test_imputed.isna().any() else nan,
+                            "F1_macro": f1_score(test, test_imputed, average="macro") if ~test_imputed.isna().any() else nan,
+                            "F1_weighted": f1_score(test, test_imputed, average="weighted") if ~test_imputed.isna().any() else nan,
                         }
                     }
                 )
