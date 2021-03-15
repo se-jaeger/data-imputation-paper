@@ -3,3 +3,17 @@
 \section{Method}
 
 TODO
+
+
+
+Datasets from OpenML:
+Using \tt{openml} python library to retrieve all available datasets. Filter for the following properties:
+\begin{itemize}
+	\item 3k to 100k observations
+	\item 5 to 25 features
+	\item no missing values (necessary to get ground truth)
+\end{itemize}
+
+We than removed some obvious duplicated and corrupted datasets by hand and omit datasets of the Sparse ARFF format. This leads to 70 datasets, 22 regression tasks, 31 binary classification, and 17 multi-class classification tasks.
+
+Here or in supplemental material: Table with all dataset IDs and basic statistics (number of rows, number of categorical columns, number of numerical columns, TODO?)
