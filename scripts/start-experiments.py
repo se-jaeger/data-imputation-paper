@@ -13,7 +13,7 @@ base_path = "/results"
 
 MISSING_FRACTIONS = [0.01, 0.1, 0.3, 0.5]
 MISSING_TYPES = ["MCAR", "MNAR", "MAR"]
-IMPUTER = ["mode", "knn", "forest", "dl", "gain", "vae"]
+IMPUTER = ["gain", "vae", "dl", "forest", "knn", "mode"]
 STRATEGIES = ["single_all"]
 
 binary_task_ids = Path("../data/raw/binary.txt").read_text().split(",")
