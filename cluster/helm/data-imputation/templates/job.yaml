@@ -15,6 +15,9 @@ spec:
         chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
+        experiment: "{{ .Values.experiment_name }}"
+        imputer: {{ .Values.imputer }}
+        task: "{{ .Values.task_id }}"
     spec:
       containers:
         - name: experiment
