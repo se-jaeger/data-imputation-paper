@@ -7,7 +7,7 @@ TODO
 
 
 Datasets from OpenML:
-Using \tt{openml} python library to retrieve all available datasets. Filter for the following properties:
+Using \code{openml} python library to retrieve all available datasets. Filter for the following properties:
 \begin{itemize}
 	\item 3k to 100k observations
 	\item 5 to 25 features
@@ -17,3 +17,48 @@ Using \tt{openml} python library to retrieve all available datasets. Filter for 
 We than removed some obvious duplicated and corrupted datasets by hand and omit datasets of the Sparse ARFF format. This leads to 70 datasets, 22 regression tasks, 31 binary classification, and 17 multi-class classification tasks.
 
 Here or in supplemental material: Table with all dataset IDs and basic statistics (number of rows, number of categorical columns, number of numerical columns, TODO?)
+
+
+\subsection{Imputation Methods}
+%
+Implement uniform interface inspired by \emph{scikit-learn}\footnote{TODO Link}: fit and transform. Where fit trains the imputer on the given \code{DataFrame} to impute the given \code{target columns}  and optimizes hyperparameters on at least 3 folds. On the other hand, \code{transform} fills the missing values in the trained \code{target columns} in the given \code{DataFrame}. Figure \label{imputer_process} this.
+%
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=10cm]{figures/fit_process}
+	\caption{TODO}
+	\label{fig:imputer_process}
+\end{figure}
+
+TODO: Irgendwo, muss hin, dass wir GridSerach nutzen für HPO..
+
+\subsubsection{Simple Imputer}
+%
+Uses the column-wise \code{mean} for numerical or \code{mode}, i.e., the most frequent value,  for categorical columns to fill missing values.
+
+
+\subsubsection{Machine Learning-based Imputer}
+%
+Two representatives here: \emph{K-NN Imputer} and \emph{Random Forest Imputer}. We build \code{scikit-learn}\footnote{TODO version} pipeline that models the \code{target columns} over all other available columns. The encoding step (see figure \ref{imputer_process}) first mark all missing values with the column's mean for numerical columns and the most frequent value for categorical ones. Second, it encodes the categorical columns as one-hot, and third, standardize  the matrix (rescale to zero mean and unit variance).
+
+Depending on the \code{target column}'s datatype (categorical or numerical), we use \code{scikit-learn}'s \code{KNeighborsClassifier} and \code{KNeighborsRegressor} for K-NN Imputer, or \code{RandomForestClassifier} and \code{RandomForestRegressor} for Random Forest Imputer.
+
+
+\subsubsection{Deep Learning-based Imputer}
+%
+For deep learning models, we need to consider the number of layers and neurons per layer as hyperparameters to properly optimize the model. This is why we use \code{autokeras}\cite{AutoKeras} to build our \code{Deep Learning Imputer}. AutoKeras is an AutoML framework that tries automatically different model architectures.
+
+Similar to our ML-based imputer, we use \code{autokeras}' \code{StructuredDataClassifier} for categorical target columns or \code{StructuredDataRegressor} for numerical columns. However, we do not need to take care of encode the data since \code{autokeras} automatically handle this.
+
+
+\subsubsection{Generative Imputer}
+%
+Since generative models estimate the data distribution and can generate similar distributions\cite{Generativ_survey}, it stands to reason that they are used to impute missing values. Common approaches are variational auto encoders (VAE) (TODO: cites) and generative adversarial networks (TODO: cites), which is why we used for both one representative method.
+
+\paragraph{Generative Adversarial Imputation Nets (GAIN)}
+%
+
+
+
+\paragraph{Variational Auto Encoder (VAE)}
+%
