@@ -47,6 +47,11 @@ spec:
               cpu: 3
             limits:
               cpu: 3
+{{- if eq .Values.image.tag "gpu" }}
+              nvidia.com/gpu: 1 # requesting 1 GPU
+      nodeSelector:
+        gpu: k80
+{{- end }}
       priorityClassName: unimportant
       volumes:
         - name: imputation-results
