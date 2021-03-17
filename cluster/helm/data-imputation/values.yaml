@@ -8,7 +8,7 @@ image:
   repository: registry.datexis.com
   user: sjaeger
   name: data-imputation
-  tag: alpha
+  tag:
   pullPolicy: Always
 
 task_id:

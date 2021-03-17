@@ -467,48 +467,49 @@ class VAEImputer(GenerativeImputer):
         )
         n_layers = self.hyperparameters["n_layers"]
 
-        # Build the encoder
-        encoder_inputs = Input((self._num_data_columns,))
-        if n_layers == 0:
-            x = encoder_inputs
-        else:
-            for i in range(n_layers):
-                layer = i + 1
-                units = int(round(self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns, 0))
-                if i == 0:
-                    x = Dense(units, activation=relu)(encoder_inputs)
-                else:
-                    x = Dense(units, activation=relu)(x)
-        z_mean = Dense(latent_dim, name="z_mean")(x)
-        z_log_var = Dense(latent_dim, name="z_log_var")(x)
-        z = VAESampling()([z_mean, z_log_var])
+        with tf.device("/GPU:0"):
+            # Build the encoder
+            encoder_inputs = Input((self._num_data_columns,))
+            if n_layers == 0:
+                x = encoder_inputs
+            else:
+                for i in range(n_layers):
+                    layer = i + 1
+                    units = int(round(self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns, 0))
+                    if i == 0:
+                        x = Dense(units, activation=relu)(encoder_inputs)
+                    else:
+                        x = Dense(units, activation=relu)(x)
+            z_mean = Dense(latent_dim, name="z_mean")(x)
+            z_log_var = Dense(latent_dim, name="z_log_var")(x)
+            z = VAESampling()([z_mean, z_log_var])
 
-        # Build the decoder
-        if n_layers == 0:
-            x = z
-        else:
-            for i in range(n_layers):
-                layer = n_layers - i
-                units = int(round(self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns, 0))
-                if i == 0:
-                    x = Dense(units, activation=relu)(z)
-                else:
-                    x = Dense(units, activation=relu)(x)
-        decoder_outputs = Dense(self._num_data_columns, activation=sigmoid)(x)
+            # Build the decoder
+            if n_layers == 0:
+                x = z
+            else:
+                for i in range(n_layers):
+                    layer = n_layers - i
+                    units = int(round(self.hyperparameters[f"layer_{layer}_rel_size"] * self._num_data_columns, 0))
+                    if i == 0:
+                        x = Dense(units, activation=relu)(z)
+                    else:
+                        x = Dense(units, activation=relu)(x)
+            decoder_outputs = Dense(self._num_data_columns, activation=sigmoid)(x)
 
-        # VAE loss
-        reconstruction_loss = tf.reduce_mean(
-            tf.reduce_sum(
-                keras.losses.mean_squared_error(encoder_inputs, decoder_outputs)
+            # VAE loss
+            reconstruction_loss = tf.reduce_mean(
+                tf.reduce_sum(
+                    keras.losses.mean_squared_error(encoder_inputs, decoder_outputs)
+                )
             )
-        )
-        kl_loss = -0.5 * (1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var))
-        kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
-        total_loss = reconstruction_loss + kl_loss
+            kl_loss = -0.5 * (1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var))
+            kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
+            total_loss = reconstruction_loss + kl_loss
 
-        # self.imputer = Model(inputs=encoder_inputs, outputs=[decoder_outputs, total_loss])
-        self.imputer = Model(inputs=encoder_inputs, outputs=decoder_outputs)  # -> .transform()
-        self.trainable_model = Model(inputs=encoder_inputs, outputs=total_loss)  # -> .fit()
+            # self.imputer = Model(inputs=encoder_inputs, outputs=[decoder_outputs, total_loss])
+            self.imputer = Model(inputs=encoder_inputs, outputs=decoder_outputs)  # -> .transform()
+            self.trainable_model = Model(inputs=encoder_inputs, outputs=total_loss)  # -> .fit()
 
     def _train_method(self, trial: optuna.trial.Trial, data: np.array) -> float:
         """
