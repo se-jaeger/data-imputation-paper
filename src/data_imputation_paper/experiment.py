@@ -209,6 +209,7 @@ def _read_prefixed_csv_files(df_experiment, file_prefix, read_details):
         file_col = "detail_file"
     else:
         file_col = "file_or_dir"
+    # TODO this loop is pretty slow
     for row in df_experiment[df_experiment[file_col].str.startswith(file_prefix)].iterrows():
         df_new = pd.read_csv(row[1]["path"])
         df_new.rename({"Unnamed: 0": "metric"}, inplace=True, axis=1)
