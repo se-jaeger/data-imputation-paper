@@ -255,4 +255,12 @@ def read_csv_files(df_experiment, read_details=True):
         ignore_index=True
     )
     df_experiment["missing_fraction"] = pd.to_numeric(df_experiment["missing_fraction"])
+
+    ordered_columns = [
+        "experiment", "imputer", "task", "missing_type", "missing_fraction", "strategy", "column",
+        "result_type", "metric", "train", "test", "baseline", "corrupted", "imputed"
+    ]
+    assert len(ordered_columns) == df_experiment.shape[1]
+    df_experiment = df_experiment[ordered_columns]
+
     return df_experiment
