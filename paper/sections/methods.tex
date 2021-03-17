@@ -5,6 +5,23 @@
 TODO
 
 
+% TODO:  replace the following rows
+%\toprule
+%OpenML ID &                Name &  \# Instances &  \# Num. Features &  \# Cat. Features \\
+%\midrule
+
+%TODO with this and move the caption to the bottom
+%\toprule
+%\multirow{2}{*}{OpenML ID} & \multirow{2}{*}{Name} & \multirow{2}{*}{Instances} & \multicolumn{2}{c}{Features} \\ \cline{4-5}
+%\\[-0.75em]
+%&                       &                            & Numerical    & Categorical   \\
+%\midrule
+
+\input{tables/regression_table}
+\input{tables/binary_table}
+\input{tables/multiclass_table}
+
+
 
 Datasets from OpenML:
 Using \code{openml} python library to retrieve all available datasets. Filter for the following properties:
