@@ -28,6 +28,7 @@ spec:
             - run-experiment.py
             - "{{ .Values.task_id }}"
             - "{{ .Values.imputer }}"
+            - "{{ .Values.target_column }}"
             - "{{ .Values.experiment_name }}"
             - --missing-fractions
             - "{{ .Values.missing_fractions }}"

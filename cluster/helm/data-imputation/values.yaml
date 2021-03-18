@@ -13,6 +13,7 @@ image:
 
 task_id:
 imputer:
+target_column:
 experiment_name:
 missing_fractions:
 missing_types:
