@@ -3,7 +3,7 @@
 
 Missing values causing troubles when applying ML. Reasons why missing values exist are manifold, e.g., accidentally not recorded, lost through application errors, or intentionally not filled by users. This produces different \emph{missingness patterns}, missing completely at random (MCAR), missing at random (MAR), and missing not at random (MNAR) \cite{Buuren}.
 
-There are three strategies to handling missing values (\cite{Buuren} or Little/Rubin?):
+There are three strategies to handle missing values (\cite{Buuren} or Little/Rubin?):
 \begin{enumerate}
 	\item drop observations with missing values
 	\item substitute missing values with a constant value
@@ -13,5 +13,6 @@ There are three strategies to handling missing values (\cite{Buuren} or Little/R
 Especially for data with many features, 1. can reduce the amount of available data drastically. 2. uses an mathematically valid value instead to keep the pipeline running. 3. tries to fill missing values with a sensible value. We group possible imputation strategies into 4 different categories: \emph{mean/mode}, \emph{ML-based}, \emph{DL-based}, \emph{generative} imputation methods.
 
 Brief description of there differences
+(Another class of models that promise to recognize more complex patterns are deep learning models (TODO: cite datawig?).)
 
 Our Contributions: Extensive evaluation of the above 4 strategies on 70 (numeric) datasets, using all 3 missingness patterns with varying percentage of missing values, evaluated on the imputation accuracy and downstream task performance. 2 experiments: trained on fully-observed data (real world example is incoming data is corrupted: connection error), already corrupted data (train data has corruptions before we can train a model)

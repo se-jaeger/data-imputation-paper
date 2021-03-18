@@ -1,81 +1,66 @@
 
 
-\section{Method}
+\section{TODO: Methods}
+%
+TODO: Übergang
 
-TODO
+\subsection{Datasets}
+%
+We focus on a broad evaluation with several numeric datasets and the most widespread tasks: regression, binary classification, and multi-class classification. The OpenML database\footnote{\url{https://www.openml.org/}} contains many thousand datasets that can directly be retrieved as \code{pandas DataFrames}\footnote{TODO Link + it is quasi standard..} that encode the columns' datatypes properly, which means categorical features are of \code{pandas dtype} \code{category}.
 
+Especially deep learning models need sufficient data to learn their task properly. However, because we plan to run many experiments, the datasets must not be too big to keep training times feasible. This is why we choose datasets without missing values that contain 5 to 25 features and 3k to 100k observations. We then removed duplicated, corrupted, and Sparse ARFF\footnote{Attribute-Relation File Format} formatted datasets.
 
-% TODO:  replace the following rows
-%\toprule
-%OpenML ID &                Name &  \# Instances &  \# Num. Features &  \# Cat. Features \\
-%\midrule
-
-%TODO with this and move the caption to the bottom
-%\toprule
-%\multirow{2}{*}{OpenML ID} & \multirow{2}{*}{Name} & \multirow{2}{*}{Instances} & \multicolumn{2}{c}{Features} \\ \cline{4-5}
-%\\[-0.75em]
-%&                       &                            & Numerical    & Categorical   \\
-%\midrule
-
-\input{tables/regression_table}
-\input{tables/binary_table}
-\input{tables/multiclass_table}
+The resulting 70 datasets are composed of 22 regression, 31 binary classification, and 17 multi-class classification datasets. The supplementary material contains a detailed list of all datasets and further information, such as OpenML ID, name, and the number of observations and features.
 
 
-
-Datasets from OpenML:
-Using \code{openml} python library to retrieve all available datasets. Filter for the following properties:
-\begin{itemize}
-	\item 3k to 100k observations
-	\item 5 to 25 features
-	\item no missing values (necessary to get ground truth)
-\end{itemize}
-
-We than removed some obvious duplicated and corrupted datasets by hand and omit datasets of the Sparse ARFF format. This leads to 70 datasets, 22 regression tasks, 31 binary classification, and 17 multi-class classification tasks.
-
-Here or in supplemental material: Table with all dataset IDs and basic statistics (number of rows, number of categorical columns, number of numerical columns, TODO?)
+\subsection{TODO: Jenga}
+%
 
 
 \subsection{Imputation Methods}
 %
-Implement uniform interface inspired by \emph{scikit-learn}\footnote{TODO Link}: fit and transform. Where fit trains the imputer on the given \code{DataFrame} to impute the given \code{target columns}  and optimizes hyperparameters on at least 3 folds. On the other hand, \code{transform} fills the missing values in the trained \code{target columns} in the given \code{DataFrame}. Figure \label{imputer_process} this.
-%
-\begin{figure}[h!]
-	\centering
-	\includegraphics[width=10cm]{figures/fit_process}
-	\caption{TODO}
-	\label{fig:imputer_process}
-\end{figure}
+In this section, we describe our six single imputation methods. The overall goal of an imputer is to train a model on $X = [X_1, X_2, ..., X_{i-1}, X_{i+1}, ..., X_n]$, where $n$ is the number of features and $X_i$ the to-be-imputed column. To abstract crucial steps, such as encode, normalize, and decode the data and cross-validate the imputer's hyperparameters, we define a common framework inspired by \emph{scikit-learn}\footnote{TODO Link}.
 
-TODO: Irgendwo, muss hin, dass wir GridSerach nutzen für HPO..
+TODO: irgendwo muss hin, dass wir mit means auffüllen, wenn zur trinings time missing values auftauchen...
+
 
 \subsubsection{Simple Imputer}
 %
-Uses the column-wise \code{mean} for numerical or \code{mode}, i.e., the most frequent value,  for categorical columns to fill missing values.
+Our \code{Simple Imputer} uses the column-wise \code{mean} for numerical or \code{mode}, i.e., the most frequent value,  for categorical columns to fill missing values.
 
 
-\subsubsection{Machine Learning-based Imputer}
+\subsubsection{Machine Learning Imputer}
 %
-Two representatives here: \emph{K-NN Imputer} and \emph{Random Forest Imputer}. We build \code{scikit-learn}\footnote{TODO version} pipeline that models the \code{target columns} over all other available columns. The encoding step (see figure \ref{imputer_process}) first mark all missing values with the column's mean for numerical columns and the most frequent value for categorical ones. Second, it encodes the categorical columns as one-hot, and third, standardize  the matrix (rescale to zero mean and unit variance).
+We use two common imputation methods as representatives: \emph{K-NN Imputer} and \emph{Random Forest Imputer}. Both encode categorical features as one-hot columns and normalize the data by rescaling it to zero mean and unit variance. The imputer's hyperparameters are optimized by 5-fold cross-validated grid-search.
 
-Depending on the \code{target column}'s datatype (categorical or numerical), we use \code{scikit-learn}'s \code{KNeighborsClassifier} and \code{KNeighborsRegressor} for K-NN Imputer, or \code{RandomForestClassifier} and \code{RandomForestRegressor} for Random Forest Imputer.
+For our K-NN Imputer, we use, depending on the target columns' datatype (categorical or numerical), \code{scikit-learn}'s \code{KNeighborsClassifier} or \code{KNeighborsRegressor} and optimizes the $n\_neighbors \in \{1, 3, 5\}$  hyperparameter.
+
+Similarly, the Random Forest Imputer uses the \code{RandomForestClassifier} or \code{RandomForestRegressor} and optimizes the hyperparameter $n\_estimators \in \{10, 50, 100\}$.
 
 
-\subsubsection{Deep Learning-based Imputer}
+\subsubsection{Deep Learning Imputer}
 %
-For deep learning models, we need to consider the number of layers and neurons per layer as hyperparameters to properly optimize the model. This is why we use \code{autokeras}\cite{AutoKeras} to build our \code{Deep Learning Imputer}. AutoKeras is an AutoML framework that tries automatically different model architectures.
+Already very simple deep learning models can achieve good imputation results (TODO: cite). To easily optimize the model's architecture, we use the AutoML\footnote{"automated machine learning (AutoML) [...] automatically set [the model's] hyperparameters to optimize performance" \cite{AutoML}} library \code{autokeras} \cite{AutoKeras} to build our \emph{Deep Learning Imputer}.
 
-Similar to our ML-based imputer, we use \code{autokeras}' \code{StructuredDataClassifier} for categorical target columns or \code{StructuredDataRegressor} for numerical columns. However, we do not need to take care of encode the data since \code{autokeras} automatically handle this.
+For categorical columns, we use AutoKeras' \code{StructuredDataClassifier} and for numerical columns \code{StructuredDataRegressor}. Both classes take care of properly encode the data and optimize the model's architecture and hyperparameters. To reduce the training time, we change the maximum number of trials to $50$, which means \code{autokeras} tries 50 different model architecture and hyperparameter combinations, and the maximal number or of $epochs$ (\code{autokeras} uses early stopping) to 50.
 
 
 \subsubsection{Generative Imputer}
 %
-Since generative models estimate the data distribution and can generate similar distributions\cite{Generativ_survey}, it stands to reason that they are used to impute missing values. Common approaches are variational auto encoders (VAE) (TODO: cites) and generative adversarial networks (TODO: cites), which is why we used for both one representative method.
+Several generative models are successfully applied to data imputation, especially variational autoencoders (VAE) (TODO: cites), and generative adversarial networks (GAN) (TODO: cites). Autoencoders in general, learn to encode their input into an latent representation and, at the same time, to decode this latent representation back into the original feature space. In contrast to this, VAEs learn to decode their input into a distribution over the latent space and decode a sample from this distribution, which makes them generative.
 
-\paragraph{Generative Adversarial Imputation Nets (GAIN)}
+
+
+\subsection{Evaluation Dimensions}
 %
 
+Was wir messen:
+Imputation Accuracy und Downstream Performance
 
+Imputation Accuracy, depending on column data type:
+categorical: F1 (TODO: macro/avg?)
+numerical: RMSE (TODO`?)
 
-\paragraph{Variational Auto Encoder (VAE)}
-%
+Downstream Performance, depending on data type:
+Classification: F1(TODO: macro/avg?)
+numerical: RMSE (TODO?)
