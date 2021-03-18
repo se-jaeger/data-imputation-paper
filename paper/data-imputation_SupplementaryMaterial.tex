@@ -1,0 +1,64 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is just an example/guide for you to refer to when producing your supplementary material for your Frontiers article.                                 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Version 2.5 Generated 2018/06/15 %%%
+%%% You will need to have the following packages installed: datetime, fmtcount, etoolbox, fcprefix, which are normally inlcuded in WinEdt. %%%
+%%% In http://www.ctan.org/ you can find the packages and how to install them, if necessary. %%%
+%%%  NB logo1.jpg is required in the path in order to correctly compile front page header %%%
+
+\documentclass[utf8]{frontiers_suppmat} % for all articles
+\usepackage{url,hyperref,lineno,microtype}
+\usepackage[onehalfspacing]{setspace}
+
+
+
+\newcommand{\code}[1]{\texttt{#1}}
+
+% For tabels
+\usepackage{booktabs}
+\usepackage{multirow}
+
+
+
+
+% Leave a blank line between paragraphs instead of using \\
+
+\begin{document}
+\onecolumn
+\firstpage{1}
+
+\title[Supplementary Material]{{\helveticaitalic{Supplementary Material}}}
+
+
+\maketitle
+
+
+\section{Datasets}
+
+TODO
+
+% TODO:  replace the following rows
+%\toprule
+%OpenML ID &                Name &  \# Instances &  \# Num. Features &  \# Cat. Features \\
+%\midrule
+
+%TODO with this and move the caption to the bottom
+%\toprule
+%\multirow{2}{*}{OpenML ID} & \multirow{2}{*}{Name} & \multirow{2}{*}{Observations} & \multicolumn{2}{c}{Features} \\ \cline{4-5}
+%\\[-0.75em]
+%&                       &                            & Numerical    & Categorical   \\
+%\midrule
+
+\input{tables/regression_table}
+\input{tables/binary_table}
+\input{tables/multiclass_table}
+
+
+
+
+%\bibliographystyle{frontiersinSCNS_ENG_HUMS} %  for Science, Engineering and Humanities and Social Sciences articles, for Humanities and Social Sciences articles please include page numbers in the in-text citations
+%\bibliographystyle{frontiersinHLTH&FPHY} % for Health and Physics articles
+%\bibliography{test}
+
+\end{document}
