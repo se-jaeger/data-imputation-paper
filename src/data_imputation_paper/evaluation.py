@@ -266,6 +266,11 @@ class Evaluator(object):
 
             result_temp = EvaluationResult(self._task, target_column)
 
+            imputer = self._imputer_class(**self._imputer_arguments)
+            start_time = time.time()
+            imputer.fit(self._task.train_data.copy(), [target_column])
+            elapsed_time = time.time() - start_time
+
             for _ in range(num_repetitions):
 
                 train_data_corrupted, test_data_corrupted = self._discard_values(
@@ -281,12 +286,6 @@ class Evaluator(object):
 
                 if not test_data_corrupted[target_column].isna().any():
                     test_data_corrupted.loc[random.choice(test_data_corrupted.index), target_column] = nan
-
-                imputer = self._imputer_class(**self._imputer_arguments)
-
-                start_time = time.time()
-                imputer.fit(self._task.train_data.copy(), [target_column])
-                elapsed_time = time.time() - start_time
 
                 train_imputed, train_imputed_mask = imputer.transform(train_data_corrupted)
                 test_imputed, test_imputed_mask = imputer.transform(test_data_corrupted)

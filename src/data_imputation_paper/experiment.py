@@ -1,6 +1,5 @@
 import json
 import logging
-import random
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -85,7 +84,7 @@ class Experiment(object):
             set_seed(self._seed)
             self._imputer_arguments.pop("seed", None)
 
-    def run(self):
+    def run(self, target_column):
         for task_id, task_class in self._task_id_class_tuples:
             self._result[task_id] = {}
 
@@ -102,18 +101,6 @@ class Experiment(object):
                         experiment_path = self._base_path / f"{task_id}" / missing_type / f"{missing_fraction}" / f"{strategy}"
 
                         try:
-                            # NOTE: randomly sample target column or a random number of random target columns
-                            columns = task.train_data.columns.tolist()
-                            if "date" in columns:  # Quickfix because date type is not supported
-                                columns.remove("date")
-
-                            if "single" in strategy:
-                                target_column = random.choice(columns)
-
-                            else:
-                                how_many = random.choice(range(len(columns) - 1))
-                                target_column = random.choices(columns, k=how_many)
-
                             evaluator = self.strategy_to_EvaluatorClass[strategy](
                                 task=task,
                                 missing_fraction=missing_fraction,
