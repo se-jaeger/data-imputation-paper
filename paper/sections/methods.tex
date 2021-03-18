@@ -1,8 +1,8 @@
-
+%!TEX root = ../data-imputation.tex
 
 \section{TODO: Methods}
 %
-TODO: Übergang
+One of the main goals of this work is to provide a comprehensive evaluation of missing value imputation methods under realistic conditions. In particular we focus on two aspects a) a large suite of real-world data sets and tasks and b) realistic missingness patterns. The following sections describe the data sets we considered as well as the missingness patterns, followed by a detailed description of the imputation methods compared. 
 
 \subsection{Datasets}
 %
@@ -13,7 +13,37 @@ Especially deep learning models need sufficient data to learn their task properl
 The resulting 70 datasets are composed of 22 regression, 31 binary classification, and 17 multi-class classification datasets. The supplementary material contains a detailed list of all datasets and further information, such as OpenML ID, name, and the number of observations and features.
 
 
-\subsection{TODO: Jenga}
+\subsection{Missingness Patterns}
+%
+Most research on missing value imputation considers three different types of missingness patterns:
+%
+\begin{itemize}
+\item Missing completely at random (MCAR): Values are discarded independent of any other values
+\item Missing at random (MAR): Values in column $c$ are discarded dependent on values in another column $k\neq c$
+\item Missing not at random (MNAR): Values in column $c$ are discarded dependent on their value in $c$
+\end{itemize}
+An example of the missingness patterns used is shown in \autoref{tab:missingness_patterns}.
+\begin{table}
+\centering
+\label{tab:missingness_patterns}
+\caption{Examples of missingness patterns for a toy data set with a numerical column A and a categorical column B and a missingness ratio of 50\%. Applying the MCAR condition to column B discards two values independent of the values in A or B. In the MAR condition values in B are discarded on their corresponding values in column A; discarded values in B here correspond to values in A in the range between 
+$[0.4,0.6]$. In the MNAR condition applied to column B we discard values based on their value in B; here we see that only values \textit{b} were discarded, not values \textit{a}.
+}
+\vspace{1em}
+\begin{tabular}{rcccc}
+\toprule
+ A & B & B$_{\text{MCAR}}$ & B$_{\text{MAR}}$ & B$_{\text{MNAR}}$ \\
+\midrule
+0.0 & b &      ? &     b &      ? \\
+0.2 & b &      b &     b &      ? \\
+0.4 & b &      ? &     ? &      b \\
+0.6 & a &      a &     ? &      a \\
+0.8 & a &      a &     a &      a \\ \bottomrule
+\end{tabular}\end{table}
+
+
+
+
 %
 
 
