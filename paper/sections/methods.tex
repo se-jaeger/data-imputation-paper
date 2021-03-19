@@ -22,29 +22,28 @@ Most research on missing value imputation considers three different types of mis
 \item Missing at random (MAR): Values in column $c$ are discarded dependent on values in another column $k\neq c$
 \item Missing not at random (MNAR): Values in column $c$ are discarded dependent on their value in $c$
 \end{itemize}
-An example of the missingness patterns used is shown in \autoref{tab:missingness_patterns}.
-\begin{table}
-\centering
-\label{tab:missingness_patterns}
-\caption{Examples of missingness patterns for a toy data set with a numerical column A and a categorical column B and a missingness ratio of 50\%. Applying the MCAR condition to column B discards two values independent of the values in A or B. In the MAR condition values in B are discarded on their corresponding values in column A; discarded values in B here correspond to values in A in the range between
-$[0.4,0.6]$. In the MNAR condition applied to column B we discard values based on their value in B; here we see that only values \textit{b} were discarded, not values \textit{a}.
-}
-\vspace{1em}
-\begin{tabular}{rcccc}
-\toprule
- A & B & B$_{\text{MCAR}}$ & B$_{\text{MAR}}$ & B$_{\text{MNAR}}$ \\
-\midrule
-0.0 & b &      ? &     b &      ? \\
-0.2 & b &      b &     b &      ? \\
-0.4 & b &      ? &     ? &      b \\
-0.6 & a &      a &     ? &      a \\
-0.8 & a &      a &     a &      a \\ \bottomrule
-\end{tabular}\end{table}
-
-
-
-
 %
+An example of the missingness patterns used is shown in \autoref{tab:missingness_patterns}.
+%
+\begin{table}
+	\centering
+	\caption{
+		Examples of missingness patterns for a toy data set with a numerical column A and a categorical column B and a missingness ratio of 50\%. Applying the MCAR condition to column B discards two values independent of the values in A or B. In the MAR condition values in B are discarded on their corresponding values in column A; discarded values in B here correspond to values in A in the range between $[0.4,0.6]$. In the MNAR condition applied to column B we discard values based on their value in B; here we see that only values \textit{b} were discarded, not values \textit{a}.
+	}
+	\label{tab:missingness_patterns}
+	\vspace{1em}
+	\begin{tabular}{rcccc}
+		\toprule
+		 A & B & B$_{\text{MCAR}}$ & B$_{\text{MAR}}$ & B$_{\text{MNAR}}$ \\
+		\midrule
+		0.0 & b &      ? &     b &      ? \\
+		0.2 & b &      b &     b &      ? \\
+		0.4 & b &      ? &     ? &      b \\
+		0.6 & a &      a &     ? &      a \\
+		0.8 & a &      a &     a &      a \\
+		\bottomrule
+	\end{tabular}
+\end{table}
 
 
 \subsection{Imputation Methods}
