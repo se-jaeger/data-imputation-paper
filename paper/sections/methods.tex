@@ -2,7 +2,7 @@
 
 \section{TODO: Methods}
 %
-One of the main goals of this work is to provide a comprehensive evaluation of missing value imputation methods under realistic conditions. In particular we focus on two aspects a) a large suite of real-world data sets and tasks and b) realistic missingness patterns. The following sections describe the data sets we considered as well as the missingness patterns, followed by a detailed description of the imputation methods compared. 
+One of the main goals of this work is to provide a comprehensive evaluation of missing value imputation methods under realistic conditions. In particular we focus on two aspects a) a large suite of real-world data sets and tasks and b) realistic missingness patterns. The following sections describe the data sets we considered as well as the missingness patterns, followed by a detailed description of the imputation methods compared.
 
 \subsection{Datasets}
 %
@@ -10,7 +10,7 @@ We focus on a broad evaluation with several numeric datasets and the most widesp
 
 Especially deep learning models need sufficient data to learn their task properly. However, because we plan to run many experiments, the datasets must not be too big to keep training times feasible. This is why we choose datasets without missing values that contain 5 to 25 features and 3k to 100k observations. We then removed duplicated, corrupted, and Sparse ARFF\footnote{Attribute-Relation File Format} formatted datasets.
 
-The resulting 70 datasets are composed of 22 regression, 31 binary classification, and 17 multi-class classification datasets. The supplementary material contains a detailed list of all datasets and further information, such as OpenML ID, name, and the number of observations and features.
+The resulting 69 datasets are composed of 21 regression, 31 binary classification, and 17 multi-class classification datasets. The supplementary material contains a detailed list of all datasets and further information, such as OpenML ID, name, and the number of observations and features.
 
 
 \subsection{Missingness Patterns}
@@ -26,7 +26,7 @@ An example of the missingness patterns used is shown in \autoref{tab:missingness
 \begin{table}
 \centering
 \label{tab:missingness_patterns}
-\caption{Examples of missingness patterns for a toy data set with a numerical column A and a categorical column B and a missingness ratio of 50\%. Applying the MCAR condition to column B discards two values independent of the values in A or B. In the MAR condition values in B are discarded on their corresponding values in column A; discarded values in B here correspond to values in A in the range between 
+\caption{Examples of missingness patterns for a toy data set with a numerical column A and a categorical column B and a missingness ratio of 50\%. Applying the MCAR condition to column B discards two values independent of the values in A or B. In the MAR condition values in B are discarded on their corresponding values in column A; discarded values in B here correspond to values in A in the range between
 $[0.4,0.6]$. In the MNAR condition applied to column B we discard values based on their value in B; here we see that only values \textit{b} were discarded, not values \textit{a}.
 }
 \vspace{1em}
