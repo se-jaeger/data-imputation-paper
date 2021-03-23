@@ -1,108 +1,147 @@
+%% This BibTeX bibliography file was created using BibDesk.
+%% https://bibdesk.sourceforge.io/
+
+%% Created for Felix Bießmann at 2021-03-23 22:43:04 +0100 
+
+
+%% Saved with string encoding Unicode (UTF-8) 
+
+
+
+@inproceedings{Schelter2020a,
+	abstract = {Machine Learning (ML) models are difficult to maintain in production settings. In particular, deviations of the unseen serving data (for which we want to compute predictions) from the source data (on which the model was trained) pose a central challenge, especially when model training and prediction are outsourced via cloud services. Errors or shifts in the serving data can affect the predictive quality of a model, but are hard to detect for engineers operating ML deployments.We propose a simple approach to automate the validation of deployed ML models by estimating the model's predictive performance on unseen, unlabeled serving data. In contrast to existing work, we do not require explicit distributional assumptions on the dataset shift between the source and serving data. Instead, we rely on a programmatic specification of typical cases of dataset shift and data errors. We use this information to learn a performance predictor for a pretrained black box model that automatically raises alarms when it detects performance drops on unseen serving data.We experimentally evaluate our approach on various datasets, models and error types. We find that it reliably predicts the performance of black box models in the majority of cases, and outperforms several baselines even in the presence of unspecified data errors.},
+	address = {New York, NY, USA},
+	author = {Schelter, Sebastian and Rukat, Tammo and Biessmann, Felix},
+	booktitle = {Proc. 2020 ACM SIGMOD Int. Conf. Manag. Data},
+	date-added = {2021-03-23 22:27:31 +0100},
+	date-modified = {2021-03-23 22:27:31 +0100},
+	doi = {10.1145/3318464.3380604},
+	isbn = {9781450367356},
+	mendeley-groups = {Zotero - library,Zotero - Zotero Library},
+	month = {jun},
+	pages = {1289--1299},
+	publisher = {ACM},
+	title = {{Learning to Validate the Predictions of Black Box Classifiers on Unseen Data}},
+	url = {https://dl.acm.org/doi/10.1145/3318464.3380604 https://ssc.io/pdf/blackbox-performance-prediction.pdf},
+	year = {2020},
+	Bdsk-Url-1 = {https://dl.acm.org/doi/10.1145/3318464.3380604%20https://ssc.io/pdf/blackbox-performance-prediction.pdf},
+	Bdsk-Url-2 = {https://doi.org/10.1145/3318464.3380604}}
+
+@inproceedings{Biessmann2018a,
+	abstract = {The success of applications that process data critically depends on the quality of the ingested data. Completeness of a data source is essential in many cases. Yet, most missing value imputation approaches suffer from severe limitations. They are almost exclusively restricted to numerical data, and they either offer only simple imputation methods or are difficult to scale and maintain in production. Here we present a robust and scalable approach to imputation that extends to tables with non-numerical values, including unstructured text data in diverse languages. Experiments on public data sets as well as data sets sampled from a large product catalog in different languages (English and Japanese) demonstrate that the proposed approach is both scalable and yields more accurate imputations than previous approaches. Training on data sets with several million rows is a matter of minutes on a single machine. With a median imputation F1 score of 0.93 across a broad selection of data sets our approach achieves on average a 23-fold improvement compared to mode imputation. While our system allows users to apply state-of-the-art deep learning models if needed, we find that often simple linear n-gram models perform on par with deep learning methods at a much lower operational cost. The proposed method learns all parameters of the entire imputation pipeline automatically in an end-to-end fashion, rendering it attractive as a generic plugin both for engineers in charge of data pipelines where data completeness is relevant, as well as for practitioners without expertise in machine learning who need to impute missing values in tables with non-numerical data.},
+	address = {New York, New York, USA},
+	author = {Biessmann, Felix and Salinas, David and Schelter, Sebastian and Schmidt, Philipp and Lange, Dustin},
+	booktitle = {Int. Conf. Inf. Knowl. Manag. Proc.},
+	date-added = {2021-03-23 22:25:53 +0100},
+	date-modified = {2021-03-23 22:25:53 +0100},
+	doi = {10.1145/3269206.3272005},
+	file = {:Users/felix/Dropbox/work/mendeley-literature/Biessmann et al/2018/Biessmann et al. - 2018 - Deep learning for missing value imputation in tables with non-numerical data.pdf:pdf},
+	isbn = {9781450360142},
+	keywords = {data cleaning,missing value imputation},
+	mendeley-groups = {mlsys},
+	pages = {2017--2026},
+	publisher = {ACM Press},
+	title = {{Deep learning for missing value imputation in tables with non-numerical data}},
+	url = {http://dl.acm.org/citation.cfm?doid=3269206.3272005},
+	year = {2018},
+	Bdsk-Url-1 = {http://dl.acm.org/citation.cfm?doid=3269206.3272005},
+	Bdsk-Url-2 = {https://doi.org/10.1145/3269206.3272005}}
+
 @inproceedings{GAIN,
-	author    = {Jinsung Yoon and
-	James Jordon and
-	Mihaela van der Schaar},
-	editor    = {Jennifer G. Dy and
-	Andreas Krause},
-	title     = {{GAIN:} Missing Data Imputation using Generative Adversarial Nets},
-	booktitle = {Proceedings of the 35th International Conference on Machine Learning,
-	{ICML} 2018, Stockholmsm{\"{a}}ssan, Stockholm, Sweden, July
-	10-15, 2018},
-	series    = {Proceedings of Machine Learning Research},
-	volume    = {80},
-	pages     = {5675--5684},
+	author = {Jinsung Yoon and James Jordon and Mihaela van der Schaar},
+	bibsource = {dblp computer science bibliography, https://dblp.org},
+	biburl = {https://dblp.org/rec/conf/icml/YoonJS18.bib},
+	booktitle = {Proceedings of the 35th International Conference on Machine Learning, {ICML} 2018, Stockholmsm{\"{a}}ssan, Stockholm, Sweden, July 10-15, 2018},
+	editor = {Jennifer G. Dy and Andreas Krause},
+	pages = {5675--5684},
 	publisher = {{PMLR}},
-	year      = {2018},
-	url       = {http://proceedings.mlr.press/v80/yoon18a.html},
+	series = {Proceedings of Machine Learning Research},
 	timestamp = {Wed, 03 Apr 2019 18:17:30 +0200},
-	biburl    = {https://dblp.org/rec/conf/icml/YoonJS18.bib},
-	bibsource = {dblp computer science bibliography, https://dblp.org}
-},
+	title = {{GAIN:} Missing Data Imputation using Generative Adversarial Nets},
+	url = {http://proceedings.mlr.press/v80/yoon18a.html},
+	volume = {80},
+	year = {2018},
+	Bdsk-Url-1 = {http://proceedings.mlr.press/v80/yoon18a.html}}
+
 @book{Buuren,
-	title={TODO: Flexible imputation of missing data},
-	author={Van Buuren, Stef},
-	year={2018},
-	publisher={CRC press}
-},
+	author = {Van Buuren, Stef},
+	publisher = {CRC press},
+	title = {TODO: Flexible imputation of missing data},
+	year = {2018}}
+
 @article{CaminoVAE,
-	title={Improving Missing Data Imputation with Deep Generative Models},
-	author={R. Camino and Christian A. Hammerschmidt and R. State},
-	journal={ArXiv},
-	year={2019},
-	volume={abs/1902.10666}
-},
+	author = {R. Camino and Christian A. Hammerschmidt and R. State},
+	journal = {ArXiv},
+	title = {Improving Missing Data Imputation with Deep Generative Models},
+	volume = {abs/1902.10666},
+	year = {2019}}
+
 @article{Jenga,
-	title={TODO: JENGA-A Framework to Study the Impact of Data Errors on the Predictions of Machine Learning Models},
-	author={Schelter, Sebastian and Rukat, Tammo and Biessmann, Felix},
-	year={2021}
-},
+	author = {Schelter, Sebastian and Rukat, Tammo and Biessmann, Felix},
+	title = {TODO: JENGA-A Framework to Study the Impact of Data Errors on the Predictions of Machine Learning Models},
+	year = {2021}}
+
 @article{Imputation_Benchmark_1,
-	author    = {Katarzyna Woznica and
-	Przemyslaw Biecek},
-	title     = {Does imputation matter? Benchmark for predictive models},
-	journal   = {CoRR},
-	volume    = {abs/2007.02837},
-	year      = {2020},
-	url       = {https://arxiv.org/abs/2007.02837},
-	archivePrefix = {arXiv},
-	eprint    = {2007.02837},
+	archiveprefix = {arXiv},
+	author = {Katarzyna Woznica and Przemyslaw Biecek},
+	bibsource = {dblp computer science bibliography, https://dblp.org},
+	biburl = {https://dblp.org/rec/journals/corr/abs-2007-02837.bib},
+	eprint = {2007.02837},
+	journal = {CoRR},
 	timestamp = {Wed, 22 Jul 2020 12:09:15 +0200},
-	biburl    = {https://dblp.org/rec/journals/corr/abs-2007-02837.bib},
-	bibsource = {dblp computer science bibliography, https://dblp.org}
-},
+	title = {Does imputation matter? Benchmark for predictive models},
+	url = {https://arxiv.org/abs/2007.02837},
+	volume = {abs/2007.02837},
+	year = {2020},
+	Bdsk-Url-1 = {https://arxiv.org/abs/2007.02837}}
+
 @article{Imputation_Benchmark_2,
-	author    = {Anil S. Jadhav and
-	Dhanya Pramod and
-	Krishnan Ramanathan},
-	title     = {Comparison of Performance of Data Imputation Methods for Numeric Dataset},
-	journal   = {Appl. Artif. Intell.},
-	volume    = {33},
-	number    = {10},
-	pages     = {913--933},
-	year      = {2019},
-	url       = {https://doi.org/10.1080/08839514.2019.1637138},
-	doi       = {10.1080/08839514.2019.1637138},
+	author = {Anil S. Jadhav and Dhanya Pramod and Krishnan Ramanathan},
+	bibsource = {dblp computer science bibliography, https://dblp.org},
+	biburl = {https://dblp.org/rec/journals/aai/JadhavPR19.bib},
+	doi = {10.1080/08839514.2019.1637138},
+	journal = {Appl. Artif. Intell.},
+	number = {10},
+	pages = {913--933},
 	timestamp = {Mon, 26 Oct 2020 09:00:09 +0100},
-	biburl    = {https://dblp.org/rec/journals/aai/JadhavPR19.bib},
-	bibsource = {dblp computer science bibliography, https://dblp.org}
-},
+	title = {Comparison of Performance of Data Imputation Methods for Numeric Dataset},
+	url = {https://doi.org/10.1080/08839514.2019.1637138},
+	volume = {33},
+	year = {2019},
+	Bdsk-Url-1 = {https://doi.org/10.1080/08839514.2019.1637138}}
+
 @inproceedings{AutoKeras,
-	title={Auto-Keras: An Efficient Neural Architecture Search System},
-	author={Jin, Haifeng and Song, Qingquan and Hu, Xia},
-	booktitle={Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery \& Data Mining},
-	pages={1946--1956},
-	year={2019},
-	organization={ACM}
-},
+	author = {Jin, Haifeng and Song, Qingquan and Hu, Xia},
+	booktitle = {Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery \& Data Mining},
+	organization = {ACM},
+	pages = {1946--1956},
+	title = {Auto-Keras: An Efficient Neural Architecture Search System},
+	year = {2019}}
+
 @article{Generativ_survey,
-	author    = {Harshvardhan GM and
-	Mahendra Kumar Gourisaria and
-	Manjusha Pandey and
-	Siddharth Swarup Rautaray},
-	title     = {A comprehensive survey and analysis of generative models in machine
-	learning},
-	journal   = {Comput. Sci. Rev.},
-	volume    = {38},
-	pages     = {100285},
-	year      = {2020},
-	url       = {https://doi.org/10.1016/j.cosrev.2020.100285},
-	doi       = {10.1016/j.cosrev.2020.100285},
+	author = {Harshvardhan GM and Mahendra Kumar Gourisaria and Manjusha Pandey and Siddharth Swarup Rautaray},
+	bibsource = {dblp computer science bibliography, https://dblp.org},
+	biburl = {https://dblp.org/rec/journals/csr/GMGPR20.bib},
+	doi = {10.1016/j.cosrev.2020.100285},
+	journal = {Comput. Sci. Rev.},
+	pages = {100285},
 	timestamp = {Tue, 29 Dec 2020 18:23:11 +0100},
-	biburl    = {https://dblp.org/rec/journals/csr/GMGPR20.bib},
-	bibsource = {dblp computer science bibliography, https://dblp.org}
-},
+	title = {A comprehensive survey and analysis of generative models in machine learning},
+	url = {https://doi.org/10.1016/j.cosrev.2020.100285},
+	volume = {38},
+	year = {2020},
+	Bdsk-Url-1 = {https://doi.org/10.1016/j.cosrev.2020.100285}}
+
 @book{AutoML,
-	editor    = {Frank Hutter and
-	Lars Kotthoff and
-	Joaquin Vanschoren},
-	title     = {Automated Machine Learning - Methods, Systems, Challenges},
-	series    = {The Springer Series on Challenges in Machine Learning},
+	bibsource = {dblp computer science bibliography, https://dblp.org},
+	biburl = {https://dblp.org/rec/books/sp/HKV2019.bib},
+	doi = {10.1007/978-3-030-05318-5},
+	editor = {Frank Hutter and Lars Kotthoff and Joaquin Vanschoren},
+	isbn = {978-3-030-05317-8},
 	publisher = {Springer},
-	year      = {2019},
-	url       = {https://doi.org/10.1007/978-3-030-05318-5},
-	doi       = {10.1007/978-3-030-05318-5},
-	isbn      = {978-3-030-05317-8},
+	series = {The Springer Series on Challenges in Machine Learning},
 	timestamp = {Fri, 27 Mar 2020 08:32:01 +0100},
-	biburl    = {https://dblp.org/rec/books/sp/HKV2019.bib},
-	bibsource = {dblp computer science bibliography, https://dblp.org}
-}
+	title = {Automated Machine Learning - Methods, Systems, Challenges},
+	url = {https://doi.org/10.1007/978-3-030-05318-5},
+	year = {2019},
+	Bdsk-Url-1 = {https://doi.org/10.1007/978-3-030-05318-5}}
