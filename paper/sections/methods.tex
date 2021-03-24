@@ -14,6 +14,7 @@ The resulting 69 datasets are composed of 21 regression, 31 binary classificatio
 
 
 \subsection{Missingness Patterns}
+\label{sec:missingess_pattern}
 %
 Most research on missing value imputation considers three different types of missingness patterns:
 %
@@ -26,7 +27,7 @@ Values in column $c$ are discarded dependent on values in another column $k\neq 
 Values in column $c$ are discarded dependent on their value in $c$
 \end{itemize}
 %
-The most often used missingness pattern in the literature on missing value imputation is MCAR. Here the missing values are chosen independently at random. Usually the implementations of this condition draw a random number from a uniform distribution and discard a value if that random number was below the desired missingness ratio. Few studies report results on the more challenging conditions MAR and MNAR. We here aim for a realistic modelling of these missingness patterns inspired by observations in large scale real world data sets as investigated in \cite{Biessmann2018a}. We use an implementation proposed in \cite{Schelter2020a} and \cite{Jenga}, which selects two random percentiles of the values in a column, one for the lower and one for the upper bound of the value range considered. The range of the upper and lower bound depend on the desired fraction of values to be discarded. In the MAR condition, we discard values if values in a random other column fall in that percentile. In the MNAR condition we discard values in a column if the values themselves fall in that random percentile range. 
+The most often used missingness pattern in the literature on missing value imputation is MCAR. Here the missing values are chosen independently at random. Usually the implementations of this condition draw a random number from a uniform distribution and discard a value if that random number was below the desired missingness ratio. Few studies report results on the more challenging conditions MAR and MNAR. We here aim for a realistic modelling of these missingness patterns inspired by observations in large scale real world data sets as investigated in \cite{Biessmann2018a}. We use an implementation proposed in \cite{Schelter2020a} and \cite{Jenga}, which selects two random percentiles of the values in a column, one for the lower and one for the upper bound of the value range considered. The range of the upper and lower bound depend on the desired fraction of values to be discarded. In the MAR condition, we discard values if values in a random other column fall in that percentile. In the MNAR condition we discard values in a column if the values themselves fall in that random percentile range.
 %
 \begin{table}
 	\centering
@@ -133,7 +134,7 @@ Similarly, the Random Forest Imputer uses the \code{RandomForestClassifier} or \
 
 \subsubsection{Deep Learning Imputer}
 %
-Already very simple deep learning models can achieve good imputation results (TODO: cite). To easily optimize the model's architecture, we use the AutoML\footnote{"automated machine learning (AutoML) [...] automatically set [the model's] hyperparameters to optimize performance" \cite{AutoML}} library \code{autokeras} \cite{AutoKeras} to build our \emph{Deep Learning Imputer}.
+Already very simple deep learning models can achieve good imputation results (TODO: cite). To easily optimize the model's architecture, we use the AutoML\footnote{"automated machine learning (AutoML) [...] automatically set [the model's] hyperparameters to optimize performance" \cite{AutoML}} library \code{autokeras} \citep{AutoKeras} to build our \emph{Deep Learning Imputer}.
 
 For categorical columns, we use AutoKeras' \code{StructuredDataClassifier} and for numerical columns \code{StructuredDataRegressor}. Both classes take care of properly encode the data and optimize the model's architecture and hyperparameters. To reduce the training time, we change the maximum number of trials to $50$, which means \code{autokeras} tries 50 different model architecture and hyperparameter combinations, and the maximal number or of $epochs$ (\code{autokeras} uses early stopping) to 50.
 
@@ -146,8 +147,9 @@ TODO: vanilla VAE
 
 \cite{GAIN} proposed Generative Adversarial Imputation Nets (GAIN) that adapts the GAN architecture as follows. GAIN takes as input some data $X$ and calculates a binary mask matrix $M$ that represents missing values. To normalize $X$ into $\hat{X}$, it first scales the data min-max ($0, 1$) and second replaces missing values with random uniform noise $\{0, 0.01\}$. The generator learns to output $\hat{X}$, where initially missing values are replaced, based on its input $\bar{X}$ and $M$. The discriminator learns to reconstruct the mask $M$ based on generator's output $\hat{X}$ and a hint matrix $H$, using the hyperparameter $hint\_rate$, that provides the discriminator with information about $M$.
 
-GAIN is optimized by minimizing the sum of the generator's loss and the with $\alpha$ weighted discriminator's loss, see \cite{GAIN} for details. Besides the learning rates for the generator and discriminator, GAIN also introduces two new hyperparameters we optimize: $hint\_rate$ and $\alpha$. For this we use 3-fold cross-validated grid-search of: $generator\_learning\_rate \in \{0.0001, 0.0005\}$, $discriminator\_learning\_rate \in \{0.00001, 0.00005\}$, $\alpha \in \{1, 10\}$, and $hint_rate \in \{0.7, 0.9\}$.
+GAIN is optimized by minimizing the sum of the generator's loss and the with $\alpha$ weighted discriminator's loss, see \cite{GAIN} for details. Besides the learning rates,\right  for the generator and discriminator, GAIN introduces two new hyperparameters we optimize $hint\_rate$ and $\alpha$. For this we use 3-fold cross-validated grid-search of: $generator\_learning\_rate \in \{0.0001, 0.0005\}$, $discriminator\_learning\_rate \in \{0.00001, 0.00005\}$, $\alpha \in \{1, 10\}$, and $hint_rate \in \{0.7, 0.9\}$.
 
+\sebastian{irgendwo muss hin, dass wird das quasi ordinal encoden...}
 
 \subsection{Evaluation Dimensions}
 %
