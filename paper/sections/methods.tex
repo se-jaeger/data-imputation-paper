@@ -18,95 +18,31 @@ The resulting 69 datasets are composed of 21 regression, 31 binary classificatio
 Most research on missing value imputation considers three different types of missingness patterns:
 %
 \begin{itemize}
-\item Missing completely at random (MCAR, see \autoref{tab:missingness_patterns_MCAR}): \\
-Values are discarded independent of any other values
-\item Missing at random (MAR, see \autoref{tab:missingness_patterns_MAR}): \\
-Values in column $c$ are discarded dependent on values in another column $k\neq c$
-\item Missing not at random (MNAR, see \autoref{tab:missingness_patterns_MNAR}): \\
-Values in column $c$ are discarded dependent on their value in $c$
+\item Missing completely at random (MCAR): Values are discarded independent of any other values
+\item Missing at random (MAR): Values in column $c$ are discarded dependent on values in another column $k\neq c$
+\item Missing not at random (MNAR): Values in column $c$ are discarded dependent on their value in $c$
 \end{itemize}
 %
-The most often used missingness pattern in the literature on missing value imputation is MCAR. Here the missing values are chosen independently at random. Usually the implementations of this condition draw a random number from a uniform distribution and discard a value if that random number was below the desired missingness ratio. Few studies report results on the more challenging conditions MAR and MNAR. We here aim for a realistic modelling of these missingness patterns inspired by observations in large scale real world data sets as investigated in \cite{Biessmann2018a}. We use an implementation proposed in \cite{Schelter2020a} and \cite{Jenga}, which selects two random percentiles of the values in a column, one for the lower and one for the upper bound of the value range considered. The range of the upper and lower bound depend on the desired fraction of values to be discarded. In the MAR condition, we discard values if values in a random other column fall in that percentile. In the MNAR condition we discard values in a column if the values themselves fall in that random percentile range. 
+An example of the missingness patterns used is shown in \autoref{tab:missingness_patterns}. \sebastian{Mabye add a sixth row in the table. 50\% missigness in 5 rows is a bit confusing.}
 %
 \begin{table}
 	\centering
-%	\caption{
-%		Examples of missingness patterns for a missingness ratio of 50\%. 	}
-%	\label{tab:missingness_patterns}
-%	\vspace{1em}
-%	\begin{subtable}{0.3\textwidth}
-\begin{minipage}{0.28\textwidth}
-\centering
-	\begin{tabular}{cc}
-\toprule
- height &  height$_{\text{MCAR}}$ \\
-\midrule
-  179.0 &                     ? \\
-  192.0 &                     ? \\
-  189.0 &                 189.0 \\
-  156.0 &                 156.0 \\
-  175.0 &                     ? \\
-  170.0 &                 170.0 \\
-  181.0 &                     ? \\
-  197.0 &                     ? \\
-  156.0 &                 156.0 \\
-  160.0 &                 160.0 \\
-\bottomrule
-\end{tabular}
-\caption{
-		Applying the MCAR condition to column \textit{height} discards five out of ten values independent of the height values.
+	\caption{
+		Examples of missingness patterns for a toy data set with a numerical column A and a categorical column B and a missingness ratio of 50\%. Applying the MCAR condition to column B discards two values independent of the values in A or B. In the MAR condition values in B are discarded on their corresponding values in column A; discarded values in B here correspond to values in A in the range between $[0.4,0.6]$. In the MNAR condition applied to column B we discard values based on their value in B; here we see that only values \textit{b} were discarded, not values \textit{a}.
 	}
-	\label{tab:missingness_patterns_MCAR}
-\vspace{2em}
-\end{minipage}
-\hfill
-\begin{minipage}{0.3\textwidth}
-\centering
-	\begin{tabular}{ccc}
-\toprule
- height & gender &  height$_{\text{MAR}}$ \\
-\midrule
-  200.0 &      m &                    ? \\
-  191.0 &      m &                    ? \\
-  198.0 &      f &                198.0 \\
-  155.0 &      m &                    ? \\
-  206.0 &      m &                    ? \\
-  152.0 &      f &                152.0 \\
-  175.0 &      f &                175.0 \\
-  159.0 &      m &                    ? \\
-  153.0 &      f &                153.0 \\
-  209.0 &      m &                209.0 \\
-\bottomrule
-\end{tabular}
-\caption{In the MAR condition \textit{height} values are discarded dependent on values in another column,  here \textit{gender}. All discarded \textit{height} values correspond to rows in which \textit{gender} was \textit{male}.
-}
-	\label{tab:missingness_patterns_MAR}
-\end{minipage}
-\hfill
-\begin{minipage}{0.28\textwidth}
-\centering
-	\begin{tabular}{cc}
-\toprule
- height &  height$_{\text{MNAR}}$ \\
-\midrule
-  154.0 &                     ? \\
-  181.0 &                 181.0 \\
-  207.0 &                 207.0 \\
-  194.0 &                 194.0 \\
-  153.0 &                     ? \\
-  156.0 &                     ? \\
-  198.0 &                 198.0 \\
-  185.0 &                 185.0 \\
-  155.0 &                     ? \\
-  164.0 &                     ? \\
-\bottomrule
-\end{tabular}
-\caption{In the MNAR condition \textit{height} values are discarded dependent on the actual \textit{height} values. All discarded values correspond to small \textit{height} values.
-}
-	\label{tab:missingness_patterns_MNAR}
-\vspace{1em}
-\end{minipage}
-
+	\label{tab:missingness_patterns}
+	\vspace{1em}
+	\begin{tabular}{rcccc}
+		\toprule
+		 A & B & B$_{\text{MCAR}}$ & B$_{\text{MAR}}$ & B$_{\text{MNAR}}$ \\
+		\midrule
+		0.0 & b &      ? &     b &      ? \\
+		0.2 & b &      b &     b &      ? \\
+		0.4 & b &      ? &     ? &      b \\
+		0.6 & a &      a &     ? &      a \\
+		0.8 & a &      a &     a &      a \\
+		\bottomrule
+	\end{tabular}
 \end{table}
 
 
