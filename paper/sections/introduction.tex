@@ -1,18 +1,20 @@
 \section{Introduction}
 
+A common problem in practice while working on machine learning (ML) or data analysis tasks is handling \emph{missing values}. Reasons for incomplete data are manifold, e.g., accidentally not recorded, lost through application or transmission errors, intentionally not filled out by users, or result because different data sources were merged. Most ML algorithms and pipelines do not work well with existing missing values. Therefore, handling missing values presents data processing challenges.
 
-Missing values causing troubles when applying ML. Reasons why missing values exist are manifold, e.g., accidentally not recorded, lost through application errors, or intentionally not filled by users. This produces different \emph{missingness patterns}, missing completely at random (MCAR), missing at random (MAR), and missing not at random (MNAR) \cite{Buuren}.
+In the last decades, statistician laid theoretical foundations, such as the three missingness patterns: missing completely at random (MCAR), missing at random (MAR), and missing not at random (MNAR) (more details in Section \ref{sec:missingess_pattern}), developed statistical approaches to handle missing values and reviewed there advantages and limitations. Simple strategies, such as dropping incomplete observations or replace missing values with constant mathematically valid values, often reduce the amount of available data for downstream tasks or, depending on the missingness pattern, might also bias them and further decrease data quality.
 
-There are three strategies to handle missing values (\cite{Buuren} or Little/Rubin?):
+With improvements of ML algorithms, methods to impute missing values evolved too. We define four different categories with the increasing complexity of imputation methods:
+%
 \begin{enumerate}
-	\item drop observations with missing values
-	\item substitute missing values with a constant value
-	\item impute missing values
+	\item \textbf{Simple:} substitute missing values with the column-wise mean or mode
+	\item \textbf{(Classic) Machine Learning:} use a $k$-NN, random forest, logistic regression, or similar model
+	\item \textbf{Deep Learning:} use a neural network
+	\item \textbf{Generative:} use generative models, such as variational autoencoders or generative adversarial network
 \end{enumerate}
+%
+However, it remains unclear whether more complex imputation methods capture the underlying data distribution more precisely and, therefore, increase their imputation accuracy and how imputing missing values for varying missing patterns impact the downstream task performance.
 
-Especially for data with many features, 1. can reduce the amount of available data drastically. 2. uses an mathematically valid value instead to keep the pipeline running. 3. tries to fill missing values with a sensible value. We group possible imputation strategies into 4 different categories: \emph{mean/mode}, \emph{ML-based}, \emph{DL-based}, \emph{generative} imputation methods.
+In this paper, we aim at filling this gap. We comprehensively benchmark representative imputers of each imputation category. For this, we use $69$ fully observed numeric (binary classification, multi-class classification, and regression task) datasets and run experiments by artificially introducing varying fractions of missing values of the three missingness patterns. We then measure both the imputation accuracy and impact on downstream performance. In practice, there are two possibilities: (a) missing values first appear in production, and (b) the train data has missing values. To simulate and compare these situations, we repeat the experiments and (a) train baseline and imputer model on complete and (b) incomplete data.
 
-Brief description of there differences
-(Another class of models that promise to recognize more complex patterns are deep learning models (TODO: cite datawig?).)
-
-Our Contributions: Comprehensive evaluation of the above 4 strategies on 70 (numeric) datasets, using all 3 missingness patterns with varying percentage of missing values, evaluated on the imputation accuracy and downstream task performance. 2 experiments: trained on fully-observed data (real world example is incoming data is corrupted: connection error), already corrupted data (train data has corruptions before we can train a model)
+The rest of the paper is structured as follows ... TODO.
