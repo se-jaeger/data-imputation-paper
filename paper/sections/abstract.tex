@@ -1,10 +1,7 @@
+%!TEX root = ../data-imputation.tex
+
 \begin{abstract}
-
-	\section{}
 %
-	In practice, incomplete data are very common and can lead to failing machine learning pipelines and negatively impact model performance. Although several methods are introduced to impute missing values, it does not exist a comprehensive benchmark that broadly compares them. Therefore, we use representatives for each category of imputation methods (mean/mode, $k$-NN, random forest, NN, GAIN, and VAE) and compare their imputation and impact on downstream performance. For this, we use  $69$ numerical datasets, MCAR, MAR, and MNAR missingness pattern, varying amount of missing values (1\% to 50\%), and repeat the experiments for fully observed and incomplete data to simulate real-world applications.
-	The main contributions are (1) comprehensive comparison of available imputation categories and (2) extensive analysis of imputation methods and their performance in given settings.
-
-	\tiny
-	\keyFont{ \section{Keywords:} data imputation, missing data, TODO, TODO, TODO, TODO, TODO, TODO} %All article types: you may provide up to 8 keywords; at least 5 are mandatory.
+With the increasing importance and complexity of data pipelines for software applications, data quality became one of key challenges for researchers as well as practitioners. The importance of data quality has been recognised beyond the field of data engineering and data base management systems (DBMS): Also for machine learning (ML) applications high data quality standards are crucial to ensure robust predictive performance and responsible usage of automated decision making. One of the most frequent data quality problems are missing values. Incomplete data sets can break data pipelines and can have devastating impact on downstream ML applications when not detected. While statisticians and more recently ML researchers have introduced a variety of approaches to impute missing values, a comprehensive benchmark comparing classical and modern imputation approaches under fair and realistic conditions is missing. Here we aim to fill this gap. We conduct a comprehensive suite of experiments on a large number of data sets with heterogeneous data and realistic missingness conditions comparing both novel deep learning approaches and classical ML imputation methods. Each imputation method is evaluated with respect to the imputation quality but also with respect to the impact the imputation has on a downstream ML task. Our results provide valuable insights into the performance of a variety of imputation methods under realistic conditions and help to guide data preprocessing method selection for research as well as applications. 
+	\keyFont{ \section{Keywords:} data quality, data cleaning, imputation, missing data, benchmark, real world data, MCAR, MNAR, MAR} %All article types: you may provide up to 8 keywords; at least 5 are mandatory.
 \end{abstract}
