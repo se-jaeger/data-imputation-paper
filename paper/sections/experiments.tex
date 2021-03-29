@@ -1,17 +1,52 @@
 
 \section{Experiments}
 %
+TODO: In this section, we briefly describe our benchmark suite.
 
-Experiments:
-- 70 datasets
+- 69 datasets
 - 6 Imputers
 - MCAR, MAR, MNAR
 - 0.01, 0.1, 0.3, 0.5
 - missing values in all columns
 - random target column
-- 5 repetitions
+- 3 repetitions
+
+
+\subsection{Downstream Task Model}
+%
+
+
+
+\subsection{Experiment 1: Fully Observed Data}
+%
+
+
+
+\subsection{Experiment 2: Incomplete Data}
+%
+
+
+
+Experiments:
+
 
 2 Experiments:
 - train on fully observed data
 - train on already corrupted data
 	- To fit the imputer we fill missing vlaues with the mean/mode to get the pipeline running.
+
+
+
+\subsection{Evaluation Dimensions}
+%
+
+Was wir messen:
+Imputation Accuracy und Downstream Performance
+
+Imputation Accuracy, depending on column data type:
+categorical: F1 macro
+numerical: RMSE
+
+Downstream Performance, depending on data type:
+Classification: F1 macro
+numerical: RMSE
