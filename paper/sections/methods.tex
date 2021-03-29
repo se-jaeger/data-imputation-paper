@@ -6,9 +6,9 @@ One of the main goals of this work is to provide a comprehensive evaluation of m
 
 \subsection{Datasets}
 %
-We focus on a broad evaluation with several numeric datasets and the most widespread tasks: regression, binary classification, and multi-class classification. The OpenML database\footnote{\url{https://www.openml.org/}} contains many thousand datasets that can directly be retrieved as \code{pandas DataFrames}\footnote{TODO Link + it is quasi standard..} that encode the columns' datatypes properly, which means categorical features are of \code{pandas dtype} \code{category}.
+We focus on a broad evaluation with several numeric datasets and the most widespread tasks: regression, binary classification, and multi-class classification. The OpenML database\footnote{\url{https://www.openml.org/}} contains thousands of datasets and provides an API to automatically download them. The Python package \code{openml}\footnote{TODO} uses the API to retrieve the datasets and creates a well-formed \code{DataFrames} that encode the tables' columns properly.
 
-Especially deep learning models need sufficient data to learn their task properly. However, because we plan to run many experiments, the datasets must not be too big to keep training times feasible. This is why we choose datasets without missing values that contain 5 to 25 features and 3k to 100k observations. We then removed duplicated, corrupted, and Sparse ARFF\footnote{Attribute-Relation File Format} formatted datasets.
+We filter available datasets as follows. To calculate the imputation performance, we need ground truth datasets that do not contain missing values. Further, especially deep learning models need sufficient data to learn their task properly. However, because we plan to run many experiments, the datasets must not be too big to keep training times feasible. This is why we choose datasets without missing values that contain 5 to 25 features and 3k to 100k observations. We then removed duplicated, corrupted, and Sparse ARFF\footnote{Attribute-Relation File Format} formatted datasets.
 
 The resulting 69 datasets are composed of 21 regression, 31 binary classification, and 17 multi-class classification datasets. The supplementary material contains a detailed list of all datasets and further information, such as OpenML ID, name, and the number of observations and features.
 
@@ -26,7 +26,7 @@ Values in column $c$ are discarded dependent on values in another column $k\neq 
 Values in column $c$ are discarded dependent on their value in $c$
 \end{itemize}
 %
-The most often used missingness pattern in the literature on missing value imputation is MCAR. Here the missing values are chosen independently at random. Usually the implementations of this condition draw a random number from a uniform distribution and discard a value if that random number was below the desired missingness ratio. Few studies report results on the more challenging conditions MAR and MNAR. We here aim for a realistic modelling of these missingness patterns inspired by observations in large scale real world data sets as investigated in \cite{Biessmann2018a}. We use an implementation proposed in \cite{Schelter2020a} and \cite{Jenga}, which selects two random percentiles of the values in a column, one for the lower and one for the upper bound of the value range considered. The range of the upper and lower bound depend on the desired fraction of values to be discarded. In the MAR condition, we discard values if values in a random other column fall in that percentile. In the MNAR condition we discard values in a column if the values themselves fall in that random percentile range. 
+The most often used missingness pattern in the literature on missing value imputation is MCAR. Here the missing values are chosen independently at random. Usually the implementations of this condition draw a random number from a uniform distribution and discard a value if that random number was below the desired missingness ratio. Few studies report results on the more challenging conditions MAR and MNAR. We here aim for a realistic modelling of these missingness patterns inspired by observations in large scale real world data sets as investigated in \cite{Biessmann2018a}. We use an implementation proposed in \cite{Schelter2020a} and \cite{Jenga}, which selects two random percentiles of the values in a column, one for the lower and one for the upper bound of the value range considered. The range of the upper and lower bound depend on the desired fraction of values to be discarded. In the MAR condition, we discard values if values in a random other column fall in that percentile. In the MNAR condition we discard values in a column if the values themselves fall in that random percentile range.
 %
 \begin{table}
 	\centering
@@ -112,9 +112,9 @@ The most often used missingness pattern in the literature on missing value imput
 
 \subsection{Imputation Methods}
 %
-In this section, we describe our six single imputation methods. The overall goal of an imputer is to train a model on $X = [X_1, X_2, ..., X_{i-1}, X_{i+1}, ..., X_n]$, where $n$ is the number of features and $X_i$ the to-be-imputed column. To abstract crucial steps, such as encode, normalize, and decode the data and cross-validate the imputer's hyperparameters, we define a common framework inspired by \emph{scikit-learn}\footnote{TODO Link}.
+In this section, we describe our six single imputation methods. The overall goal of an imputer is to train a model on $X = [X_1, X_2, ..., X_{i-1}, X_{i+1}, ..., X_n]$, where $n$ is the number of features and $X_i$ the to-be-imputed column. To abstract crucial steps, such as encode, normalize, and decode the data and cross-validate the imputer's hyperparameters, we define a framework implemented by all of our imputer implementations. As described in Section \ref{sec:introduction}, missing values can break ML pipelines. By default, we substitute missing values with column-wise mean/mode to prevent the framework from failing.
 
-TODO: irgendwo muss hin, dass wir mit means auffüllen, wenn zur trinings time missing values auftauchen...
+TODO: Übergang
 
 
 \subsubsection{Simple Imputer}
@@ -124,7 +124,7 @@ Our \code{Simple Imputer} uses the column-wise \code{mean} for numerical or \cod
 
 \subsubsection{Machine Learning Imputer}
 %
-We use two common imputation methods as representatives: \emph{K-NN Imputer} and \emph{Random Forest Imputer}. Both encode categorical features as one-hot columns and normalize the data by rescaling it to zero mean and unit variance. The imputer's hyperparameters are optimized by 5-fold cross-validated grid-search.
+We use two common imputation methods as representatives: $k$\emph{-NN Imputer} and \emph{Random Forest Imputer}. Both encode categorical features as one-hot columns and normalize the data by rescaling it to zero mean and unit variance. The imputer's hyperparameters are optimized by 5-fold cross-validated grid-search.
 
 For our K-NN Imputer, we use, depending on the target columns' datatype (categorical or numerical), \code{scikit-learn}'s \code{KNeighborsClassifier} or \code{KNeighborsRegressor} and optimizes the $n\_neighbors \in \{1, 3, 5\}$  hyperparameter.
 
@@ -144,7 +144,7 @@ Several generative models are successfully applied to data imputation, especiall
 
 TODO: vanilla VAE
 
-\cite{GAIN} proposed Generative Adversarial Imputation Nets (GAIN) that adapts the GAN architecture as follows. GAIN takes as input some data $X$ and calculates a binary mask matrix $M$ that represents missing values. To normalize $X$ into $\hat{X}$, it first scales the data min-max ($0, 1$) and second replaces missing values with random uniform noise $\{0, 0.01\}$. The generator learns to output $\hat{X}$, where initially missing values are replaced, based on its input $\bar{X}$ and $M$. The discriminator learns to reconstruct the mask $M$ based on generator's output $\hat{X}$ and a hint matrix $H$, using the hyperparameter $hint\_rate$, that provides the discriminator with information about $M$.
+\cite{GAIN} proposed Generative Adversarial Imputation Nets (GAIN) that adapts the GAN architecture as follows. GAIN takes as input some data $X$ and calculates a binary mask matrix $M$ that represents missing values. To normalize $X$ into $\bar{X}$, it first scales the data min-max ($0, 1$) and second replaces missing values with random uniform noise ($\{0, 0.01\}$). The generator learns to output $\hat{X}$, where initially missing values are replaced, based on its input $\bar{X}$ and $M$. The discriminator learns to reconstruct the mask $M$ based on generator's output $\hat{X}$ and a hint matrix $H$, using the hyperparameter $hint\_rate$, that provides the discriminator with information about $M$.
 
 GAIN is optimized by minimizing the sum of the generator's loss and the with $\alpha$ weighted discriminator's loss, see \cite{GAIN} for details. Besides the learning rates, for the generator and discriminator, GAIN introduces two new hyperparameters we optimize $hint\_rate$ and $\alpha$. For this we use 3-fold cross-validated grid-search of: $generator\_learning\_rate \in \{0.0001, 0.0005\}$, $discriminator\_learning\_rate \in \{0.00001, 0.00005\}$, $\alpha \in \{1, 10\}$, and $hint\_rate \in \{0.7, 0.9\}$.
 
