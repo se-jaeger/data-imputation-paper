@@ -5,8 +5,8 @@ repos:
   rev: v2.2.3
   hooks:
   - id: trailing-whitespace
-  - id: check-added-large-files
-    args: ['–maxkb=1024']
+  #- id: check-added-large-files
+  #  args: ['–maxkb=1024']
   - id: check-ast
   - id: check-json
   - id: check-merge-conflict
