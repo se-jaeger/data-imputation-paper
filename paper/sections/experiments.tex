@@ -1,45 +1,48 @@
 
-\section{Experiments}
+\section{Implementation and Experiments}
 %
-TODO: In this section, we briefly describe our benchmark suite.
+TODO: In this section, we briefly describe the implementation of our benchmark suite.
 
-- 69 datasets
-- 6 Imputers
-- MCAR, MAR, MNAR
-- 0.01, 0.1, 0.3, 0.5
-- missing values in all columns
-- random target column
-- 3 repetitions
+As described in Section \ref{sec:methods:impuation}, we define a framework that provides for each of the six implemented imputation approaches a common API with \code{fit} and \code{transform}. \code{fit} trains the imputer for the given data and cross-validates its hyperparameters and \code{transform} allows to impute missing values of the target column the imputer is trained on. For our implementation, we use \emph{tensorflow} version 2.4.1, \emph{scikit-learn} version 0.24.1, and \emph{autokeras} version 1.0.12.
+
+For a comprehensive comparison under realistic conditions, we use the package \code{jenga}\footnote{\url{https://github.com/schelterlabs/jenga}} \citep{Jenga} to discard values. In all experiments, we spread the amount of missing values, e.g., $30\%$, over all columns. As an example, for a given missingness pattern, e.g., \emph{MAR}, we introduce $\frac{30\%}{n}$ missing values of the pattern MAR to each of the $n$ columns.
+
+The following section presents our experimental settings.
 
 
-\subsection{Downstream Task Model}
+\subsection{Experiments}
+
+We repeatedly run experiments with the settings shown in Table \ref{tab:experiment_settings}. For each of the data sets, we randomly sampled one to-be-imputed (or target) column that remains static throughout all of our experiments (see supplementary material). To reduce the randomness in our results, we run each setting three times and report the mean values.
 %
-
-
-
-\subsection{Experiment 1: Fully Observed Data}
-%
-
-
-
-\subsection{Experiment 2: Incomplete Data}
-%
-
-
-
-Experiments:
-
-
-2 Experiments:
-- train on fully observed data
-- train on already corrupted data
-	- To fit the imputer we fill missing vlaues with the mean/mode to get the pipeline running.
-
-
-
-\subsection{Evaluation Dimensions}
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{ll}
+		\toprule
+		Parameter            & Values                                     \\ \midrule
+		Datasets             & 69 datasets (see supplementary material)    \\
+		Imputer              & Mode, $k$-NN, Random Forest, DL, GAIN, VAE \\
+		Missingness Pattern  & MCAR, MAR, MNAR                            \\
+		Missingness Fraction & $1\%, 10\%, 30\%, 50\%$                      \\ \bottomrule
+	\end{tabular}
+	\caption{TODO.}
+	\label{tab:experiment_settings}
+\end{table}
 %
 
+As mentioned in Section \ref{sec:introduction}, one of our goals is to imputer's performance on two scenarios. These are described in the following sections.
+
+
+\subsubsection{Fully Observed Data}
+%
+
+
+
+\subsubsection{Incomplete Data}
+%
+
+
+\subsection{Evaluation}
+%
 Was wir messen:
 Imputation Accuracy und Downstream Performance
 
