@@ -3,16 +3,30 @@
 %
 TODO: In this section, we briefly describe the implementation of our benchmark suite.
 
-As described in Section \ref{sec:methods:impuation}, we define a framework that provides for each of the six implemented imputation approaches a common API with \code{fit} and \code{transform}. \code{fit} trains the imputer for the given data and cross-validates its hyperparameters and \code{transform} allows to impute missing values of the target column the imputer is trained on. For our implementation, we use \emph{tensorflow} version 2.4.1, \emph{scikit-learn} version 0.24.1, and \emph{autokeras} version 1.0.12.
+As described in Section \ref{sec:methods:impuation}, we define a framework that provides for each of the six implemented imputation approaches a common API with \code{fit} and \code{transform} methods. \code{fit} trains the imputer for the given data and cross-validates its hyperparameters and \code{transform} allows imputing missing values of the target column the imputer is trained on. For our implementation, we use \emph{tensorflow} version 2.4.1, \emph{scikit-learn} version 0.24.1, and \emph{autokeras} version 1.0.12.
 
-For a comprehensive comparison under realistic conditions, we use the package \code{jenga}\footnote{\url{https://github.com/schelterlabs/jenga}} \citep{Jenga} to discard values. In all experiments, we spread the amount of missing values, e.g., $30\%$, over all columns. As an example, for a given missingness pattern, e.g., \emph{MAR}, we introduce $\frac{30\%}{n}$ missing values of the pattern MAR to each of the $n$ columns.
+For a comprehensive comparison under realistic conditions, we use the package \code{jenga}\footnote{\url{https://github.com/schelterlabs/jenga}} \citep{Jenga} to discard values. In all experiments, we spread the number of missing values, e.g., $30\%$, over all columns. As an example, for a given missingness pattern, e.g., \emph{MAR}, we introduce $\frac{30\%}{n}$ missing values of the pattern MAR to each of the $n$ columns.
 
-The following section presents our experimental settings.
+
+\subsection{Evaluation}
+%
+
+
+Was wir messen:
+Imputation Accuracy und Downstream Performance
+
+Imputation Accuracy, depending on column data type:
+categorical: F1 macro
+numerical: RMSE
+
+Downstream Performance, depending on data type:
+Classification: F1 macro
+numerical: RMSE
 
 
 \subsection{Experiments}
-
-We repeatedly run experiments with the settings shown in Table \ref{tab:experiment_settings}. For each of the data sets, we randomly sampled one to-be-imputed (or target) column that remains static throughout all of our experiments (see supplementary material). To reduce the randomness in our results, we run each setting three times and report the mean values.
+%
+We repeatedly run experiments with the settings shown in Table \ref{tab:experiment_settings}. For each of the data sets, we sample one to-be-imputed (or target) column that remains static throughout all experiments (see supplementary material). To reduce the randomness in our results, we run each experiment three times and report their mean.
 %
 \begin{table}[h!]
 	\centering
@@ -29,27 +43,18 @@ We repeatedly run experiments with the settings shown in Table \ref{tab:experime
 \end{table}
 %
 
-As mentioned in Section \ref{sec:introduction}, one of our goals is to imputer's performance on two scenarios. These are described in the following sections.
+One of our goals is to measure the imputers' performance on two scenarios. These are described in the following sections.
 
 
-\subsubsection{Fully Observed Data}
+\subsubsection{Scenario 1: Complete Data}
 %
+In practice, ML researchers commonly use complete (or fully observed) data to train, tune, and validate their ML applications. However, in production it is possible that missing values occur, e.g., because of processing or transmission errors or incomplete user input. These missing values likely reduce the model's prediction performance. An imputation model trained on complete data to impute these incomplete observations can help to lift the performance. We use this \emph{Scenario 1} experiment series to simulate those situations.
+
+TODO..
 
 
-
-\subsubsection{Incomplete Data}
+\subsubsection{Scenario 2: Incomplete Data}
 %
+In contrast to \emph{Scenario 1}, when facing \emph{Scenario 2} no complete data is available. TODO..
 
-
-\subsection{Evaluation}
-%
-Was wir messen:
-Imputation Accuracy und Downstream Performance
-
-Imputation Accuracy, depending on column data type:
-categorical: F1 macro
-numerical: RMSE
-
-Downstream Performance, depending on data type:
-Classification: F1 macro
-numerical: RMSE
+TODO
