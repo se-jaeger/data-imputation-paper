@@ -113,12 +113,17 @@
 	Bdsk-Url-1 = {https://arxiv.org/abs/2007.02837}}
 
 @article{Imputation_Benchmark_2,
-	author = {Anil S. Jadhav and Dhanya Pramod and Krishnan Ramanathan},
-	biburl = {https://dblp.org/rec/journals/aai/JadhavPR19.bib},
-	doi = {10.1080/08839514.2019.1637138},
-	journal = {Appl. Artif. Intell.},
-	number = {10},
-	pages = {913--933},
+	author    = {Anil S. Jadhav and
+	Dhanya Pramod and
+	Krishnan Ramanathan},
+	title     = {Comparison of Performance of Data Imputation Methods for Numeric Dataset},
+	journal   = {Appl. Artif. Intell.},
+	volume    = {33},
+	number    = {10},
+	pages     = {913--933},
+	year      = {2019},
+	url       = {https://doi.org/10.1080/08839514.2019.1637138},
+	doi       = {10.1080/08839514.2019.1637138},
 	timestamp = {Mon, 26 Oct 2020 09:00:09 +0100},
 	biburl    = {https://dblp.org/rec/journals/aai/JadhavPR19.bib},
 	bibsource = {dblp computer science bibliography, https://dblp.org}
@@ -212,4 +217,143 @@
   timestamp = {Thu, 04 Apr 2019 13:20:07 +0200},
   biburl    = {https://dblp.org/rec/journals/corr/KingmaW13.bib},
   bibsource = {dblp computer science bibliography, https://dblp.org}
+},
+@inproceedings{VIGAN,
+	author    = {Chao Shang and
+	Aaron Palmer and
+	Jiangwen Sun and
+	Ko{-}Shin Chen and
+	Jin Lu and
+	Jinbo Bi},
+	editor    = {Jian{-}Yun Nie and
+	Zoran Obradovic and
+	Toyotaro Suzumura and
+	Rumi Ghosh and
+	Raghunath Nambiar and
+	Chonggang Wang and
+	Hui Zang and
+	Ricardo Baeza{-}Yates and
+	Xiaohua Hu and
+	Jeremy Kepner and
+	Alfredo Cuzzocrea and
+	Jian Tang and
+	Masashi Toyoda},
+	title     = {{VIGAN:} Missing view imputation with generative adversarial networks},
+	booktitle = {2017 {IEEE} International Conference on Big Data, BigData 2017, Boston,
+	MA, USA, December 11-14, 2017},
+	pages     = {766--775},
+	publisher = {{IEEE} Computer Society},
+	year      = {2017},
+	url       = {https://doi.org/10.1109/BigData.2017.8257992},
+	doi       = {10.1109/BigData.2017.8257992},
+	timestamp = {Sat, 30 May 2020 20:04:53 +0200},
+	biburl    = {https://dblp.org/rec/conf/bigdataconf/ShangPSCLB17.bib},
+	bibsource = {dblp computer science bibliography, https://dblp.org}
+},
+@inproceedings{MisGAN,
+	author    = {Steven Cheng{-}Xian Li and
+	Bo Jiang and
+	Benjamin M. Marlin},
+	title     = {MisGAN: Learning from Incomplete Data with Generative Adversarial
+	Networks},
+	booktitle = {7th International Conference on Learning Representations, {ICLR} 2019,
+	New Orleans, LA, USA, May 6-9, 2019},
+	publisher = {OpenReview.net},
+	year      = {2019},
+	url       = {https://openreview.net/forum?id=S1lDV3RcKm},
+	timestamp = {Thu, 25 Jul 2019 14:25:47 +0200},
+	biburl    = {https://dblp.org/rec/conf/iclr/LiJM19.bib},
+	bibsource = {dblp computer science bibliography, https://dblp.org}
+},
+@article{HIVAE,
+	author    = {Alfredo Naz{\'{a}}bal and
+	Pablo M. Olmos and
+	Zoubin Ghahramani and
+	Isabel Valera},
+	title     = {Handling incomplete heterogeneous data using VAEs},
+	journal   = {Pattern Recognit.},
+	volume    = {107},
+	pages     = {107501},
+	year      = {2020},
+	url       = {https://doi.org/10.1016/j.patcog.2020.107501},
+	doi       = {10.1016/j.patcog.2020.107501},
+	timestamp = {Wed, 26 Aug 2020 11:04:13 +0200},
+	biburl    = {https://dblp.org/rec/journals/pr/NazabalOGV20.bib},
+	bibsource = {dblp computer science bibliography, https://dblp.org}
+},
+@article{VAE_for_genomic_data,\n
+	author = {Qiu, Yeping Lina and Zheng, Hong and Gevaert, Olivier},\n
+	title = "{Genomic data imputation with variational auto-encoders}",\n
+	journal = {GigaScience},\n
+	volume = {9},\n
+	number = {8},\n
+	year = {2020},\n
+	month = {08},\n
+	abstract = "{As missing values are frequently present in genomic data, practical methods to handle missing data are necessary for downstream analyses that require complete data sets. State-of-the-art imputation techniques, including methods based on singular value decomposition and K-nearest neighbors, can be computationally expensive for large data sets and it is difficult to modify these algorithms to handle certain cases not missing at random.In this work, we use a deep-learning framework based on the variational auto-encoder (VAE) for genomic missing value imputation and demonstrate its effectiveness in transcriptome and methylome data analysis. We show that in the vast majority of our testing scenarios, VAE achieves similar or better performances than the most widely used imputation standards, while having a computational advantage at evaluation time. When dealing with data missing not at random (e.g., few values are missing), we develop simple yet effective methodologies to leverage the prior knowledge about missing data. Furthermore, we investigate the effect of varying latent space regularization strength in VAE on the imputation performances and, in this context, show why VAE has a better imputation capacity compared to a regular deterministic auto-encoder.We describe a deep learning imputation framework for transcriptome and methylome data using a VAE and show that it can be a preferable alternative to traditional methods for data imputation, especially in the setting of large-scale data and certain missing-not-at-random scenarios.}",\n
+	issn = {2047-217X},\n
+	doi = {10.1093/gigascience/giaa082},\n
+	url = {https://doi.org/10.1093/gigascience/giaa082},\n
+	note = {giaa082},\n
+	eprint = {https://academic.oup.com/gigascience/article-pdf/9/8/giaa082/33571399/giaa082.pdf},\n
+},
+@inproceedings{VAEM,
+	author    = {Chao Ma and
+	Sebastian Tschiatschek and
+	Richard E. Turner and
+	Jos{\'{e}} Miguel Hern{\'{a}}ndez{-}Lobato and
+	Cheng Zhang},
+	editor    = {Hugo Larochelle and
+	Marc'Aurelio Ranzato and
+	Raia Hadsell and
+	Maria{-}Florina Balcan and
+	Hsuan{-}Tien Lin},
+	title     = {{VAEM:} a Deep Generative Model for Heterogeneous Mixed Type Data},
+	booktitle = {Advances in Neural Information Processing Systems 33: Annual Conference
+	on Neural Information Processing Systems 2020, NeurIPS 2020, December
+	6-12, 2020, virtual},
+	year      = {2020},
+	url       = {https://proceedings.neurips.cc/paper/2020/hash/8171ac2c5544a5cb54ac0f38bf477af4-Abstract.html},
+	timestamp = {Mon, 29 Mar 2021 13:34:46 +0200},
+	biburl    = {https://dblp.org/rec/conf/nips/MaTTHZ20.bib},
+	bibsource = {dblp computer science bibliography, https://dblp.org}
+},
+@inproceedings{GAN,
+	author = {Goodfellow, Ian and Pouget-Abadie, Jean and Mirza, Mehdi and Xu, Bing and Warde-Farley, David and Ozair, Sherjil and Courville, Aaron and Bengio, Yoshua},
+	booktitle = {Advances in Neural Information Processing Systems},
+	editor = {Z. Ghahramani and M. Welling and C. Cortes and N. Lawrence and K. Q. Weinberger},
+	pages = {},
+	publisher = {Curran Associates, Inc.},
+	title = {Generative Adversarial Nets},
+	url = {https://proceedings.neurips.cc/paper/2014/file/5ca3e9b122f61f8f06494c97b1afccf3-Paper.pdf},
+	volume = {27},
+	year = {2014}
+},
+@Article{Graham,
+	Author="Schafer, J. L.  and Graham, J. W. ",
+	Title="{{M}issing data: our view of the state of the art}",
+	Journal="Psychol Methods",
+	Year="2002",
+	Volume="7",
+	Number="2",
+	Pages="147--177",
+	Month="Jun"
+},
+@article{Rubin,
+	ISSN = {00063444},
+	URL = {http://www.jstor.org/stable/2335739},
+	author = {Donald B. Rubin},
+	journal = {Biometrika},
+	number = {3},
+	pages = {581--592},
+	publisher = {[Oxford University Press, Biometrika Trust]},
+	title = {Inference and Missing Data},
+	volume = {63},
+	year = {1976}
+},
+@book{Little,
+	author = {Little, Roderick J. A. and Rubin, Donald B.},
+	title = {Statistical Analysis with Missing Data},
+	year = {1986},
+	isbn = {0471802549},
+	publisher = {John Wiley \& Sons, Inc.}
 }
