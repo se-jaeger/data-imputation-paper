@@ -148,3 +148,20 @@ Our VAE imputer is based on the traditional architecture \citep{VAE}. For the mi
 \cite{GAIN} proposed Generative Adversarial Imputation Nets (GAIN) that adapts the GAN architecture as follows. GAIN takes as input some data $X$, encodes categorical columns as numbers from $0$ to $n-1$, where $n$ is the number of categories, and calculates a binary mask matrix $M$ that represents missing values. To normalize $X$ into $\bar{X}$, it first scales the data min-max ($0, 1$) and second replaces missing values with random uniform noise ($\{0, 0.01\}$). The generator learns to output $\hat{X}$, where initially missing values are replaced, based on its input $\bar{X}$ and $M$. The discriminator learns to reconstruct the mask $M$ based on generator's output $\hat{X}$ and a hint matrix $H$, using the hyperparameter $hint\_rate$, that provides the discriminator with information about $M$.
 
 GAIN is optimized by minimizing the sum of the generator's loss and the with $\alpha$ weighted discriminator's loss, see \cite{GAIN} for details. Besides the learning rates, for the generator and discriminator, GAIN introduces two new hyperparameters we optimize $hint\_rate$ and $\alpha$. For this we use 3-fold cross-validated grid-search of: $generator\_learning\_rate \in \{0.0001, 0.0005\}$, $discriminator\_learning\_rate \in \{0.00001, 0.00005\}$, $\alpha \in \{1, 10\}$, and $hint\_rate \in \{0.7, 0.9\}$.
+
+
+\subsection{Evaluation Metrics}
+%
+We evaluate each experiment regarding imputation quality and the impact imputation has on the experiment's downstream ML task. Therefore, we use two metrics the $RMSE$, shown in Equation \ref{eq:RMSE}, for regression downstream task or numerical imputation and $macro\ F1$, shown in Equation \ref{eq:F1}, for classification downstream task or categorical imputation.
+%
+\begin{equation}
+	RMSE = \sqrt{\frac{1}{N} \sum_{i = 0}^{N} (x_i - \hat{x_i})^2}
+	\label{eq:RMSE}
+\end{equation}
+%
+\begin{equation}
+	macro\ F1 = \sum_{i = 0}^{N} F1_i\text{, where }F1 = \frac{TP}{TP + \frac{1}{2}(FP + FN)}
+	\label{eq:F1}
+\end{equation}
+
+TODO: In the following we use $macro\ F1$ and $F1$ synonym/interchangeably

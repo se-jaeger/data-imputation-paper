@@ -1,32 +1,17 @@
 
-\section{Implementation and Experiments}
+\section{TODO: Implementation and Experiments}
 %
 TODO: In this section, we briefly describe the implementation of our benchmark suite.
 
 As described in Section \ref{sec:methods:impuation}, we define a framework that provides for each of the six implemented imputation approaches a common API with \code{fit} and \code{transform} methods. \code{fit} trains the imputer for the given data and cross-validates its hyperparameters and \code{transform} allows imputing missing values of the target column the imputer is trained on. For our implementation, we use \emph{tensorflow} version 2.4.1, \emph{scikit-learn} version 0.24.1, and \emph{autokeras} version 1.0.12.
 
-For a comprehensive comparison under realistic conditions, we use the package \code{jenga}\footnote{\url{https://github.com/schelterlabs/jenga}} \citep{Jenga} to discard values. In all experiments, we spread the number of missing values, e.g., $30\%$, over all columns. As an example, for a given missingness pattern, e.g., \emph{MAR}, we introduce $\frac{30\%}{n}$ missing values of the pattern MAR to each of the $n$ columns.
+The Python package \code{jenga}\footnote{Software package "to study the effects of common data corruptions (e.g., missing values, broken character encodings) on the prediction quality of ML models." Source: \url{https://github.com/schelterlabs/jenga}} \citep{Jenga} provides two features we use to implement our experiments. First, it implements the mechanisms to discard values for the missingness patterns MCAR, MAR, and MNAR, as described in Section \ref{sec:missingess_pattern}. Second, it provides a wrapper for OpenML data sets, creates a $80/20$ training-test split, and can automatically train a \emph{baseline model} for the downstream task defined by the data set. Therefore, \code{jenga} uses \code{scikit-learn}'s \code{SGDClassifier} for classification and \code{SGDRegressor} for regression tasks. As preprocessing steps it first replaces missing values with a constant and second encodes categorical columns one-hot and normalizes numerical columns to zero mean and unit variance. Finally, it 5-fold cross-validates the hyperparameters \emph{loss}, \emph{penalty}, and \emph{alpha}.
 
+TODO Übergangn..
 
-\subsection{Evaluation}
+\subsection{TODO: Experiments}
 %
-
-
-Was wir messen:
-Imputation Accuracy und Downstream Performance
-
-Imputation Accuracy, depending on column data type:
-categorical: F1 macro
-numerical: RMSE
-
-Downstream Performance, depending on data type:
-Classification: F1 macro
-numerical: RMSE
-
-
-\subsection{Experiments}
-%
-We repeatedly run experiments with the settings shown in Table \ref{tab:experiment_settings}. For each of the data sets, we sample one to-be-imputed (or target) column that remains static throughout all experiments (see supplementary material). To reduce the randomness in our results, we run each experiment three times and report their mean.
+Our experimental settings are listed in Table \ref{tab:experiment_settings}. To reduce the randomness in our results, we run each experiment three times and report their mean.
 %
 \begin{table}[h!]
 	\centering
@@ -38,12 +23,35 @@ We repeatedly run experiments with the settings shown in Table \ref{tab:experime
 		Missingness Pattern  & MCAR, MAR, MNAR                            \\
 		Missingness Fraction & $1\%, 10\%, 30\%, 50\%$                      \\ \bottomrule
 	\end{tabular}
-	\caption{TODO.}
+	\caption{TODO In summe $4,968$ settings..}
 	\label{tab:experiment_settings}
 \end{table}
-%
 
-One of our goals is to measure the imputers' performance on two scenarios. These are described in the following sections.
+We evaluate the imputer's imputation quality and impact on downstream task. Therefore, we set up two experiments described in the following Sections.
+
+TODO: irgendwo muss das hin ... - For this reason, we sample one to-be-imputed (or target) column for each of the data sets that remains static throughout the experimental settings (see Table \ref{tab:experiment_settings}).
+
+TODO: experiments and scenarios erklären..
+
+\subsubsection{Experiment 1: Imputation Quality}
+\label{sec:experiment_1}
+%
+With this experiment, we aim to reveal how accurate the imputation methods can learn to impute the correct values. In practice, it is common that not only a single column is affected of missing values. Therefore, an important factor here is the imputers' robustness against missing values in other columns.
+
+With the help of \code{jenga}, we spread the number of missing values, e.g., $30\%$, over all columns. As an example, for a given missingness pattern, e.g., \emph{MAR}, we introduce $\frac{30\%}{N}$ missing values of the pattern MAR to each of the $N$ columns.
+
+The evaluation of the imputation quality is than performed using the target column's discarded values as ground truth and compare them with the imputers predictions. For this, we use $F1$-score if the target column is categorical or $RMSE$ for numerical columns.
+
+
+\subsubsection{Experiment 2: Impact on Downstream Task}
+%
+For ML researchers or engineers, it is more important to know how the usage of imputation approaches impacts the downstream task performance. \emph{Experiment 2} aims to answer this question.
+
+As described in Section \ref{sec:methods:impuation}, our framework needs to train one imputation model for each target column. This in combination with the large number of experimental settings (see Table \ref{tab:experiment_settings}) makes it infeasible to discard values in all columns (as in \emph{Experiment 1} see Section \ref{sec:experiment_1}). For this reason, we use \code{jenga} to discard values in the data sets' target column.
+
+TODO: Here explain baseline model...
+
+Finally, we report the impact on the downstream task's performance as the percent change of the imputation over the incomplete data relative to the baseline. As an example, given baseline $F1 = 0.8$, incomplete $F1 = 0.6$, and imputed $F1 = 0.75$, then the impact on the downstream task is $\frac{imputed - incomplete}{baseline} = 18.75\%$ improvement.
 
 
 \subsubsection{Scenario 1: Complete Data}
@@ -55,6 +63,9 @@ TODO..
 
 \subsubsection{Scenario 2: Incomplete Data}
 %
-In contrast to \emph{Scenario 1}, when facing \emph{Scenario 2} no complete data is available. TODO..
+%In contrast to \emph{Scenario 1}, when facing \emph{Scenario 2} no complete data is available. TODO..
+
+
+data integration..
 
 TODO
