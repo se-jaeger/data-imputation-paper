@@ -113,7 +113,7 @@ The most often used missingness pattern in the literature on missing value imput
 \subsection{Imputation Methods}
 \label{sec:methods:impuation}
 %
-In this section, we describe our six single imputation methods. The overall goal of an imputer is to train a model on $X = [X_1, X_2, ..., X_{i-1}, X_{i+1}, ..., X_n]$, where $n$ is the number of features and $X_i$ the to-be-imputed column. To abstract crucial steps, such as encode, normalize, and decode the data and cross-validate the imputer's hyperparameters, we define a framework implemented by all of our imputer implementations. As described in Section \ref{sec:introduction}, missing values can break ML pipelines. By default, we substitute missing values with column-wise mean/mode to prevent the framework from failing.
+In this section, we describe our six single imputation methods. The overall goal of an imputer is to train a model on $X = [X_1, X_2, ..., X_{i-1}, X_{i+1}, ..., X_n]$, where $n$ is the number of features and $X_i$ the to-be-imputed (or target) column. Consequently, if there are $m$ columns with missing values, we need to train $m$ imputation models. However, to abstract this and other crucial steps, such as encode, normalize, and decode the data and cross-validate the imputer's hyperparameters, we define a framework implemented by all of our imputer implementations. As described in Section \ref{sec:introduction}, missing values can break ML pipelines. By default, we substitute missing values with column-wise mean/mode to prevent the framework from failing.
 
 TODO: Übergang
 
