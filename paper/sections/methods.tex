@@ -1,12 +1,12 @@
 %!TEX root = ../data-imputation.tex
 
-\section{TODO: Methods}
+\section{Methods}
 %
 One of the main goals of this work is to provide a comprehensive evaluation of missing value imputation methods under realistic conditions. In particular we focus on two aspects a) a large suite of real-world data sets and tasks and b) realistic missingness patterns. The following sections describe the data sets we considered as well as the missingness patterns, followed by a detailed description of the imputation methods compared.
 
 \subsection{Datasets}
 %
-We focus on a broad evaluation with several numeric datasets and the most widespread tasks: regression, binary classification, and multi-class classification. The OpenML database\footnote{\url{https://www.openml.org/}} contains thousands of datasets and provides an API to automatically download them. The Python package \code{openml}\footnote{TODO} uses the API to retrieve the datasets and creates a well-formed \code{DataFrames} that encode the tables' columns properly.
+We focus on a broad evaluation with several numeric datasets and the most widespread tasks: regression, binary classification, and multi-class classification. The OpenML database\footnote{Website: \url{https://www.openml.org/}} contains thousands of datasets and provides an API to automatically download them. The Python package \code{scikit-learn} uses this API to retrieve the datasets and creates a well-formed \code{DataFrames} that encode the tables' columns properly.
 
 We filter available datasets as follows. To calculate the imputation performance, we need ground truth datasets that do not contain missing values. Further, especially deep learning models need sufficient data to learn their task properly. However, because we plan to run many experiments, the datasets must not be too big to keep training times feasible. For this reason, we choose datasets without missing values that contain 5 to 25 features and 3k to 100k observations. We then removed duplicated, corrupted, and Sparse ARFF\footnote{Attribute-Relation File Format} formatted datasets.
 
@@ -115,8 +115,6 @@ The most often used missingness pattern in the literature on missing value imput
 %
 In this section, we describe our six single imputation methods. The overall goal of an imputer is to train a model on $X = [X_1, X_2, ..., X_{i-1}, X_{i+1}, ..., X_n]$, where $n$ is the number of features and $X_i$ the to-be-imputed (or target) column. Consequently, if there are $m$ columns with missing values, we need to train $m$ imputation models. However, to abstract this and other crucial steps, such as encode, normalize, and decode the data and cross-validate the imputer's hyperparameters, we define a framework implemented by all of our imputer implementations. As described in Section \ref{sec:introduction}, missing values can break ML pipelines. By default, we substitute missing values with column-wise mean/mode to prevent the framework from failing.
 
-TODO: Übergang
-
 
 \subsubsection{Simple Imputer}
 %
@@ -151,7 +149,7 @@ Our VAE imputer is based on the traditional architecture \citep{VAE}. We encode 
 
 \subsection{Evaluation Metrics}
 %
-We evaluate each experiment regarding imputation quality and the impact imputation has on the experiment's downstream ML task. Therefore, we use two metrics the $RMSE$, shown in Equation \ref{eq:RMSE}, for regression downstream task or numerical imputation and $macro\ F1$, shown in Equation \ref{eq:F1}, for classification downstream task or categorical imputation.
+To evaluate our experiments, we use two metrics. For regression downstream tasks or numerical imputation, we use the $RMSE$, shown in Equation \ref{eq:RMSE}, and for classification downstream tasks or categorical imputation the $macro\ F1$, shown in Equation \ref{eq:F1}.
 %
 \begin{equation}
 	RMSE = \sqrt{\frac{1}{N} \sum_{i = 0}^{N} (x_i - \hat{x_i})^2}
@@ -162,5 +160,5 @@ We evaluate each experiment regarding imputation quality and the impact imputati
 	macro\ F1 = \sum_{i = 0}^{N} F1_i\text{, where }F1 = \frac{TP}{TP + \frac{1}{2}(FP + FN)}
 	\label{eq:F1}
 \end{equation}
-
-TODO: In the following we use $macro\ F1$ and $F1$ synonym/interchangeably
+%
+Because $RMSE$ measures an error, the lower its value the better the performance. On the other hand, $F1$ (we use $macro\ F1$ and $F1$ synonym) calculates a score and, therefore, greater $F1$ means better performance.
