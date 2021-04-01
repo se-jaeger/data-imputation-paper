@@ -1,4 +1,5 @@
 
+import json
 from pathlib import Path
 from typing import List, Tuple
 
@@ -86,9 +87,9 @@ IMPUTER_ARGUMENTS = {
     }
 }
 
-BINARY_TASK_IDS = [int(x) for x in Path("../data/raw/binary.txt").read_text().split(",")]
-MULTI_TASK_IDS = [int(x) for x in Path("../data/raw/multi.txt").read_text().split(",")]
-REGRESSION_TASK_IDS = [int(x) for x in Path("../data/raw/regression.txt").read_text().split(",")]
+BINARY_TASK_IDS = [int(x) for x in json.loads(Path("../data/raw/binary.txt").read_text()).keys()]
+MULTI_TASK_IDS = [int(x) for x in json.loads(Path("../data/raw/multi.txt").read_text()).keys()]
+REGRESSION_TASK_IDS = [int(x) for x in json.loads(Path("../data/raw/regression.txt").read_text()).keys()]
 
 
 def get_missing_fractions(missing_fractions) -> List[float]:
@@ -149,6 +150,7 @@ def get_imputer_class_and_arguments(imputer_name: str) -> BaseImputer:
 def main(
     task_id: int,
     imputer: str,
+    target_column: str,
     experiment_name: str,
     missing_fractions: str = typer.Option(str, help="comma-separated list"),
     missing_types: str = typer.Option(str, help="comma-separated list"),
@@ -176,7 +178,7 @@ def main(
         timestamp=experiment_name,
         fully_observed=False if "corrupted" in experiment_name else True
     )
-    experiment.run()
+    experiment.run(target_column)
 
 
 if __name__ == '__main__':

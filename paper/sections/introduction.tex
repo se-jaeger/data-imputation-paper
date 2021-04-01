@@ -1,0 +1,21 @@
+\section{Introduction}
+\label{sec:introduction}
+
+A common problem in practice while working on machine learning (ML) or data analysis tasks is handling \emph{missing values} (TODO: cite). Reasons for incomplete data are manifold, e.g., accidentally not recorded, lost through application or transmission errors, intentionally not filled out by users, or result because different data sources were merged (TODO: cite. Most ML algorithms and pipelines do not work well with missing values. Therefore, handling missing values presents data processing challenges.
+
+In the last decades, statistician laid theoretical foundations, such as \cite{Rubin} who described the three missingness patterns first: missing completely at random (MCAR), missing at random (MAR), and missing not at random (MNAR) (more details in Section \ref{sec:missingess_pattern}), developed statistical approaches to handle missing values and reviewed there advantages and limitations \citep{Graham}. Simple strategies, such as dropping incomplete observations or replace missing values with constant mathematically valid values, often reduce the amount of available data for downstream tasks or, depending on the missingness pattern, might also bias them and further decrease data quality \citep{Little, Graham}.
+
+With improvements of ML algorithms, methods to impute missing values evolved too. We define four different categories with the increasing complexity of imputation methods:
+%
+\begin{enumerate}
+	\item \textbf{Simple:} substitute missing values with the column-wise mean or mode
+	\item \textbf{Classical Machine Learning:} use a $k$-NN, random forest, logistic regression, or similar models
+	\item \textbf{Deep Learning:} use a neural network
+	\item \textbf{Generative:} use generative models, such as variational autoencoders or generative adversarial network
+\end{enumerate}
+%
+However, it remains unclear whether more complex imputation methods capture the underlying data distribution more precisely and, therefore, increase their imputation accuracy and how imputing missing values for varying missing patterns impact the downstream task performance.
+
+In this paper, we aim at filling this gap. We comprehensively benchmark representative imputers of each imputation category. For this, we use $69$ fully observed numeric (binary classification, multi-class classification, and regression task) datasets and run experiments by artificially introducing varying fractions of missing values of the three missingness patterns. We then measure both the imputation accuracy and impact on downstream performance. In practice, there are two scenarios we simulate: (a) missing values first appear in production, i.e., we train on complete data, and (b) the train data has missing values, i.e., we train on incomplete data.
+
+The rest of the paper is structured as follows ... TODO.

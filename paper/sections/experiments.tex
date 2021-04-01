@@ -1,0 +1,80 @@
+
+\section{Implementation and Experiments}
+%
+In this section, we describe our benchmark suite in detail and its implementation.
+
+As described in Section \ref{sec:methods:impuation}, we define a framework that provides for each of the six implemented imputation approaches a common API with \code{fit} and \code{transform} methods. \code{fit} trains the imputer for the given data and cross-validates its hyperparameters and \code{transform} allows imputing missing values of the target column the imputer is trained on. For our implementation, we use \emph{tensorflow} version 2.4.1, \emph{scikit-learn} version 0.24.1, and \emph{autokeras} version 1.0.12.
+
+The Python package \code{jenga}\footnote{Software package "to study the effects of common data corruptions (e.g., missing values, broken character encodings) on the prediction quality of ML models." Source: \url{https://github.com/schelterlabs/jenga}} \citep{Jenga} provides two features we use to implement our experiments. First, it implements the mechanisms to discard values for the missingness patterns MCAR, MAR, and MNAR, as described in Section \ref{sec:missingess_pattern}. Second, it provides a wrapper for OpenML data sets, creates a $80/20$ training-test split, and can automatically train a \emph{baseline model} for the downstream task defined by the data set. Therefore, \code{jenga} uses \code{scikit-learn}'s \code{SGDClassifier} for classification and \code{SGDRegressor} for regression tasks. As preprocessing steps it first replaces missing values with a constant and second encodes categorical columns one-hot and normalizes numerical columns to zero mean and unit variance. Finally, to train a robust model it 5-fold cross-validates the hyperparameters using grid-search: \emph{loss}, \emph{penalty}, and \emph{alpha}. For classification tasks, \code{jenga} reports the baseline model's $F1$ score and for regression task the $RMSE$ based on the test set.
+
+
+\subsection{Experimental Setting}
+%
+Our experimental settings are listed in Table \ref{tab:experiment_settings}. To reduce the randomness in our results, we run each experiment three times and report their mean.
+%
+\begin{table}
+	\centering
+	\begin{tabular}{ll}
+		\toprule
+		Parameter            & Values                                     \\ \midrule
+		Datasets             & 69 datasets (see supplementary material)    \\
+		Imputer              & Mode, $k$-NN, Random Forest, DL, GAIN, VAE \\
+		Missingness Pattern  & MCAR, MAR, MNAR                            \\
+		Missingness Fraction & $1\%, 10\%, 30\%, 50\%$                      \\ \bottomrule
+	\end{tabular}
+	\caption{Overview of our experimental settings. We focus on covering an extensive range of the in Section \ref{sec:related_work} described dimensions. In total these are $4,968$ experiments, which we repeat three times and report the mean to reduce the randomness of our results.}
+	\label{tab:experiment_settings}
+\end{table}
+%
+For each of the data sets, we sample one to-be-imputed (or target) column upfront that remain static throughout our experiments.
+
+We split the experiments into four parts. \emph{Experiment 1} (Section \ref{sec:experiment_1}) and \emph{Experiment 2} (Section \ref{sec:experiment_2}) compare the imputation approaches based on their imputation quality and impact on the downstream task. Both experiments are then repeated in two scenarios: \emph{Scenario 1} (Section \ref{sec:scenario_1}) and \emph{Scenario 2} (Section \ref{sec:scenario_2}), with complete and incomplete training data.
+
+%\sebastian{Klar machen, dass man erstmal nur den test set corrupted...}
+%\sebastian{plot nebeneinander mit flow chart oä..}
+
+\subsubsection{Experiment 1: Imputation Quality}
+\label{sec:experiment_1}
+%
+With this experiment, we aim to reveal how accurate the imputation methods can learn to impute the correct values. In practice, it is common that not only a single column is affected of missing values. Therefore, an important factor is the imputation model's robustness against missing values in other columns.
+
+With the help of \code{jenga}, we spread the number of missing values over all columns of the test set. For example, for a given missingness pattern, e.g., \emph{MAR} and missingness fraction, e.g., $30\%$, we introduce $\frac{30\%}{N}$ missing values of the pattern MAR to each of the $N$ columns.
+
+The evaluation of the imputation quality is than performed using the target column's discarded values as ground truth and the imputer's predictions. If the target column is categorical, we report the $F1$-score and for numerical columns the $RMSE$.
+
+
+\subsubsection{Experiment 2: Impact on Downstream Task}
+\label{sec:experiment_2}
+%
+For ML researchers or engineers, knowing an imputation approach's impact on the downstream task is important. \emph{Experiment 2} is designed to give indications for this.
+
+As described in Section \ref{sec:methods:impuation}, our framework needs to train one imputation model for each target column. This in combination with the large number of experimental settings (see Table \ref{tab:experiment_settings}) makes it infeasible to discard values in all columns (as in \emph{Experiment 1}, see Section \ref{sec:experiment_1}). For this reason, we only discard values in the test sets' target column.
+
+First, we train the baseline model on the training set and report its $baseline$ score ($F1$ for classification and $RMSE$ for regression tasks) on the test set. Second, after discarding values in the target column, we again use the trained baseline model and calculate its score on the incomplete test set, hence the name: $incomplete$. Third, we impute the missing values of the test set and, once more, using the trained baseline model, calculate the $imputed$ score. Finally, we report the impact on the downstream task's performance as the percent change of the imputation over the incomplete data relative to the baseline:
+%
+\begin{equation}
+	impact\ on \ downstream\ task = \frac{imputed - incomplete}{baseline}
+	\label{eq:impact}
+\end{equation}
+%
+
+
+
+\subsubsection{Scenario 1: Complete Data}
+\label{sec:scenario_1}
+%
+In practice, ML researchers commonly use complete (or fully observed) data to train, tune, and validate their ML applications. However, in production it is possible that missing values occur, e.g., because of processing or transmission errors or incomplete user input. These missing values likely reduce the model's prediction performance. An imputation model trained on complete data to impute these incomplete observations can help to lift the performance. We use \emph{Scenario 1} to simulate those situations and run both experiments as described in Section \ref{sec:experiment_1} and \ref{sec:experiment_2}
+
+
+\subsubsection{Scenario 2: Incomplete Data}
+\label{sec:scenario_2}
+%
+Integrating different data sources into a single data set often produces missing values. Reasons for this are, e.g., optional information in one of the sources or different values from multiple sources for one information, which are then removed. Changing strategies, e.g., add or remove a feature, or errors during data collection can also lead to incomplete data sets. Training ML models on this incomplete data set requires a strategy for handling missing values.
+The strategy, we want to evaluate here is to train both the ML and imputation model on incomplete data.  In production, the ML pipeline then would first impute missing values and, second, use the ML model for prediction. To simulate \emph{Scenario 2}, we adapt \emph{Experiment 1} and \emph{Experiment 2} slightly.
+
+We first introduce missing values in the training and test set and then train the baseline and imputation model based on these incomplete training and test set. The calculation of the imputation quality (\emph{Experiment 1}, Section \ref{sec:experiment_1}) remains the same. However, to calculate the impact on downstream task, we lack the availability of the $baseline$ score trained on complete data. Therefore, we adapt Equation \ref{eq:impact} as follows:
+%
+\begin{equation}
+	impact\ on \ downstream\ task = \frac{imputed - incomplete}{incomplete}
+\end{equation}
+%

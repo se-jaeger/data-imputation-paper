@@ -1,0 +1,20 @@
+FROM tensorflow/tensorflow:2.4.1-gpu
+
+RUN apt-get update && apt-get install --no-install-recommends -y \
+        git \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN pip install typer autokeras optuna pandas scikit-learn imgaug imagecorruptions
+
+# Add code
+ADD . /workdir
+
+WORKDIR /workdir/src/jenga
+RUN python setup.py develop
+
+WORKDIR /workdir
+RUN python setup.py develop
+
+WORKDIR /workdir/scripts
+
+ENTRYPOINT ["python", "run-experiment.py"]

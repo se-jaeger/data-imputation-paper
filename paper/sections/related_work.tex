@@ -1,0 +1,26 @@
+\section{Related Work}
+\label{sec:related_work}
+
+Besides many papers that present new or improved imputation methods \citep{Imputation_Benchmark_4, Imputation_Benchmark_6, GAIN, VAE_for_genomic_data, HIVAE, MisGAN, VIGAN}, several studies compare and benchmark imputation strategies \citep{Imputation_Benchmark_1, Imputation_Benchmark_2, Imputation_Benchmark_3}. However, they often focus on specific aspects or use cases and do not aim at an extensive comparison. In contrast to this, our goal is to get a broad overview of the following  dimension:
+%
+\begin{enumerate}
+	\item number of data sets and varying downstream tasks (binary classification, multi-class classification, and regression)
+	\item missingness patterns and amount of missing values
+	\item chosen imputation methods and optimized hyperparameters
+	\item evaluation on imputation accuracy and impact on downstream task performance
+	\item compare these for complete and incomplete data
+\end{enumerate}
+
+\cite{Imputation_Benchmark_3} compared the downstream task performance on two binary classification data sets ($N = 48,842$, and $N = 435$) with imputed and incomplete data. Therefore, they varied the amount of MCAR and MNAR values from $0\%$ to $40\%$ in categorical features. For the imputation, they used five models we would categorize as simple and classical ML. The authors optimize the hyperparameters for one of the three downstream task but not for the imputation models.
+
+Similarly, \cite{Imputation_Benchmark_2} compare seven simple and classical ML imputation methods without optimizing their hyperparameters based on five small and numeric data sets (max. $1030$ observations). The authors discuss different missingness patterns but do not state which one is used to discard values for their experiments. However, they measured the methods' imputation performance for $10\%$ to $50\%$ missing values.
+
+\cite{Imputation_Benchmark_1} evaluate and compare seven simple and classical ML imputation methods combined with five classification models regarding their prediction performance. Therefore,  they use $13$ binary classification data sets with missing values in at least one column and do not know the data's missingness pattern. The amount of missing values ranges between $1\%$ and about $33\%$. In contrast to \citep{Imputation_Benchmark_3, Imputation_Benchmark_2}, the authors coping with the situation where only incomplete data is available for training.
+
+The following two papers differ from the others because their main goal is to compare their proposed method against existing approaches. \cite{Imputation_Benchmark_6} implement an iterative expectation-maximization (EM) algorithm that learns and optimizes a latent representation, parameterized by a deep neural network, of the data distribution to perform the imputation. They use ten classification and three regression task data sets and 11 simple and classical ML imputation baselines for comparison. The authors conducted both evaluations, imputation and downstream task performance, with $25\%$, $50\%$, and $75\%$ MNAR missing values.
+
+To the best of our knowledge \citep{Imputation_Benchmark_4} is the biggest and most extensive comparison, although the authors focus on introducing an imputation algorithm and present its improvements. Their proposed algorithm cross-validates the choice of the best imputation method out of $k$-NN, SVM, or Tree-based imputation methods, where the hyperparameters are cross-validate too. The authors then benchmarked their method on $84$ classification and regression tasks against five simple and classical ML imputation methods. They measured the imputation and downstream task performance on $10\%$ to $50\%$ MCAR and MNAR missing values.
+
+To summarize, there are papers that compare different imputation methods. However, most of the time they compare very specific settings, which often do not generalize well. Further, there are no benchmarks that also incorporate DL or generative imputation methods. In contrast to these papers, our work aims at build a broad and comprehensive benchmark that achieve maximal variance on all the five dimension, described at the beginning of this section.
+
+%\sebastian{TODO: maybe table .. summarize all these... }
