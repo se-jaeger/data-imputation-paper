@@ -5,8 +5,10 @@
 
 
 \begin{figure}\centering
-    \includegraphics[width=1\columnwidth]{corrupted_impute_rank_boxplot.png}
+    \includegraphics[width=1\columnwidth]{corrupted_impute_rank_boxplot.eps}
     \caption[Corrupted imputation ranks]{In this figure, we visualize the results of experiment 1 (imputation quality) in the \textit{corrupted} setting. The imputation rank is plotted against the missingness fraction. The plot is divided into six sub-plots, with three columns determined by the missingness type, ordered by task difficulty from easiest to hardest (MCAR, MAR, MNAR). In the first row of sub-plots we depict results of regression tasks, whereas the second row contains classification results. Within a single sub-plot, each box represents the distibution of ranks of a single imputer over all corresponding datasets/columns.}\label{fig:corrupted_impute_rank_boxplot}
 \end{figure}
 
 The \textit{imputation rank} is the rank of the six imputers imputation performance on a single dataset-column combination. The values therefore lie within the interval [1, 6]. For numerical columns it is based on RMSE where lower is better. And for categorical columns it is based on the F1 macro score where higher is better. $n$ imputers with equal performance are assigned the same rank $r$ and the next best imputer gets the rank $r+n$.
+
+XXXXX
