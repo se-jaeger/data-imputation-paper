@@ -1,21 +1,29 @@
+%!TEX root = ../data-imputation.tex
 \section{Introduction}
 \label{sec:introduction}
 
-A common problem in practice while working on machine learning (ML) or data analysis tasks is handling \emph{missing values} (TODO: cite). Reasons for incomplete data are manifold, e.g., accidentally not recorded, lost through application or transmission errors, intentionally not filled out by users, or result because different data sources were merged (TODO: cite. Most ML algorithms and pipelines do not work well with missing values. Therefore, handling missing values presents data processing challenges.
+In recent years complex data pipelines have become a central component of many software systems. It has been widely recognised that monitoring and improving data quality in these modern software applications is an important challenge at the intersection of data base management systems (DBMS) and machine learning (ML) \citep{Schelter2015,Abedjan2018}. A substantial part of the engineering efforts required for maintenance of large scale production systems, especially when ML components are involved, is dedicated to data quality \citep{Sculley2015,Bose2017b}. 
 
-In the last decades, statistician laid theoretical foundations, such as \cite{Rubin} who described the three missingness patterns first: missing completely at random (MCAR), missing at random (MAR), and missing not at random (MNAR) (more details in Section \ref{sec:missingess_pattern}), developed statistical approaches to handle missing values and reviewed there advantages and limitations \citep{Graham}. Simple strategies, such as dropping incomplete observations or replace missing values with constant mathematically valid values, often reduce the amount of available data for downstream tasks or, depending on the missingness pattern, might also bias them and further decrease data quality \citep{Little, Graham}.
+Poor data quality can quickly break software applications and lead to application downtimes, which often lead to significant economic cost. More importantly poor data quality can also lead to automated decisions that are unfair, marginalizing minorities or have other negative impact on a societal level~\citep{Stoyanovich2020,Yang2020,Bender2021}. This is why many researchers have started investigating to what extent monitoring of data quality can be automated \citep{Abedjan2016,Baylor2017,Schelter2018,rukat2020towards}. While some aspects of such monitoring, like consistency of data types, are easy to automate, others, like semantic correctness\footnote{A great example from life sciences is given in~\citep{Ziemann2016}}, are are still subject of active research~\citep{biessmann2021automated}. However even if automatic monitoring tools such as those proposed in~\citep{Schelter2017} would be used, a central challenge remains: How can we fix the data quality problems detected automatically?
 
-With improvements of ML algorithms, methods to impute missing values evolved too. We define four different categories with the increasing complexity of imputation methods:
+One of the most frequent data quality problems are \emph{missing values}~\citep{Kumar}. Reasons for incomplete data are manifold: data might be accidentally not recorded, lost through application or transmission errors, intentionally not filled out by users, or result from data integration errors.
 %
-\begin{enumerate}
-	\item \textbf{Simple:} substitute missing values with the column-wise mean or mode
-	\item \textbf{Classical Machine Learning:} use a $k$-NN, random forest, logistic regression, or similar models
-	\item \textbf{Deep Learning:} use a neural network
-	\item \textbf{Generative:} use generative models, such as variational autoencoders or generative adversarial network
-\end{enumerate}
-%
-However, it remains unclear whether more complex imputation methods capture the underlying data distribution more precisely and, therefore, increase their imputation accuracy and how imputing missing values for varying missing patterns impact the downstream task performance.
+Throughout the past decades, statisticians laid the theoretical foundations for missing value imputation \citep{Rubin}, for instance by describing different missingness patterns (more details in Section \ref{sec:missingess_pattern}). Statistical approaches have been proposed to handle missing values \citep{Graham}. Simple strategies include dropping incomplete observations or replacing missing values with constant mathematically valid values. While this might be a reasonable solution to ensure robust functioning of data pipelines, such approaches often reduce the amount of available data for downstream tasks. And depending on the missingness pattern such approaches might also bias downstream applications~\citep{Stoyanovich2020,Yang2020} and thus further decrease data quality of the output of an application \citep{Little, Graham}. Other approaches popular in the statistics literature use more sophisticated modelling, such as multivariate imputation by chained equations (MICE) (Little and Rubin, 2002).
 
-In this paper, we aim at filling this gap. We comprehensively benchmark representative imputers of each imputation category. For this, we use $69$ fully observed numeric (binary classification, multi-class classification, and regression task) datasets and run experiments by artificially introducing varying fractions of missing values of the three missingness patterns. We then measure both the imputation accuracy and impact on downstream performance. In practice, there are two scenarios we simulate: (a) missing values first appear in production, i.e., we train on complete data, and (b) the train data has missing values, i.e., we train on incomplete data.
+More recently also ML approaches are being increasingly used for imputation. Popular approaches include k-nearest neighbors (KNN)~\citep{Batista2003}, matrix factorization~\citep{Troyanskaya2001,Koren2009,Mazumder2010}, random forest based approaches~\citep{Stekhoven2012} and also deep learning methods~\citep{HIVAE,GAIN,Biessmann2018a}.
+
+%With improvements of ML algorithms, methods to impute missing values evolved too. We define four different categories with the increasing complexity of imputation methods:
+%%
+%\begin{enumerate}
+%	\item \textbf{Simple:} substitute missing values with the column-wise mean or mode
+%	\item \textbf{Classical Machine Learning:} use a $k$-NN, random forest, logistic regression, or similar models
+%	\item \textbf{Deep Learning:} use a neural network
+%	\item \textbf{Generative:} use generative models, such as variational autoencoders or generative adversarial network
+%\end{enumerate}
+%
+
+Most of this work on imputation provides solid experimental evidence that the respective proposed method in the application setting investigated outperforms other competitor baselines. Yet it remains difficult to assess which imputation method would consistently perform best in a large spectrum of application scenarios and data sets under realistic missingness conditions. In particular most studies to not report both imputation quality as well as the impact of the imputation on downstream ML applications. 
+
+In this paper, we aim at filling this gap. We benchmark a representative set of imputation methods on a large number of data sets under realistic missingness conditions with respect to imputation quality as well as impact on the predictive performance of downstream ML models. For our experiments use $69$ fully observed numeric (binary classification, multi-class classification, and regression task) datasets and run experiments by artificially introducing varying fractions of missing values of the three missingness patterns. We then measure both the imputation accuracy and impact on downstream performance. In practice, there are two scenarios we simulate: (a) missing values first appear in production, i.e., we train on complete data, and (b) the train data has missing values, i.e., we train on incomplete data.
 
 The rest of the paper is structured as follows ... TODO.
