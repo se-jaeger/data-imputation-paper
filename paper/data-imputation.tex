@@ -19,6 +19,10 @@
 \usepackage{url,hyperref,lineno,microtype,subcaption}
 \usepackage[onehalfspacing]{setspace}
 \usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{dsfont}
 
 
 \linenumbers
@@ -39,7 +43,8 @@
 
 \def\corrEmail{sebastian.jaeger@beuth-hochschule.de}
 
-
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\newcommand{\R}{\ensuremath{\mathds{R}}}
 
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\felix}[1]{\textcolor{red}{[Felix: #1]}}
@@ -51,7 +56,7 @@
 \onecolumn
 \firstpage{1}
 
-\title[A Comprehensive Benchmark for Data Imputation Methods]{A Comprehensive Benchmark for Data Imputation Methods}
+\title[A Benchmark for Data Imputation Methods]{A Benchmark for Data Imputation Methods}
 
 \author[\firstAuthorLast ]{\Authors} %This field will be automatically populated
 \address{} %This field will be automatically populated
