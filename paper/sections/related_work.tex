@@ -3,14 +3,15 @@
 \label{sec:related_work}
 \felix{Hier waere ne table gut, was schon andere gemacht haben}
 \sebastian{TODO: rework "simple" and ML imputatiaon ...}
-Besides many papers that present new or improved imputation methods \citep{Imputation_Benchmark_4, Imputation_Benchmark_6, GAIN, VAE_for_genomic_data, HIVAE, MisGAN, VIGAN}, several studies compare and benchmark imputation strategies \citep{Imputation_Benchmark_1, Imputation_Benchmark_2, Imputation_Benchmark_3}. However, they often focus on specific aspects or use cases and do not aim at an extensive comparison. In contrast to this, our goal is to get a broad overview of the following  dimension:
+There are many studies presenting new or improved imputation methods \citep{Imputation_Benchmark_4, Imputation_Benchmark_6, GAIN, VAE_for_genomic_data, HIVAE, MisGAN, VIGAN}. And several studies compare and benchmark imputation strategies \citep{Imputation_Benchmark_1, Imputation_Benchmark_2, Imputation_Benchmark_3}. What both types of studies. have in common is that they often focus on specific aspects or use cases and do not aim at an extensive comparison. In contrast, our goal is to get a broad overview of the following dimensions:
 %
 \begin{enumerate}
-	\item number of data sets and varying downstream tasks (binary classification, multi-class classification, and regression)
-	\item missingness patterns and amount of missing values
-	\item chosen imputation methods and optimized hyperparameters
+	\item number and heterogeneity of data sets
+	\item varying downstream tasks (binary classification, multi-class classification, and regression)
+	\item realistic missingness patterns and amount of missing values
+	\item imputation methods and optimized hyperparameters
 	\item evaluation on imputation accuracy and impact on downstream task performance
-	\item compare these for complete and incomplete data
+	\item training on complete and incomplete data
 \end{enumerate}
 
 \cite{Imputation_Benchmark_3} compared the downstream task performance on two binary classification data sets ($N = 48,842$, and $N = 435$) with imputed and incomplete data. Therefore, they varied the amount of MCAR and MNAR values from $0\%$ to $40\%$ in categorical features. For the imputation, they used five models we would categorize as simple and classical ML. The authors optimize the hyperparameters for one of the three downstream task but not for the imputation models.
@@ -23,6 +24,6 @@ The following two papers differ from the others because their main goal is to co
 
 To the best of our knowledge \citep{Imputation_Benchmark_4} is the biggest and most extensive comparison, although the authors focus on introducing an imputation algorithm and present its improvements. Their proposed algorithm cross-validates the choice of the best imputation method out of $k$-NN, SVM, or Tree-based imputation methods, where the hyperparameters are cross-validate too. The authors then benchmarked their method on $84$ classification and regression tasks against five simple and classical ML imputation methods. They measured the imputation and downstream task performance on $10\%$ to $50\%$ MCAR and MNAR missing values.
 
-To summarize, there are papers that compare different imputation methods. However, most of the time they compare very specific settings, which often do not generalize well. Further, there are no benchmarks that also incorporate DL or generative imputation methods. In contrast to these papers, our work aims at build a broad and comprehensive benchmark that achieve maximal variance on all the five dimension, described at the beginning of this section.
+To summarize, there are papers that compare different imputation methods. However, most of the time they compare very specific settings, which often do not generalize well. Further, there are no benchmarks that also incorporate DL or generative imputation methods. And studies presenting novel imputation methods based on deep learning often lack a comprehensive comparison with classical methods under realistic conditions, with few exceptions~\citep{Imputation_Benchmark_6}. Here we aim at a broad and comprehensive benchmark accounting for all of the above dimensions described at the beginning of this section.
 
 %\sebastian{TODO: maybe table .. summarize all these... }

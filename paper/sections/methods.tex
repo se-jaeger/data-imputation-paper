@@ -7,7 +7,7 @@ One of the main goals of this work is to provide a comprehensive evaluation of m
 
 \subsection{Datasets}
 %
-We focus on a broad evaluation with several numeric datasets and tasks (regression, binary classification, and multi-class classification). The OpenML database\footnote{Website: \url{https://www.openml.org/}} contains thousands of datasets and provides an API to automatically download them. The Python package \code{scikit-learn} uses this API to retrieve the datasets and creates well-formed \code{DataFrames} that encode the tables' columns properly.
+We focus on a broad evaluation with several numeric datasets and tasks (regression, binary classification, and multi-class classification). The OpenML database\footnote{Website: \url{https://www.openml.org/}}~\citep{OpenML2013} contains thousands of datasets and provides an API to automatically download them. The Python package \code{scikit-learn} \citep{scikit-learn} uses this API to retrieve the datasets and creates well-formed \code{DataFrames} that encode the tables' columns properly.
 
 We filter available datasets as follows. To calculate the imputation performance, we need ground truth datasets that do not contain missing values. Further, especially deep learning models need sufficient data to learn their task properly. However, because we plan to run many experiments, the datasets must not be too big to keep training times feasible. For this reason, we choose datasets without missing values that contain 5 to 25 features and 3k to 100k observations. We then removed duplicated, corrupted, and Sparse ARFF\footnote{Attribute-Relation File Format} formatted datasets.
 
