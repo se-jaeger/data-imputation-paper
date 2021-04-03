@@ -136,7 +136,7 @@ Our \code{Simple Imputer} uses the column-wise \code{mean} for numerical or \cod
 
 \subsubsection{KNN Imputation}
 %
-A popular ML imputation baseline is KNN imputation, also known as Hot-Deck imputation~\citep{Batista2002}. \felix{isn't the encoding the same for most methods? if so, we should place that somewhere else, before the methods, and highlight the different steps in the pipeline in a flow chart} We encode categorical features as one-hot columns and normalize the data by rescaling it to zero mean and unit variance. The hyperparameter $k \in \{1, 3, 5\}$ is optimized by 5-fold cross-validated grid-search.
+A popular ML imputation baseline is KNN imputation, also known as Hot-Deck imputation~\citep{Batista2003}. \felix{isn't the encoding the same for most methods? if so, we should place that somewhere else, before the methods, and highlight the different steps in the pipeline in a flow chart} We encode categorical features as one-hot columns and normalize the data by rescaling it to zero mean and unit variance. The hyperparameter $k \in \{1, 3, 5\}$ is optimized by 5-fold cross-validated grid-search.
 Depending on the target column datatype (categorical or numerical) we use the \code{scikit-learn} implementation \code{KNeighborsClassifier} or \code{KNeighborsRegressor}, respectively.
 
 \subsubsection{Random Forest Imputation}
