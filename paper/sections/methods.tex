@@ -6,6 +6,7 @@
 One of the main goals of this work is to provide a comprehensive evaluation of missing value imputation methods under realistic conditions. In particular we focus on two aspects a) a large suite of real-world data sets and tasks and b) realistic missingness patterns. The following sections describe the data sets we considered as well as the missingness patterns, followed by a detailed description of the imputation methods compared and the metrics used for the evaluation.
 
 \subsection{Datasets}
+\label{sec:datasets}
 %
 We focus on a broad evaluation with several numeric datasets and tasks (regression, binary classification, and multi-class classification). The OpenML database\footnote{Website: \url{https://www.openml.org/}}~\citep{OpenML2013} contains thousands of datasets and provides an API to automatically download them. The Python package \code{scikit-learn} \citep{scikit-learn} uses this API to retrieve the datasets and creates well-formed \code{DataFrames} that encode the tables' columns properly.
 
@@ -19,11 +20,11 @@ The resulting 69 datasets are composed of 21 regression, 31 binary classificatio
 Most research on missing value imputation considers three different types of missingness patterns:
 %
 \begin{itemize}
-\item Missing completely at random (MCAR, see \autoref{tab:missingness_patterns_MCAR}): \\
+\item Missing completely at random (MCAR, see Table \ref{tab:missingness_patterns_MCAR}): \\
 Values are discarded independent of any other values
-\item Missing at random (MAR, see \autoref{tab:missingness_patterns_MAR}): \\
+\item Missing at random (MAR, see Table \ref{tab:missingness_patterns_MAR}): \\
 Values in column $c$ are discarded dependent on values in another column $k\neq c$
-\item Missing not at random (MNAR, see \autoref{tab:missingness_patterns_MNAR}): \\
+\item Missing not at random (MNAR, see Table \ref{tab:missingness_patterns_MNAR}): \\
 Values in column $c$ are discarded dependent on their value in $c$
 \end{itemize}
 %
@@ -111,60 +112,59 @@ The most often used missingness pattern in the literature on missing value imput
 \end{table}
 
 \subsection{Data Preprocessing}
-\felix{Here we can describe the encoding steps independently of the imputation methods}
-
-general do the following: 1. encode the data, 2. handle missing values, 3. normalize
-
+\label{sec:preprocessing}
+%
+Data preprocessing is often an important part of ML pipelines to achieve good results (TODO: cite?). In general, we do the following three preprocessing steps for all imputation methods:
+%
 \begin{itemize}
-	\item discriminate approaches: one-hot encode, substitute missing values with mean/mode, numerical columns - rescale to zero mean and unit variance
-	\item generative approaches: replace categories with 0 - n-1 .., replace missing values with random uniform noise ($\{0, 0.01\}$), min-max scale (0/1)
+	\item Encode: \\
+		The data sets (see Section \ref{sec:datasets}) we use are of heterogeneous columns, thus, categorical columns need to be encoded into a numerical representation
+
+	\item Handle missing values: \\
+		To avoid the imputation model from failing, it is necessary to handle missing values
+
+	\item Normalize: \\
+		Re-scale the columns to a common range makes ML algorithms more stable.
 \end{itemize}
+%
+Encoding and normalizing mechanisms are defined on the training set and equally applied on the test set. The actual techniques varying for discriminative (described in Section \ref{sec:simple_imputation} to \ref{sec:dl_imputation}) and generative (described in Section \ref{sec:generative_imputation}) imputation approaches.
+
+For discriminative imputation approaches, we substitute all missing values in the predictor columns with their column-wise mean/mode value to prevent the model from failing. The categorical columns are one-hot encoded and numerical ones normalized to zero mean and unit variance.
+
+For Generative imputation approaches, it is important to preserve the number of columns, which is why we encode the categories of categorical columns as values from $0$ to $n-1$, where $n$ is the number of categories. Then, missing values are replaced with random uniform noise from $0$ to $0.01$ and, finally, the data is min-max scaled ranging from $0$ to $1$.
 
 \subsection{Imputation Methods}
 \label{sec:methods:impuation}
 %
-\felix{
-\begin{itemize}
-\item subsubsections are too deeply nested, I'd replace them by paragraphs but the journal style doesn't like that ...
-\item we should avoid the term imputer, even if it makes sense for the API, we should call it imputation method
-\item we should stick to American (e.g. normalize) or British English (e.g. normalise)
-\item As for the notation, it's common to follow the convention: $\vec{x}\in\R^d$ for $d$-dimensional vectors, $\vec{X}\in\R^{n\times d}$ for matrices with n rows and d columns,  scalars are denoted by $x$, single coefficients can be denoted as $\vec{x}_i$ and scalars in row i and column j can be denoted as $\vec{X}_{i,j}$, but the latter two are not really a convention.
-\item most importantly: if we don't need the formulars/math notation to make a point, like derive anything or present an objective/proof, we might as well discard it entirely.
-\item We should have a table with all hyperparameters in one place
-\item the encoding should be in one place, at least for discriminative and generative models
-\end{itemize}
-}
-In this section, we describe our six single imputation methods. The overall goal of an imputation method is to train a model on $\vec{X}\in\R^{n\times d} = [\vec{x}_1, \vec{x}_2, ..., \vec{x}_{i-1}, \vec{x}_{i+1}, ..., \vec{x}_n]$, where $d$ is the number of features, $n$ the number of observations, and $\vec{x}_i$ denotes the to-be-imputed (or target) column.
-To abstract crucial steps such as encode, normalize, and decode the data and cross-validate hyperparameters of each imputation method, we define a framework implemented by all of the following imputation approaches.
+In this section, we describe our six single imputation methods. The overall goal of an imputation method is to train a model on $\vec{X}\in\R^{n\times d} = [\vec{x}_1, \vec{x}_2, ..., \vec{x}_{i-1}, \vec{x}_{i+1}, ..., \vec{x}_d]$, where $d$ is the number of features, $n$ the number of observations, and $\vec{x}_i$ denotes the to-be-imputed (or target) column.
+To abstract crucial steps such as preprocessing the data (see Section \ref{sec:preprocessing}) and cross-validate the imputation method's hyperparameters (see Section \ref{sec:HPO}), we define a framework implemented by all of the following imputation approaches.
 
-\sebastian{
-Will rework this section and
-\begin{itemize}
-	\item take care of change "imputer" into something else
-	\item add Table with HPs, probably at the end of Section 3.4 to have an overview
-	\item write preprocessing section and change the others accordingly
-\end{itemize}
-}
 
 \subsubsection{Simple Imputation}
+\label{sec:simple_imputation}
 %
-Our \code{Simple Imputer} uses the column-wise \code{mean} for numerical or \code{mode}, i.e., the most frequent value,  for categorical columns to fill missing values.
+As a simple imputation baseline, we use the column-wise \code{mean} for numerical or \code{mode}, i.e., the most frequent value,  for categorical columns to fill missing values.
+
 
 \subsubsection{$k$-NN Imputation}
+\label{sec:knKNN}
 %
-A popular ML imputation baseline is $k$-NN imputation, also known as Hot-Deck imputation~\citep{Batista2003}. \felix{isn't the encoding the same for most methods? if so, we should place that somewhere else, before the methods, and highlight the different steps in the pipeline in a flow chart} We encode categorical features as one-hot columns and normalize the data by rescaling it to zero mean and unit variance. The hyperparameter $k \in \{1, 3, 5\}$ is optimized by 5-fold cross-validated grid-search.
-Depending on the target column datatype (categorical or numerical) we use the \code{scikit-learn} implementation \code{KNeighborsClassifier} or \code{KNeighborsRegressor}, respectively.
+A popular ML imputation baseline is $k$-NN imputation, also known as Hot-Deck imputation~\citep{Batista2003}. For our implementation thereof, we use \code{scikit-learn}'s \code{KNeighborsClassifier} for a categorical target columns and \code{KNeighborsRegressor} for numerical columns, respectively.
+%Both models expose the hyperparameter $k \in \{1, 3, 5\}$, which we optimize by 5-fold cross-validated grid-search.
+
 
 \subsubsection{Random Forest Imputation}
 %
-Another popular ML based imputation method is based on Random Forests. Also here we encode categorical features as one-hot columns and normalize the data by rescaling it to zero mean and unit variance
-Depending on the target column we use either the \code{RandomForestClassifier} or \code{RandomForestRegressor} and optimize the hyperparameter $n\_estimators \in \{10, 50, 100\}$ optimized by 5-fold cross-validated grid-search.
+Similarly to the $k$-NN Imputation approach, described in Section \ref{sec:knKNN}, we implement the random forest imputation method using \code{scikit-learn}'s \code{RandomForestClassifier} and \code{RandomForestRegressor}.
+
+%A very important hyperparameter of the models \code{RandomForestClassifier} and \code{RandomForestRegressor} is $n\_estimators$. Again, we use  5-fold cross-validated grid-search to optimize $n\_estimators \in \{10, 50, 100\}$.
+
 
 \subsubsection{Discriminate Deep Learning Imputation}
+\label{sec:dl_imputation}
 %
-Often simple deep learning models can achieve good imputation results~\cite{Biessmann2018a}. To easily optimize the model's architecture, we use the AutoML\footnote{"automated machine learning (AutoML) [...] automatically set [the model's] hyperparameters to optimize performance" \cite{AutoML}} library \code{autokeras} \citep{AutoKeras} to build our \emph{Deep Learning Imputer}.
-%
-For categorical columns, we use AutoKeras' \code{StructuredDataClassifier} and for numerical columns \code{StructuredDataRegressor}. Both classes take care of properly encode the data and optimize the model's architecture and hyperparameters. To reduce the training time, we change the maximum number of trials to $50$, which means \code{autokeras} tries 50 different model architecture and hyperparameter combinations, and the maximal number or of $epochs$ (\code{autokeras} uses early stopping) to 50.
+Often simple deep learning models can achieve good imputation results~\citep{Biessmann2018a}. To easily optimize the model's architecture, we use the AutoML\footnote{"automated machine learning (AutoML) [...] automatically set [the model's] hyperparameters to optimize performance" \cite{AutoML}} library \code{autokeras} \citep{AutoKeras} to implement the discriminate deep learning imputation method.
+For categorical columns, we use AutoKeras' \code{StructuredDataClassifier} and for numerical columns \code{StructuredDataRegressor}. Both classes take care of properly encode the data themselves and optimize the model's architecture and hyperparameters. We use $max\_trials = 50$, which means AutoKeras tries up to $50$ different model architecture and hyperparameter combinations, and $epochs = 50$ such that each model is trained for maximum $50$ epochs (AutoKeras uses early stopping by default).
 
 
 \subsubsection{Generative Deep Learning Imputation}
@@ -176,8 +176,11 @@ Generative Deep Learning methods can be broadly categorized into classes, (varia
 
 \paragraph{Variational Autoencoder (VAE) Imputation}
 %
-VAEs learn to encode their input into a distribution over the latent space and decode by sampling from this distribution \citep{VAE}. Imputation methods based on this type of generative model include \cite{HIVAE, VAE_for_genomic_data, VAEM}. Rather than comparing all existing implementations we here focus on the original VAE imputation method for the sake of comparability with other approaches. To find the best model architecture, i.e., number of hidden layers and their sizes, we follow the approach proposed by \cite{CaminoVAE}. We use 3-fold cross-validated grid-search to find the best number of hidden layers $\{0, 1, 2\}$. The layers' sizes are fixed and determined relatively to the input dimension, i.e., the table's number of columns. The encoder's first hidden layer has $50\%$ of the input layer's neurons, the second $30\%$, and the last layer, i.e., the latent space, $20\%$. The decoder's hidden layers' sizes are vice versa for upsampling the information to the same size as the input data.
-To train the VAE, we use Adam optimizer with default hyperparameters, batch size of $64$, and early stopping within $50$ epochs.
+VAEs learn to encode their input into a distribution over the latent space and decode by sampling from this distribution \citep{VAE}. Imputation methods based on this type of generative model include \cite{HIVAE, VAE_for_genomic_data, VAEM}. Rather than comparing all existing implementations we here focus on the original VAE imputation method for the sake of comparability with other approaches. To find the best model architecture, i.e., number of hidden layers and their sizes, we follow the approach proposed by \cite{CaminoVAE}. We test using no, one, and two hidden layers for the encoder and decoder and fixed their sizes relatively to the input dimension, i.e., the table's number of columns. If existing, the encoder's first hidden layer has $50\%$ of the input layer's neurons and the second $30\%$. The decoder's sizes are vice versa for upsampling the information to the same size as the input data. The latent space is also fixed to $20\%$ of the input dimension.
+For training, we use Adam optimizer with default hyperparameters, batch size of $64$, and early stopping within $50$ epochs.
+
+%We use 3-fold cross-validated grid-search to find the best number of hidden layers $\{0, 1, 2\}$. The layers' sizes are fixed and determined relatively to the input dimension, i.e., the table's number of columns. The encoder's first hidden layer has $50\%$ of the input layer's neurons, the second $30\%$, and the last layer, i.e., the latent space, $20\%$. The decoder's hidden layers' sizes are vice versa for upsampling the information to the same size as the input data.
+%To train the VAE, we use Adam optimizer with default hyperparameters, batch size of $64$, and early stopping within $50$ epochs.
 
 
 %We treat the number of hidden layers $n\_hidden\_layers$ for encoder and decoder as hyperparameters\felix{Which values were chosen?}. The size of these layers, i.e., the number of neurons, are fix and set relatively to the input dimension, i.e., the data set's number of columns\felix{Why? Can we motivate that decision?}\sebastian{For NNs the input dimension is (almost?) always the number of features. (here columns of the table)}. The dimensionality of the hidden layer one is $50\%$, hidden layer two $30\%$, and latent space is $20\%$ of the input dimension.
@@ -186,16 +189,28 @@ To train the VAE, we use Adam optimizer with default hyperparameters, batch size
 %To optimize the hyperparameter $n\_hidden\_layers \in \{0, 1, 2\}$, we use 3-fold cross-validated grid-search.
 
 \paragraph{Generative Adversarial Network (GAN) Imputation}
+%
 GANs consist of two parts \citep{GAN}: a generator and a discriminator. In an adversarial process, the generator learns to generate samples that are as close as possible to the data distribution, and the discriminator learns to distinguish whether an example is true or generated. Imputation approaches based on GANs include \cite{GAIN, VIGAN, MisGAN}.
 Here we employ one of the most popular approaches of GAN based imputation, Generative Adversarial Imputation Nets (GAIN)~\citep{GAIN}.
-GAIN adapts the original GAN architecture as follows. The generator's input is the concatenation of the input data and a binary matrix that represents the missing values. The discriminator learns to reconstruct the mask matrix by concatenating the generator's output and a hint matrix that is based on the introduced hyperparameter $hint\_rate$ revealing partial information about the missingness of the original data. A second hyperparameter GAIN introduces $\alpha$ is used to balance the generators performance for observed and missing values. To optimize these and others, we use 3-fold cross-validated grid-search of: $generator\_learning\_rate \in \{0.0001, 0.0005\}$, $discriminator\_learning\_rate \in \{0.00001, 0.00005\}$, $\alpha \in \{1, 10\}$, and $hint\_rate \in \{0.7, 0.9\}$.
-Other hyperparameters, we do not optimize are the usage of Adam optimizer for generator and discriminator, batch size of $64$, and early stopping withing $50$ epochs.
+GAIN adapts the original GAN architecture as follows. The generator's input is the concatenation of the input data and a binary matrix that represents the missing values. The discriminator learns to reconstruct the mask matrix by concatenating the generator's output and a hint matrix that is based on the introduced hyperparameter $hint\_rate$ revealing partial information about the missingness of the original data. A second hyperparameter GAIN introduces $\alpha$ is used to balance the generators performance for observed and missing values.
+For training, we use Adam optimizer with default hyperparameters except the learning rate for generator and discriminator, batch size of $64$, and early stopping withing $50$ epochs.
+
+%To optimize these and others, we use 3-fold cross-validated grid-search of: $generator\_learning\_rate \in \{0.0001, 0.0005\}$, $discriminator\_learning\_rate \in \{0.00001, 0.00005\}$, $\alpha \in \{1, 10\}$, and $hint\_rate \in \{0.7, 0.9\}$.
+%Other hyperparameters, we do not optimize are the usage of Adam optimizer for generator and discriminator, batch size of $64$, and early stopping withing $50$ epochs.
 
 
 
 %\felix{if this is the only place where we used math notation, we might consider rephrasing this, none of the other methods is described in such detail.} GAIN takes as input some data $X$, encodes categorical columns as numbers from $0$ to $n-1$, where $n$ is the number of categories, and calculates a binary mask matrix $M$ that represents missing values. To normalize $X$ into $\bar{X}$, it first scales the data min-max ($0, 1$) and second replaces missing values with random uniform noise ($\{0, 0.01\}$). The generator learns to output $\hat{X}$, where initially missing values are replaced, based on its input $\bar{X}$ and $M$. The discriminator learns to reconstruct the mask $M$ based on generator's output $\hat{X}$ and a hint matrix $H$, using the hyperparameter $hint\_rate$, that provides the discriminator with information about $M$.
 
 %GAIN is optimized by minimizing the sum of the generator's loss and the with $\alpha$ weighted discriminator's loss, see \cite{GAIN} for details. Besides the learning rates, for the generator and discriminator, GAIN introduces two new hyperparameters we optimize $hint\_rate$ and $\alpha$. For this, we use 3-fold cross-validated grid-search of: $generator\_learning\_rate \in \{0.0001, 0.0005\}$, $discriminator\_learning\_rate \in \{0.00001, 0.00005\}$, $\alpha \in \{1, 10\}$, and $hint\_rate \in \{0.7, 0.9\}$.
+
+
+\subsection{Hyperparameter Optimization}
+\label{sec:HPO}
+%
+Optimizing and cross-validate hyperparameters is crucial to gain insights of a models' performance, robustness, and training time. Therefore, we choose for each imputation model the, as we find, most important hyperparameters and optimize them using cross-validated grid-search. For the $k$-NN and random forest imputation methods, we use $5$-fold cross validation and, to reduce the overall training time, $3$-fold cross validation for VAE and GAIN imputation. The mean/mode imputation does not have hyperparameters to optimize and because we use AutoKeras for the discriminate deep learning Imputation we do not need to set the hyperparameters explicitly. Table \ref{tab:HPO} gives an overview of all imputation approaches and their hyperparameters we optimize as well as the number of combinations.
+
+\sebastian{TODO: table with HPs..}
 
 
 

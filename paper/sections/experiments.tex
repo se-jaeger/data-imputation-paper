@@ -26,7 +26,7 @@ Our experimental settings are listed in Table \ref{tab:experiment_settings}. Eac
 	\label{tab:experiment_settings}
 \end{table}
 %
-For each of the data sets, we sample one to-be-imputed (or target) column upfront that remain static throughout our experiments. \felix{so we don't sample the to-be-imputed column for each of the $4,968$  experiments?}
+For each of the data sets, we sample one to-be-imputed (or target) column upfront that remain static throughout our experiments. \felix{so we don't sample the to-be-imputed column for each of the $4,968$  experiments?} \sebastian{The to-be-imputed column is fixed for each dataset. The problem we ran into was that for a given data set imputer A imputs column X and imputer B column Y we can't compare the results.}
 
 We split the experiments into four parts. \emph{Experiment 1} (Section \ref{sec:experiment_1}) and \emph{Experiment 2} (Section \ref{sec:experiment_2}) compare the imputation approaches based on their imputation quality and impact on the downstream task. Both experiments are then repeated in two application scenarios: \emph{Scenario 1} (Section \ref{sec:scenario_1}) and \emph{Scenario 2} (Section \ref{sec:scenario_2}), with complete and incomplete training data.
 
@@ -69,8 +69,7 @@ In practice, ML researchers commonly use complete (or fully observed) data to tr
 \subsubsection{Scenario 2: Training on Incomplete/Imputed Data}
 \label{sec:scenario_2}
 %
-\felix{Here we don't neccessarily need to explain why this situation would occur, that's more of a motivation for the intro}
-A more realistic scenario than training on fully observed data is training of ML models or imputation models on incomplete data. We evaluate this application scenario by compare the performance in \emph{Experiment 1} and \emph{Experiment 2} for corrupted and imputed training data.
+A more realistic scenario than training on fully observed data is training of ML models or imputation models on incomplete data. To evaluate this application scenario, we adapt \emph{Experiment 1} and \emph{Experiment 2} slightly.
 
 We first introduce missing values in the training and test set and then train the baseline and imputation model based on these incomplete training and test set. The calculation of the imputation quality (\emph{Experiment 1}, Section \ref{sec:experiment_1}) remains the same. However, to calculate the impact on downstream task, we lack the availability of the $baseline$ score trained on complete data. Therefore, we adapt \autoref{eq:impact} as follows:
 %
