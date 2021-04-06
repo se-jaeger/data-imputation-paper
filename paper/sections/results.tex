@@ -96,3 +96,24 @@ Conclusions:
 - generative methods mostly worse than mean/mode
 - discriminative often as good as classical ML and better than mean/mode, but when considering
 the runtime might not be a good choice
+
+
+\subsection{Training Time}
+
+\begin{table}
+	\centering
+	\begin{tabular}{lrr}
+		\toprule
+		Imputation Method &  Training Time &  Relative Standard Deviation \\
+		\midrule
+		Mean/Mode &       0.005009 &                     0.656056 \\
+		$k$-NN &      40.961577 &                     0.243020 \\
+		Random Forest &     225.513999 &                     0.118707 \\
+		Discriminate DL &    6285.017741 &                     0.424011 \\
+		VAE &      71.685278 &                     0.107189 \\
+		GAIN &     874.657293 &                     0.299608 \\
+		\bottomrule
+	\end{tabular}
+	\caption{Training time for each imputation method in seconds. Training time is the mean overall experimental settings, experiments, and scenarios. The data set's size skews the standard deviation heavily, which is why we first compute the relative standard deviation for each imputation method on each data set separately and then average over the data sets.}
+	\label{tab:training_time}
+\end{table}
