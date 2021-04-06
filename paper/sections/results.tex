@@ -2,19 +2,33 @@
 \section{Results}
 \label{sec:results}
 
-\felix{This entire section is the most important section of this paper. It's difficult to work on / comment on this section in its current shape. The content is lacking and the text needs some serious proofreading.}
+In this section, we describe and visualize the results of our experiments.
 
-\felix{why did we choose the rank in the first place? it's important to motivate that decision here by pointing to the heterogeneity of the results which we want to aggregate over}
-The \textit{imputation rank} is the rank of the six imputers imputation performance on a single dataset-column combination. The values therefore lie within the interval [1, 6]. For numerical columns it is based on RMSE where lower is better. And for categorical columns it is based on the F1 macro score where higher is better. $n$ imputers with equal performance are assigned the same rank $r$ and the next best imputer gets the rank $r+n$.
+Our goal was to provide as broad an overview as possible of the performance of various imputation methods. Therefore, we included a lage number of datasets in our selection, with different data and task types. To make the results comparable on such heterogeneous data, we decided to use the following approach.
 
+The \textit{imputation rank} is the rank of the six imputers imputation performance on a single dataset-column combination. The values therefore lie within the interval [1, 6]. For numerical columns it is based on RMSE where lower is better. And for categorical columns it is based on the F1 macro score where higher is better. $n$ imputers with equal performance are assigned the same rank $r$ and the next best imputer gets the rank $r+n$. This is also known as \textit{standard competition ranking} ("1224" ranking).
+
+Of course, this ranking simplifies the results. However, comparing the merics (F1, RMSE) across tasks/columns is not sensible. Especially for RMSE, where the values do not lie within a well-defined range.
 
 \begin{figure}\centering
     \includegraphics[width=1\columnwidth]{fully_observed_impute_rank_boxplot.eps}
     \caption[Scenario 1 Imputation Ranks]{In this figure, we visualize the results of \textit{Experiment 1} (imputation quality) in \textit{Scenario 1}. The imputation rank is plotted against the missingness fraction. The plot is divided into six sub-plots, with three columns determined by the missingness type, ordered by task difficulty from easiest to hardest (MCAR, MAR, MNAR). In the first row of sub-plots we depict results of regression tasks, whereas the second row contains classification results. Within a single sub-plot, each box represents the distibution of ranks of a single imputer over all corresponding datasets/columns.}\label{fig:fully_observed_impute_rank_boxplot}
 \end{figure}
 
-In Figure \ref{fig:fully_observed_impute_rank_boxplot} we observe that the \textit{forest imputer} performs best. It is the only one with 50\% of values among the first two ranks. In the MCAR and MNAR setting, another 25\% of values are on the third rank, whereas in the MNAR setting this spreads until rank four. However, the whiskery indicate that there are also some results ranging on the middle and even last ranks. (TODO rational for that?)
-TODO
+% Experiment / Scenario / Task Type
+% - observations
+%   - best imputers
+%   - medium imputers
+%   - worst imputers
+% - bottom line
+
+In Figure \ref{fig:fully_observed_impute_rank_boxplot} we observe that ..
+When imputing categorical columns, there is no clear winner. However, the Discriminate DL yields stronges performance in most cases. However, in the MAR setting, also the classical ML methods are among the first two to three ranks often times. With increasing complexity the DL based methods seem to improve. Interesingly though, the Mean/Mode imputation yields a lot of good results in the most complex settings.
+The clear loser seems to be GAIN, with worst performance in most cases. However, in the setting of highest complexity (MNAR with 50\% missing values) the results are not as bad.
+
+When it comes to imputing numerical columns, the picture is much clearer. Random Forest is the only method with 50\% of values among the first three ranks basically all of the time. However, the whiskers indicate that there are also some results ranging on the middle and even last ranks. \textit{k}-NN and Discriminate DL are almost as strong with the boxes indicating many second and third ranks, with k-NN performing a bit better. Mean/Mode and VAE are in the middle with the former in being slightly in the lead. Again, GAIN performs worst, this time even more clearly.
+
+The bottom line is that the classical ML methods and discriminative DL perform best. However, for categorical columns there is often no improvement over Mode imputation. The generative methods are mostly outperformed even by Mean/Mode with VAE not as clearly as GAIN.
 
 \begin{figure}\centering
     \includegraphics[width=1\columnwidth]{corrupted_impute_rank_boxplot.eps}
@@ -28,7 +42,7 @@ In Figure \ref{fig:corrupted_impute_rank_boxplot} we observe the following effec
 TODO
 
 
-\sebastian{Added the following plots..}
+\sebastian{Added the following plots...}
 
 \begin{figure}\centering
 	\includegraphics[width=1\columnwidth]{fully_observed_downstream_boxplot.eps}
