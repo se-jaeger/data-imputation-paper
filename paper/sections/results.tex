@@ -6,7 +6,7 @@ In this section, we describe and visualize the results of our experiments.
 
 Our goal was to provide as broad an overview as possible of the performance of various imputation methods. Therefore, we included a lage number of datasets in our selection, with different data and task types. To make the results comparable on such heterogeneous data, we decided to use the following approach.
 
-The \textit{imputation rank} is the rank of the six imputers imputation performance on a single dataset-column combination. The values therefore lie within the interval [1, 6]. For numerical columns it is based on RMSE where lower is better. And for categorical columns it is based on the F1 macro score where higher is better. $n$ imputers with equal performance are assigned the same rank $r$ and the next best imputer gets the rank $r+n$. This is also known as \textit{standard competition ranking} ("1224" ranking).
+The \textit{imputation rank} is the rank of the six imputers imputation performance on a single dataset-column combination. The values therefore lie within the interval [1, 6]. For numerical columns it is based on RMSE where lower is better. And for categorical columns it is based on the F1 macro score where higher is better. $n$ imputers with equal performance are assigned the same rank $r$ and the next best imputer gets the rank $r+n$. This is also known as \textit{standard competition ranking} ("1224" ranking). If an imputation mehtods produced Null-values we set it's rank to be the last.
 
 Of course, this ranking simplifies the results. However, comparing the merics (F1, RMSE) across tasks/columns is not sensible. Especially for RMSE, where the values do not lie within a well-defined range.
 
@@ -38,8 +38,13 @@ The bottom line is that the classical ML methods and discriminative DL perform b
 	\label{fig:corrupted_impute_rank_boxplot}
 \end{figure}
 
-In Figure \ref{fig:corrupted_impute_rank_boxplot} we observe the following effects ...
-TODO
+Figure \ref{fig:corrupted_impute_rank_boxplot} shows the imputation performance in \textit{Scenario 2}, i.e. when training on incomplete/imputed data. For categorical columns it is even harder to find clear patterns. With increasing task difficulty, the performance of the Mode imputation increases, though with higher variance. Interestingly, Mode outperforms other methods especially in the hardest settings (MNAR with 30\% and 50\% missing values). The classical ML methods (k-NN and Random Forest) perform pretty good on the MCAR and MAR patterns, but Random Forest has much higher variance. Discriminative DL yields similar perforamnce in these settings, slightly worse on average and with lower variance than Random Forest. For MCAR and MAR these three methods tend to yield better imputation performance than simply using Mode, especially with an increasing fraction of missing values. The generative models tend to performc worst, especially GAIN.
+
+For numerical columns, again, the results are distinguished more clearly. The classical models yield best performances with a tendency of Random Forest to outperform k-NN, with larger variance of Random Forest however. The Discrimanative DL methods yields similar performance to the classical ML approaches in the MCAR and MAR settings. However, in the more difficult MNAR setting it performns slightly worse. In the midfield here, too, are Mean and VAE. The latter performs a slightly worse overall. On the last ranks is GAIN once again.
+
+Overall, the results of \textit{Scenario 1} (Figure \ref{fig:fully_observed_impute_rank_boxplot}) and \textit{Scenario 2} (Figure \ref{fig:corrupted_impute_rank_boxplot}) for numeric columns are quite similar. GAIN has become somewhat better in Scenario 2, although it still ranks at the bottom. For the categorical columns, the visualizations of the two scenarios differ slightly more. However, there are no major shifts in which the median worsens by more than 2 ranks. \arndt{TODO das habe ich nur aus den Plots abgelesen, ggf. Auswertung hierzu fahren}. Interestingly, it happens four times in scenario 2 that the complete box of MODE is on only one rank. This also occurs in KNN, once in scenario 1 and once in scenario 2.
+
+One reason why GAIN performed so badly is it's numerical instability. Out of our 828 runs per imputer GAIN failed 273 times, that's 33\%. Besides GAIN, only the Discrimanative DL failed 3 times. \arndt{TODO AutoKeras results where not complete yet - check again}. Thus, the last rank has been assigned to GAIN in these cases.
 
 
 \sebastian{Added the following plots...}
@@ -57,3 +62,10 @@ TODO
 	\caption[TODO]{TODO}
 	\label{fig:corrupted_downstream_boxplot}
 \end{figure}
+
+
+
+Conclusions:
+- higher variance of random forest over knn due to outliers ?!
+- generative methods mostly worse than mean/mode
+- discriminative often as good as classical ML and better than mean/mode, but when considering the runtime might not be a good choice
