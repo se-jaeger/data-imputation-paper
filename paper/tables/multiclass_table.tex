@@ -1,30 +1,30 @@
 \begin{table}[h!]
 \centering
-\begin{tabular}{rlrrr}
+\begin{tabular}{rllrrr}
 \toprule
-\multirow{2}{*}{OpenML ID} & \multirow{2}{*}{Name} & \multirow{2}{*}{Observations} & \multicolumn{2}{c}{Features} \\ \cline{4-5}
+\multirow{2}{*}{OpenML ID} & \multirow{2}{*}{Name} & \multirow{2}{*}{Target Column} & \multirow{2}{*}{Obs.} & \multicolumn{2}{c}{Features} \\ \cline{5-6}
 \\[-0.75em]
-&                       &                            & Numerical    & Categorical   \\
+&        &                &                            & Num.    & Cat.   \\
 \midrule
-      1526 &                  wall-robot-navigation &         5456 &                4 &                1 \\
-       183 &                                abalone &         4177 &                7 &                2 \\
-     40498 &                     wine-quality-white &         4898 &               11 &                1 \\
-        30 &                            page-blocks &         5473 &               10 &                1 \\
-     40677 &                                  led24 &         3200 &                0 &               25 \\
-      1459 &                  artificial-characters &        10218 &                7 &                1 \\
-     40497 &                            thyroid-ann &         3772 &               21 &                1 \\
-      4552 &                      BachChoralHarmony &         5665 &                2 &               15 \\
-        26 &                                nursery &        12960 &                0 &                9 \\
-       375 &                         JapaneseVowels &         9961 &               14 &                1 \\
-        32 &                              pendigits &        10992 &               16 &                1 \\
-      1481 &                                kr-vs-k &        28056 &                3 &                4 \\
-       184 &                                  kropt &        28056 &                0 &                7 \\
-     41027 & jungle\_chess\_2pcs\_raw\_endgame\_complete &        44819 &                6 &                1 \\
-         6 &                                 letter &        20000 &               16 &                1 \\
-     41671 &                      microaggregation2 &        20000 &               20 &                1 \\
-     40685 &                                shuttle &        58000 &                9 &                1 \\
+      1526 &                    wall-robot-navigation &   V3 &      5456 &                4 &                1 \\
+       183 &                                abalone &     Length &    4177 &                7 &                2 \\
+     40498 &                     wine-quality-white &     V11 &    4898 &               11 &                1 \\
+        30 &                            page-blocks &      eccen &   5473 &               10 &                1 \\
+     40677 &                                  led24 &      attribute\#3 &   3200 &                0 &               25 \\
+      1459 &                  artificial-characters &    V7 &    10218 &                7 &                1 \\
+     40497 &                            thyroid-ann &    V13 &     3772 &               21 &                1 \\
+      4552 &                      BachChoralHarmony &    V2 &     5665 &                2 &               15 \\
+        26 &                                nursery &    parents &    12960 &                0 &                9 \\
+       375 &                         JapaneseVowels &     coefficient3 &    9961 &               14 &                1 \\
+        32 &                              pendigits &    input4 &    10992 &               16 &                1 \\
+      1481 &                                kr-vs-k &     V2 &   28056 &                3 &                4 \\
+       184 &                                  kropt &      black\_king\_col &  28056 &                0 &                7 \\
+     41027 & jungle\_chess\_2pcs\_raw\_endgame\_complete &    black\_piece0\_strength &    44819 &                6 &                1 \\
+         6 &                                 letter &     x-box &   20000 &               16 &                1 \\
+     41671 &                      microaggregation2 &    a9 &    20000 &               20 &                1 \\
+     40685 &                                shuttle &     A2 &   58000 &                9 &                1 \\
 \bottomrule
 \end{tabular}
-\caption{Multiclass classification datasets.}
+\caption{Overview of all data sets we use associated with a multi-class classification downstream task. \emph{Target Column} presents the data set's column we used to evaluate the imputation methods, \emph{Obs.} the number of observations, \emph{Num.} the number numerical columns, and \emph{Cat.} the number of categorical columns.}
 \label{tab:multiclass_data}
 \end{table}
