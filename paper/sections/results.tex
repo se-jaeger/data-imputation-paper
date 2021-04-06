@@ -60,8 +60,21 @@ Overall, the results of \textit{Scenario 1} (Figure \ref{fig:fully_observed_impu
 One reason why GAIN performed so badly is it's numerical instability. Out of our 828 runs per imputer GAIN failed 273 times, that's 33\%. Besides GAIN, only the Discrimanative DL failed 3 times. \arndt{AutoKeras results where not complete yet - check again}. Thus, the last rank has been assigned to GAIN in these cases.
 
 
+\subsubsection{Conclusions}
+
+\arndt{nur eine temporäre sammlung von ideen}
+
+- higher variance of random forest over knn due to outliers ?!
+
+- generative methods mostly worse than mean/mode
+
+- discriminative often as good as classical ML and better than mean/mode, but when considering the runtime might not be a good choice
+
+
 
 \subsection{Experiment 2: Impact on Downstream Task}
+
+In the following plots, the \textit{impact on downstream task} metrics (Equations \ref{eq:impact} and \ref{eq:impact_scenario2}) are labeled \textit{Improvement} and the values represented on the Y-axis.
 
 
 \subsubsection{Scenario 1: Training on Complete Data}
@@ -70,12 +83,16 @@ One reason why GAIN performed so badly is it's numerical instability. Out of our
 \begin{figure}\centering
 	\includegraphics[width=1\columnwidth]{fully_observed_downstream_boxplot.eps}
 
-	\caption[Downstream Ranks - Fully Observed]{In this figure, we visualize the results of \textit{Experiment 2} (impact on downstream task) in the \textit{Scenario 1} setting (training on complete data). The downstream rank is plotted against the missingness fraction. The plot is divided into six sub-plots, with three columns determined by the missingness type, ordered by task difficulty from easiest to hardest (MCAR, MAR, MNAR). In the first row of sub-plots we depict results of classification tasks, whereas the second row contains regression results. Within a single sub-plot, each box represents the distibution of ranks of a single imputer over all corresponding datasets/columns.
+	\caption[Downstream Ranks - Fully Observed]{In this figure, we visualize the results of \textit{Experiment 2} (impact on downstream task) in the \textit{Scenario 1} setting (training on complete data). The downstream improvement is plotted against the missingness fraction. The plot is divided into six sub-plots, with three columns determined by the missingness type, ordered by task difficulty from easiest to hardest (MCAR, MAR, MNAR). In the first row of sub-plots we depict results of classification tasks, whereas the second row contains regression results. Within a single sub-plot, each box represents the distribution of the \textit{impact on downstream task} metric (Equation \ref{eq:impact}) of a single imputer over all corresponding datasets/columns.
     }
 	\label{fig:fully_observed_downstream_boxplot}
 \end{figure}
 
-TODO XXXXX
+Figure \ref{fig:fully_observed_downstream_boxplot} visualizes the \textit{impact on downstream task} metric (Equation \ref{eq:impact}) in \textit{Scenario 1}. The impact of imputation seems mostly negligible if the proportion of missing values is only 1\%. However, for numeric columns, there are some outliers in the 20\% to 40\% improvement range with the MCAR and MAR patterns. With an increasing proportion of missing values we observe increasing improvements in the downstream performance in all types of missingness patterns. However, there are also some cases where downstream performance is degraded by imputation, which is mainly the case for categorical columns. For categorical columns, improvements are mostly in the 0\% to 5\% range, and in case of 50\% missing values even in the 5\% to 10\% range and in some cases significantly beyond.
+
+TODO which imputer performs best
+
+TODO describe regression results
 
 
 \subsubsection{Scenario 2: Training on Incomplete/Imputed Data}
@@ -84,17 +101,10 @@ TODO XXXXX
 \begin{figure}\centering
 	\includegraphics[width=1\columnwidth]{corrupted_downstream_boxplot.eps}
 
-	\caption[Downstream Ranks - Corrupted]{In this figure, we visualize the results of \textit{Experiment 2} (impact on downstream task) in the \textit{Scenario 2} setting (training on incomplete/imputed data). The downstream rank is plotted against the missingness fraction. The plot is divided into six sub-plots, with three columns determined by the missingness type, ordered by task difficulty from easiest to hardest (MCAR, MAR, MNAR). In the first row of sub-plots we depict results of classification tasks, whereas the second row contains regression results. Within a single sub-plot, each box represents the distibution of ranks of a single imputer over all corresponding datasets/columns.
+	\caption[Downstream Ranks - Corrupted]{In this figure, we visualize the results of \textit{Experiment 2} (impact on downstream task) in the \textit{Scenario 2} setting (training on incomplete/imputed data). The downstream improvement is plotted against the missingness fraction. The plot is divided into six sub-plots, with three columns determined by the missingness type, ordered by task difficulty from easiest to hardest (MCAR, MAR, MNAR). In the first row of sub-plots we depict results of classification tasks, whereas the second row contains regression results. Within a single sub-plot, each box represents the distribution of the \textit{impact on downstream task} metric (Equation \ref{eq:impact_scenario2}) of a single imputer over all corresponding datasets/columns.
     }
 	\label{fig:corrupted_downstream_boxplot}
 \end{figure}
 
-TODO XXXXX
-
-
-
-Conclusions:
-- higher variance of random forest over knn due to outliers ?!
-- generative methods mostly worse than mean/mode
-- discriminative often as good as classical ML and better than mean/mode, but when considering
-the runtime might not be a good choice
+In Figure \ref{fig:corrupted_downstream_boxplot} we observe .. TODO
+The relative improvements are significantly smaller compared to scenario 1
