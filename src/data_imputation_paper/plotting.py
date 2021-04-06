@@ -39,18 +39,23 @@ def plot_rank_vs_fraction_by_type(data, ci, fpath, fname):
     plt.savefig(fpath/fname)
 
 
-def draw_cat_box_plot(data, y, ylim, fpath, fname):
-    ax = sns.catplot(
+def draw_cat_box_plot(data, y, ylim, fpath, fname, col_order=["MCAR", "MAR", "MNAR"], hue_order=None, row_order=None):
+    g = sns.catplot(
         x="Missing Fraction",
         y=y,
-        hue="Imputer",
+        hue="Imputation Method",
         col="Missing Type",
         row="metric",
         data=data,
         kind="box",
-        height=5,
-        col_order=["MCAR", "MAR", "MNAR"]
+        height=4,
+        col_order=col_order,
+        row_order=row_order,
+        hue_order=hue_order,
+        margin_titles=True
     )
-    ax.set(ylim=ylim)
+    g.set_titles(row_template="{row_name}", col_template="{col_name}", size=17).set(ylim=ylim)
+
+    plt.tight_layout(rect=(0, 0, 0.85, 1))
     fpath.mkdir(parents=True, exist_ok=True)
     plt.savefig(fpath/fname)
