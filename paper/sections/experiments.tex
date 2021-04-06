@@ -26,12 +26,10 @@ Our experimental settings are listed in Table \ref{tab:experiment_settings}. Eac
 	\label{tab:experiment_settings}
 \end{table}
 %
-For each of the data sets, we sample one to-be-imputed (or target) column upfront that remain static throughout our experiments. \felix{so we don't sample the to-be-imputed column for each of the $4,968$  experiments?} \sebastian{The to-be-imputed column is fixed for each dataset. The problem we ran into was that for a given data set imputer A imputs column X and imputer B column Y we can't compare the results.}
+For each of the data sets, we sample one to-be-imputed (or target) column upfront that remain static throughout our experiments.
 
 We split the experiments into four parts. \emph{Experiment 1} (Section \ref{sec:experiment_1}) and \emph{Experiment 2} (Section \ref{sec:experiment_2}) compare the imputation approaches based on their imputation quality and impact on the downstream task. Both experiments are then repeated in two application scenarios: \emph{Scenario 1} (Section \ref{sec:scenario_1}) and \emph{Scenario 2} (Section \ref{sec:scenario_2}), with complete and incomplete training data.
 
-%\sebastian{Klar machen, dass man erstmal nur den test set corrupted...}
-%\sebastian{plot nebeneinander mit flow chart oä..}
 
 \subsubsection{Experiment 1: Imputation Quality}
 \label{sec:experiment_1}
