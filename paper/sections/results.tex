@@ -93,11 +93,9 @@ In the following plots, the \textit{impact on downstream task} metrics (Equation
 	\label{fig:fully_observed_downstream_boxplot}
 \end{figure}
 
-Figure \ref{fig:fully_observed_downstream_boxplot} visualizes the \textit{impact on downstream task} metric (Equation \ref{eq:impact}) in \textit{Scenario 1}. The impact of imputation seems mostly negligible if the proportion of missing values is only 1\%. However, for numeric columns, there are some outliers in the 20\% to 40\% improvement range with the MCAR and MAR patterns. With an increasing proportion of missing values we observe increasing improvements in the downstream performance in all types of missingness patterns. However, there are also some cases where downstream performance is degraded by imputation, which is mainly the case for categorical columns. For categorical columns, improvements are mostly in the 0\% to 5\% range, and in case of 50\% missing values even in the 5\% to 10\% range and in some cases significantly beyond.
+Figure \ref{fig:fully_observed_downstream_boxplot} visualizes the \textit{impact on downstream task} metric (Equation \ref{eq:impact}) in \textit{Scenario 1}. The impact of imputation seems mostly negligible if the proportion of missing values is only 1\%. However, for numeric columns, there are some outliers in the 20\% to 40\% improvement range with the MCAR and MAR patterns. With an increasing proportion of missing values we observe increasing improvements in the downstream performance in all types of missingness patterns. However, there are also some cases where downstream performance is degraded by imputation, which is mainly the case for categorical columns. For categorical columns, improvements are mostly in the 0\% to 5\% range, and in case of 50\% missing values even in the 5\% to 10\% range and in some cases significantly beyond. Measured by the median, in summary, Random Forest yields the best results for categorical columns. GAIN is often similarly good or even better, but also has more negative fluctuations.
 
-TODO which imputer performs best
-
-TODO describe regression results
+The situation is different for regression tasks. Here GAIN clearly yields the least improvements downstream. Even the mean imputation is oftentimes significantly more beneficial for the downstream results. The VAE results are approximately on par with mean imputation. In contrast, the classical ML and the discriminative DL approaches do outperform the other methods in most settings. However, when the missing values are MNAR there is no clear advantage except that the discriminative DL is exceptionally superior at 50\% missing values.
 
 
 \subsubsection{Scenario 2: Training on Incomplete/Imputed Data}
@@ -111,10 +109,9 @@ TODO describe regression results
 	\label{fig:corrupted_downstream_boxplot}
 \end{figure}
 
-In Figure \ref{fig:corrupted_downstream_boxplot} we observe .. TODO
-The relative improvements are significantly smaller compared to scenario 1
-TODO XXXXX
+Figure \ref{fig:corrupted_downstream_boxplot} illustrates the \textit{impact on downstream task} (Equation \ref{eq:impact_scenario2}) in \textit{Scenario 2} (training on incomplete/imputed data). Here, the different scaling of the y-axis must be taken into account, i.e. the relative improvements are significantly smaller compared to the first scenario. One reason for this is the different basis for calculating the relative values (see sections \ref{sec:experiment_2} and \ref{sec:scenario_2}). If weak positive effects seem to predominate in classification tasks at first, this tendency changes with increasing proportion of missing values (at 50\%) and increasing difficulty of the task (especially MNAR).
 
+In regression tasks, apart from a few outliers, there are no significant improvements. At the highest proportion of missing values (50\%) and greatest difficulty (MNAR), the results of the generative methods (VAE and GAIN) even turn predominantly negative.
 
 
 
