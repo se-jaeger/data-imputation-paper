@@ -160,11 +160,11 @@ Similarly to the $k$-NN Imputation approach, described in Section \ref{sec:knKNN
 %A very important hyperparameter of the models \code{RandomForestClassifier} and \code{RandomForestRegressor} is $n\_estimators$. Again, we use  5-fold cross-validated grid-search to optimize $n\_estimators \in \{10, 50, 100\}$.
 
 
-\subsubsection{Discriminate Deep Learning Imputation}
+\subsubsection{Discriminative Deep Learning Imputation}
 \label{sec:dl_imputation}
 %
-Often simple deep learning models can achieve good imputation results~\citep{Biessmann2018a}. To easily optimize the model's architecture, we use the AutoML\footnote{"automated machine learning (AutoML) [...] automatically set [the model's] hyperparameters to optimize performance" \cite{AutoML}} library \code{autokeras} \citep{AutoKeras} to implement the discriminate deep learning imputation method.
-For categorical columns, we use AutoKeras' \code{StructuredDataClassifier} and for numerical columns \code{StructuredDataRegressor}. Both classes take care of properly encode the data themselves and optimize the model's architecture and hyperparameters. We use $max\_trials = 50$, which means AutoKeras tries up to $50$ different model architecture and hyperparameter combinations, and $epochs = 50$ such that each model is trained for maximum $50$ epochs (AutoKeras uses early stopping by default).
+Often simple deep learning models can achieve good imputation results~\citep{Biessmann2018a}. To easily optimize the model's architecture, we use the AutoML\footnote{"automated machine learning (AutoML) [...] automatically set [the model's] hyperparameters to optimize performance" \cite{AutoML}} library \code{autokeras} \citep{AutoKeras} to implement the discriminative deep learning imputation method.
+For categorical columns, we use AutoKeras' \code{StructuredDataClassifier} and for numerical columns \code{StructuredDataRegressor}. Both classes take care of properly encode the data themselves and optimize the model's architecture and hyperparameters. We use $max\_trials = 50$, which means AutoKeras tries up to $50$ different model architecture and hyperparameter combinations, and $epochs = 50$ such that each model is trained for a maximum of $50$ epochs (AutoKeras uses early stopping by default).
 
 
 \subsubsection{Generative Deep Learning Imputation}
@@ -208,7 +208,7 @@ For training, we use Adam optimizer with default hyperparameters except the lear
 \subsection{Hyperparameter Optimization}
 \label{sec:HPO}
 %
-Optimizing and cross-validate hyperparameters is crucial to gain insights of a models' performance, robustness, and training time. Therefore, we choose for each imputation model the, as we find, most important hyperparameters and optimize them using cross-validated grid-search. For the $k$-NN and random forest imputation methods, we use $5$-fold cross validation and, to reduce the overall training time, $3$-fold cross validation for VAE and GAIN imputation. The mean/mode imputation does not have hyperparameters to optimize and because we use AutoKeras for the discriminate deep learning Imputation we do not need to set the hyperparameters explicitly. Table \ref{tab:HPO} gives an overview of all imputation approaches and their hyperparameters we optimize as well as the number of combinations.
+Optimizing and cross-validate hyperparameters is crucial to gain insights of a models' performance, robustness, and training time. Therefore, we choose for each imputation model the, as we find, most important hyperparameters and optimize them using cross-validated grid-search. For the $k$-NN and random forest imputation methods, we use $5$-fold cross validation and, to reduce the overall training time, $3$-fold cross validation for VAE and GAIN imputation. The mean/mode imputation does not have hyperparameters to optimize and because we use AutoKeras for the discriminative deep learning Imputation we do not need to set the hyperparameters explicitly. Table \ref{tab:HPO} gives an overview of all imputation approaches and their hyperparameters we optimize as well as the number of combinations.
 %
 \begin{table}[]
 	\centering
@@ -223,7 +223,7 @@ Optimizing and cross-validate hyperparameters is crucial to gain insights of a m
 		\\[-0.75em]
 		Random Forest                      & $n\_estimators$                 & \{10, 50, 100\}            & 3                          \\
 		\\[-0.75em]
-		Discriminate DL*                   &                                 &                            &                            \\
+		Discriminative DL*                   &                                 &                            &                            \\
 		\\[-0.75em]
 		VAE                                & $n\_hidden\_layers$             & \{0, 1, 2\}                & 3                          \\
 		\\[-0.75em]
@@ -233,7 +233,7 @@ Optimizing and cross-validate hyperparameters is crucial to gain insights of a m
 		& $discriminator\_learning\_rate$ & \{0.00001, 0.00005\}       &                            \\ \midrule
 		\multicolumn{4}{l}{* Optimized using AutoKeras see Section \ref{sec:dl_imputation}}
 	\end{tabular}
-	\caption{Overview of all imputation methods and their hyperparameters we optimized. \emph{Mean/Mode} imputation does not have any hyperparameters and \emph{Discriminate DL} is optimized using AutoKeras, which is why we do not explicitly define a hyperparameter grid.}
+	\caption{Overview of all imputation methods and their hyperparameters we optimized. \emph{Mean/Mode} imputation does not have any hyperparameters and \emph{Discriminative DL} is optimized using AutoKeras, which is why we do not explicitly define a hyperparameter grid.}
 	\label{tab:HPO}
 \end{table}
 

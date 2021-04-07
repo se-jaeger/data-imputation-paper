@@ -7,9 +7,9 @@
 \item the figures should have a sentence summarizing the main finding (like: generative models perform worse)
 \item Discriminate DL should be Discriminative DL, or maybe just AutoKeras?
 \item for the downstream performance i'm not sure it's immediately clear what's shown - maybe we should highlight that it's improvement over downstream performance with missing data?
-\item in the conclusion we should relate the performance to the training and prediction time and comment on the (large) differences - for AutoKeras, a lot more tuning is performed and we don't know whether it would have worked as well with less tuning. 
+\item in the conclusion we should relate the performance to the training and prediction time and comment on the (large) differences - for AutoKeras, a lot more tuning is performed and we don't know whether it would have worked as well with less tuning.
 \item we should highlight the limitations of our results (only one column, maybe too simple)
-\item we should highlight the main findings; as far as i can see this would be: a) classical methods perform best (on these simple (?) data sets) and b) downstream performance is improved by X \% in Y \% of the experiments (we can use the quantiles in the boxplots) whereas when the imputation methods are trained on incomplete data, we cannot expect improvements. 
+\item we should highlight the main findings; as far as i can see this would be: a) classical methods perform best (on these simple (?) data sets) and b) downstream performance is improved by X \% in Y \% of the experiments (we can use the quantiles in the boxplots) whereas when the imputation methods are trained on incomplete data, we cannot expect improvements.
 \end{itemize}
 }
 
@@ -29,7 +29,7 @@ Our goal was to provide as broad an overview as possible of the performance of v
 
 \subsection{Experiment 1: Imputation Quality}
 
-In this experiment we evaluate the imputation performance of each method when training on fully observed data and incomplete data. 
+In this experiment we evaluate the imputation performance of each method when training on fully observed data and incomplete data.
 
 \subsubsection{Scenario 1: Training on Complete Data}
 
@@ -122,6 +122,7 @@ TODO XXXXX
 
 \begin{table}
 	\centering
+	\label{tab:time}
 	\begin{tabular}{lrr}
 		\toprule
 		Imputation Method &  Training Time &  Relative Standard Deviation \\
@@ -129,11 +130,10 @@ TODO XXXXX
 		Mean/Mode &       0.005009 &                     0.656056 \\
 		$k$-NN &      40.961577 &                     0.243020 \\
 		Random Forest &     225.513999 &                     0.118707 \\
-		Discriminate DL &    6285.017741 &                     0.424011 \\
+		Discriminative DL &    6285.017741 &                     0.424011 \\
 		VAE &      71.685278 &                     0.107189 \\
 		GAIN &     874.657293 &                     0.299608 \\
 		\bottomrule
 	\end{tabular}
 	\caption{Training time for each imputation method in seconds. Training time is the mean overall experimental settings, experiments, and scenarios. The data set's size skews the standard deviation heavily, which is why we first compute the relative standard deviation for each imputation method on each data set separately and then average over the data sets.\felix{for knn the training time should be almost 0, right? maybe it would be good to have the inference/prediction times as well, if we have that? kNN should perform much worse here, and the winner should be RF, i'm assuming}}
-	\label{tab:training_time}
 \end{table}
