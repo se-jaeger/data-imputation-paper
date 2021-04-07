@@ -1,7 +1,7 @@
 %!TEX root = ../data-imputation.tex
 \section{Related Work}
 \label{sec:related_work}
-\felix{Hier waere ne table gut, was schon andere gemacht haben}
+%
 There are many studies presenting new or improved imputation methods \citep{Imputation_Benchmark_4, Imputation_Benchmark_6, GAIN, VAE_for_genomic_data, HIVAE, MisGAN, VIGAN}. And several studies compare and benchmark imputation strategies \citep{Imputation_Benchmark_1, Imputation_Benchmark_2, Imputation_Benchmark_3}. What both types of studies have in common is that they often focus on specific aspects or use cases and do not aim at an extensive comparison. In contrast, our goal is to get a broad overview of the following dimensions:
 %
 \begin{enumerate}
@@ -15,14 +15,40 @@ There are many studies presenting new or improved imputation methods \citep{Impu
 
 \cite{Imputation_Benchmark_3} compared the downstream task performance on two binary classification data sets ($N = 48,842$, and $N = 435$) with imputed and incomplete data. Therefore, they varied the amount of MCAR and MNAR values from $0\%$ to $40\%$ in categorical features. For the imputation, they used six models: mode, random, $k$-NN, logistic regression, random forest, and SVM. The authors optimize the hyperparameters for one of the three downstream task but not for the imputation models.
 
-Similarly, \cite{Imputation_Benchmark_2} compare seven imputation methods (median, $k$-NN, predictive mean matching, bayesian linear regression, linear regression, non-bayesian, and random) without optimizing their hyperparameters based on five small and numeric data sets (max. $1030$ observations). The authors discuss different missingness patterns but do not state which one is used to discard values for their experiments. However, they measured the methods' imputation performance for $10\%$ to $50\%$ missing values.
+Similarly, \cite{Imputation_Benchmark_2} compare seven imputation methods (random, median, $k$-NN, predictive mean matching, bayesian linear regression, linear regression, and non-bayesian) without optimizing their hyperparameters based on five small and numeric data sets (max. $1030$ observations). The authors discuss different missingness patterns but do not state which one is used to discard values for their experiments. However, they measured the methods' imputation performance for $10\%$ to $50\%$ missing values.
 
 \cite{Imputation_Benchmark_1} evaluate and compare seven imputation methods (random, mean, softImpute, miss-Forest, VIM kknn, VIM hotdeck, and mice) combined with five classification models regarding their prediction performance. Therefore,  they use $13$ binary classification data sets with missing values in at least one column and do not know the data's missingness pattern. The amount of missing values ranges between $1\%$ and about $33\%$. In contrast to \citep{Imputation_Benchmark_3, Imputation_Benchmark_2}, the authors coping with the situation where only incomplete data is available for training.
 
 The following two papers differ from the others because their main goal is to compare their proposed method against existing approaches. \cite{Imputation_Benchmark_6} implement an iterative expectation-maximization (EM) algorithm that learns and optimizes a latent representation, parameterized by a deep neural network, of the data distribution to perform the imputation. They use ten classification and three regression task data sets and 11 imputation baselines (zero, mean, median, mice, miss-Forest, softImpute, $k$-NN, PCA, autoencoder, denoising autoencoder, residual autoencoder) for comparison. The authors conducted both evaluations, imputation and downstream task performance, with $25\%$, $50\%$, and $75\%$ MNAR missing values.
 
-To the best of our knowledge \citep{Imputation_Benchmark_4} is the biggest and most extensive comparison, although the authors focus on introducing an imputation algorithm and present its improvements. Their proposed algorithm cross-validates the choice of the best imputation method out of $k$-NN, SVM, or Tree-based imputation methods, where the hyperparameters are cross-validate too. The authors then benchmarked their method on $84$ classification and regression tasks against five simple and classical ML imputation methods. They measured the imputation and downstream task performance on $10\%$ to $50\%$ MCAR and MNAR missing values.
+To the best of our knowledge \citep{Imputation_Benchmark_4} is the biggest and most extensive comparison, although the authors focus on introducing an imputation algorithm and present its improvements. Their proposed algorithm cross-validates the choice of the best imputation method out of $k$-NN, SVM, or Tree-based imputation methods, where the hyperparameters are cross-validate too. The authors then benchmarked their method on $84$ classification and regression tasks against five imputation methods: mean, predictive mean matching, bayesian PCA, $k$-NN, and iterative $k$-NN. They measured the imputation and downstream task performance on $10\%$ to $50\%$ MCAR and MNAR missing values.
 
-To summarize, there are papers that compare different imputation methods. However, most of the time they compare very specific settings, which often do not generalize well. Studies presenting novel imputation methods based on deep learning often lack a comprehensive comparison with classical methods under realistic conditions, with few exceptions~\citep{Imputation_Benchmark_6}. Here we aim at a broad and comprehensive benchmark accounting for all of the above dimensions described at the beginning of this section.
+We summarize the above mentioned papers and related benchmarks in Table \ref{tab:related_work} focusing on presenting the papers' aspects that account for the at the beginning of this section described dimensions. Most benchmarks use broad missingness fractions but lack realistic missingness conditions and number of data sets or their heterogeneity. Further, there is no paper published that systematically compares the imputation quality and impact on downstream task for imputation methods trained on complete and incomplete data. Studies presenting novel imputation methods based on deep learning often lack a comprehensive comparison with classical methods under realistic conditions, with few exceptions~\citep{Imputation_Benchmark_6}. In contrast to them, we aim at a broad and comprehensive benchmark accounting for all of the above dimensions described at the beginning of this section.
 
-%\sebastian{TODO: maybe table .. summarize all these... }
+% Please add the following required packages to your document preamble:
+% \usepackage{booktabs}
+% \usepackage{multirow}
+\begin{table}[]
+	\centering
+	\begin{tabular}{@{}p{2.5cm}p{3cm}p{1.5cm}p{1cm}rllll@{}}
+		\toprule
+		\multicolumn{1}{c}{\multirow{2}{*}{Study}} & \multicolumn{1}{c}{\multirow{2}{*}{\# Data Sets/Tasks}}  & \multicolumn{2}{c}{Missingness}                            & \multicolumn{1}{c}{\multirow{2}{*}{\# Basel.}} & \multicolumn{2}{c}{Evaluation}                       & \multicolumn{2}{c}{Training on}                         \\
+		\\[-0.75em]
+		\multicolumn{1}{c}{}                      & \multicolumn{1}{c}{}                       & \multicolumn{1}{c}{Pattern} & \multicolumn{1}{c}{Fraction} & \multicolumn{1}{c}{}                                   & \multicolumn{1}{c}{Imp.} & \multicolumn{1}{c}{Down.} & \multicolumn{1}{c}{Comp.} & \multicolumn{1}{c}{Incomp.} \\ \midrule
+		\\[-.5em]
+		\cite{Imputation_Benchmark_3}                                         & 2 binary clf.                                     & MCAR MAR                   & 0\% 10\% 20\% 30\% 40\%  & 6                                                      & No                       & Yes                       & \multicolumn{2}{c}{\emph{unclear}}                             \\
+		\\[-.5em]
+		\cite{Imputation_Benchmark_2}                                         & 5 data sets                                    & \emph{unclear}                     & 10\% 20\% 30\% 40\% 50\% & 7                                                      & Yes                      & No                        & No                        & Yes                         \\
+		\\[-.5em]
+		\cite{Imputation_Benchmark_1}                                         & 13 binary clf.                   & \emph{unclear*}                    & 1\% - $\sim$33\%            & 7                                                      & No                       & Yes                       & No                        & Yes                         \\
+		\\[-.5em]
+		\cite{Imputation_Benchmark_6}                                         & 10 clf.\newline 3~~~regression                            & MNAR                        & 25\% 50\% 75\%             & 11                                                     & Yes                      & Yes                       & No                        & Yes                         \\
+		\\[-.5em]
+		\citep{Imputation_Benchmark_4}                                         & 84 data sets\newline \footnotesize(clf. and regression)                                 & MCAR MNAR                  & 10\% 20\% 30\% 40\% 50\% & 5                                                      & Yes                      & Yes                       & No                        & Yes                         \\
+		\\[-.5em]
+		Ours                                      & 21 regression\newline 31 binary clf.\newline 17 multi-class clf.         & MCAR MAR MNAR             & 1\% 10\% 30\% 50\%        & 6                                                      & Yes                      & Yes                       & Yes                       & Yes                         \\ \midrule
+		\multicolumn{9}{l}{\footnotesize*Authors use incomplete datasets and, therefore, do not know the missingness pattern}
+	\end{tabular}
+	\caption{Overview of related benchmarks. In contrast to our benchmark, all other studies focus on specific aspects such as specific downstream tasks or missingness conditions. Most importantly, there is no paper that systematically compares imputation methods trained on complete and incomplete data sets. Abbreviations: the symbol \emph{\#} stands for \emph{number of}, \emph{Basel.} means Baselines, \emph{Imp.} means Imputation Quality, \emph{Down.} means Impact on Downstream Task, \emph{Comp.} means Complete Data, \emph{Incomp.} means Incomplete Data, and \emph{clf.} means classification.}
+	\label{tab:related_work}
+\end{table}
