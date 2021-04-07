@@ -3,12 +3,12 @@
 \section{Methods}
 \label{sec:methods}
 %
-One of the main goals of this work is to provide a comprehensive evaluation of missing value imputation methods under realistic conditions. In particular we focus on two aspects a) a large suite of real-world data sets and tasks and b) realistic missingness patterns. The following sections describe the data sets we considered as well as the missingness patterns, followed by a detailed description of the imputation methods compared and the metrics used for the evaluation.
+One of the main goals of this work is to provide a comprehensive evaluation of missing value imputation methods under realistic conditions. In particular, we focus on two aspects a) a broad suite of real-world data sets and tasks and b) realistic missingness patterns. The following sections describe the data sets and missingness patterns we considered, followed by a detailed description of the imputation methods compared and their preprocessing and hyperparameter optimization strategies used, and the metrics used for the evaluation.
 
 \subsection{Datasets}
 \label{sec:datasets}
 %
-We focus on a broad evaluation with several numeric datasets and tasks (regression, binary classification, and multi-class classification). The OpenML database\footnote{Website: \url{https://www.openml.org/}}~\citep{OpenML2013} contains thousands of datasets and provides an API to automatically download them. The Python package \code{scikit-learn} \citep{scikit-learn} uses this API to retrieve the datasets and creates well-formed \code{DataFrames} that encode the tables' columns properly.
+We focus on a comprehensive evaluation with several numeric datasets and tasks (regression, binary classification, and multi-class classification). The OpenML database\footnote{Website: \url{https://www.openml.org/}}~\citep{OpenML2013} contains thousands of datasets and provides an API. The Python package \code{scikit-learn} \citep{scikit-learn} can use this API to download datasets and creates well-formed \code{DataFrames} that encode the data's columns properly.
 
 We filter available datasets as follows. To calculate the imputation performance, we need ground truth datasets that do not contain missing values. Further, especially deep learning models need sufficient data to learn their task properly. However, because we plan to run many experiments, the datasets must not be too big to keep training times feasible. For this reason, we choose datasets without missing values that contain 5 to 25 features and 3k to 100k observations. We then removed duplicated, corrupted, and Sparse ARFF\footnote{Attribute-Relation File Format} formatted datasets.
 
@@ -21,14 +21,14 @@ Most research on missing value imputation considers three different types of mis
 %
 \begin{itemize}
 \item Missing completely at random (MCAR, see Table \ref{tab:missingness_patterns_MCAR}): \\
-Values are discarded independent of any other values
+Values are discarded independently of any other values
 \item Missing at random (MAR, see Table \ref{tab:missingness_patterns_MAR}): \\
 Values in column $c$ are discarded dependent on values in another column $k\neq c$
 \item Missing not at random (MNAR, see Table \ref{tab:missingness_patterns_MNAR}): \\
 Values in column $c$ are discarded dependent on their value in $c$
 \end{itemize}
 %
-The most often used missingness pattern in the literature on missing value imputation is MCAR. Here the missing values are chosen independently at random. Usually the implementations of this condition draw a random number from a uniform distribution and discard a value if that random number was below the desired missingness ratio. Few studies report results on the more challenging conditions MAR and MNAR. We here aim for a realistic modelling of these missingness patterns inspired by observations in large scale real world data sets as investigated in \cite{Biessmann2018a}. We use an implementation proposed in \cite{Schelter2020a} and \cite{Jenga}, which selects two random percentiles of the values in a column, one for the lower and one for the upper bound of the value range considered. The range of the upper and lower bound depend on the desired fraction of values to be discarded. In the MAR condition, we discard values if values in a random other column fall in that percentile. In the MNAR condition we discard values in a column if the values themselves fall in that random percentile range.
+The most often used missingness pattern in the literature on missing value imputation is MCAR. Here the missing values are chosen independently at random. Usually, the implementations of this condition draw a random number from a uniform distribution and discard a value if that random number was below the desired missingness ratio. Few studies report results on the more challenging conditions MAR and MNAR. We here aim for realistic modeling of these missingness patterns inspired by observations in large-scale real-world data sets as investigated in \cite{Biessmann2018a}. We use an implementation proposed in \cite{Schelter2020a} and \cite{Jenga}, which selects two random percentiles of the values in a column, one for the lower and one for the upper bound of the value range considered. The range of the upper and lower bound depending on the desired fraction of values to be discarded. In the MAR condition, we discard values if values in a random other column fall in that percentile. In the MNAR condition, we discard values in a column if the values themselves fall in that random percentile range.
 %
 \begin{table}
 	\centering
@@ -80,7 +80,7 @@ The most often used missingness pattern in the literature on missing value imput
   209.0 &      m &                209.0 \\
 \bottomrule
 \end{tabular}
-\caption{In the MAR condition \textit{height} values are discarded dependent on values in another column,  here \textit{gender}. All discarded \textit{height} values correspond to rows in which \textit{gender} was \textit{male}.
+\caption{In the MAR condition, \textit{height} values are discarded dependent on values in another column,  here \textit{gender}. All discarded \textit{height} values correspond to rows in which \textit{gender} was \textit{male}.
 }
 	\label{tab:missingness_patterns_MAR}
 \end{minipage}
@@ -103,7 +103,7 @@ The most often used missingness pattern in the literature on missing value imput
   164.0 &                     ? \\
 \bottomrule
 \end{tabular}
-\caption{In the MNAR condition \textit{height} values are discarded dependent on the actual \textit{height} values. All discarded values correspond to small \textit{height} values.
+\caption{In the MNAR condition, \textit{height} values are discarded dependent on the actual \textit{height} values. All discarded values correspond to small \textit{height} values.
 }
 	\label{tab:missingness_patterns_MNAR}
 \vspace{1em}
@@ -114,24 +114,23 @@ The most often used missingness pattern in the literature on missing value imput
 \subsection{Data Preprocessing}
 \label{sec:preprocessing}
 %
-Data preprocessing is often an important part of ML pipelines to achieve good results (TODO: cite?). In general, we do the following three preprocessing steps for all imputation methods:
+Data preprocessing is often an essential part of ML pipelines to achieve good results (TODO: cite?). In general, we do the following three preprocessing steps for all imputation methods:
 %
 \begin{itemize}
-	\item Encode: \\
-		The data sets (see Section \ref{sec:datasets}) we use are of heterogeneous columns, thus, categorical columns need to be encoded into a numerical representation
+	\item Encode categorical columns: \\
+		Categories are transformed into a numerical representation, which is defined on the training set and equally applied to the test set
 
-	\item Handle missing values: \\
-		To avoid the imputation model from failing, it is necessary to handle missing values
+	\item Replace missing values: \\
+		To avoid the imputation model from failing
 
-	\item Normalize: \\
-		Re-scale the columns to a common range makes ML algorithms more stable.
+	\item Normalize the data: \\
+		Columns are rescaled to the same range, which is defined on the training set and equally applied to the test set
 \end{itemize}
 %
-Encoding and normalizing mechanisms are defined on the training set and equally applied on the test set. The actual techniques varying for discriminative (described in Section \ref{sec:simple_imputation} to \ref{sec:dl_imputation}) and generative (described in Section \ref{sec:generative_imputation}) imputation approaches.
+However, the concrete techniques varying for discriminative (described in Section \ref{sec:simple_imputation} to \ref{sec:dl_imputation}) and generative (described in Section \ref{sec:generative_imputation}) imputation approaches.
 
-For discriminative imputation approaches, we substitute all missing values in the predictor columns with their column-wise mean/mode value to prevent the model from failing. The categorical columns are one-hot encoded and numerical ones normalized to zero mean and unit variance.
-
-For Generative imputation approaches, it is important to preserve the number of columns, which is why we encode the categories of categorical columns as values from $0$ to $n-1$, where $n$ is the number of categories. Then, missing values are replaced with random uniform noise from $0$ to $0.01$ and, finally, the data is min-max scaled ranging from $0$ to $1$.
+For discriminative imputation approaches, we substitute missing values with their column-wise mean/mode value, encode categorical columns one-hot, and normalize the data to zero mean and unit variance.
+For generative imputation approaches, we need to preserve the number of columns. For this reason, we encode the categories of categorical columns as values from $0$ to $n-1$, where $n$ is the number of categories. Then, missing values are replaced with random uniform noise from $0$ to $0.01$, and, finally, the data is min-max scaled ranging from $0$ to $1$.
 
 \subsection{Imputation Methods}
 \label{sec:methods:impuation}
@@ -140,7 +139,7 @@ In this section, we describe our six single imputation methods. The overall goal
 To abstract crucial steps such as preprocessing the data (see Section \ref{sec:preprocessing}) and cross-validate the imputation method's hyperparameters (see Section \ref{sec:HPO}), we define a framework implemented by all of the following imputation approaches.
 
 
-\subsubsection{Simple Imputation}
+\subsubsection{Mean/Mode Imputation}
 \label{sec:simple_imputation}
 %
 As a simple imputation baseline, we use the column-wise \code{mean} for numerical or \code{mode}, i.e., the most frequent value,  for categorical columns to fill missing values.
@@ -149,7 +148,7 @@ As a simple imputation baseline, we use the column-wise \code{mean} for numerica
 \subsubsection{$k$-NN Imputation}
 \label{sec:knKNN}
 %
-A popular ML imputation baseline is $k$-NN imputation, also known as Hot-Deck imputation~\citep{Batista2003}. For our implementation thereof, we use \code{scikit-learn}'s \code{KNeighborsClassifier} for a categorical target columns and \code{KNeighborsRegressor} for numerical columns, respectively.
+A popular ML imputation baseline is $k$-NN imputation, also known as Hot-Deck imputation~\citep{Batista2003}. For our implementation thereof, we use \code{scikit-learn}'s \code{KNeighborsClassifier} for categorical target columns and \code{KNeighborsRegressor} for numerical columns, respectively.
 %Both models expose the hyperparameter $k \in \{1, 3, 5\}$, which we optimize by 5-fold cross-validated grid-search.
 
 
@@ -170,45 +169,29 @@ For categorical columns, we use AutoKeras' \code{StructuredDataClassifier} and f
 \subsubsection{Generative Deep Learning Imputation}
 \label{sec:generative_imputation}
 %
-All of the above approaches essentially follow the ideas known in the statistics literature as multiple imputation with chained equations (MICE) \citep{Little} or as {\em fully conditional specification} \citep{vanBuuren2018}: a discriminative model is trained on all but one column as features and the remaining column as the target variable. This approach has the advantage to be applicable to any supervised learning method, but it has the decisive disadvantage that for each to-be-imputed column a new model has to be trained. Generative approaches are different in that they train just one model for an entire table. All matrix factorization based approaches such as \citep{Troyanskaya2001,Koren2009,Mazumder2010} can be thought of as an example of generative models for imputation. We do not consider those linear generative models here as they have been shown to be outperformed by the above mentioned methods and focus on deep learning variants of generative models only.
+All of the above approaches essentially follow the ideas known in the statistics literature as multiple imputation with chained equations (MICE) \citep{Little} or as {\em fully conditional specification} \citep{vanBuuren2018}: a discriminative model is trained on all but one column as features and the remaining column as the target variable. This approach has the advantage to be applicable to any supervised learning method, but it has the decisive disadvantage that for each to-be-imputed column a new model has to be trained. Generative approaches are different in that they train just one model for an entire table. All matrix factorization-based approaches such as \citep{Troyanskaya2001,Koren2009,Mazumder2010} can be thought of as an example of generative models for imputation. We do not consider those linear generative models here as they have been shown to be outperformed by the mentioned methods and focus on deep learning variants of generative models only.
 
 Generative Deep Learning methods can be broadly categorized into classes, (variational) autoencoders (VAE)~\citep{VAE}\footnote{We focus on probabilistic autoencoders here as there are more imputation methods available for VAEs} and generative adversarial networks (GAN)~\citep{GAN}. In the following, we shortly highlight some representative imputation methods based on either of these two and describe the implementation used in our experiments.
 
 \paragraph{Variational Autoencoder (VAE) Imputation}
 %
-VAEs learn to encode their input into a distribution over the latent space and decode by sampling from this distribution \citep{VAE}. Imputation methods based on this type of generative model include \cite{HIVAE, VAE_for_genomic_data, VAEM}. Rather than comparing all existing implementations we here focus on the original VAE imputation method for the sake of comparability with other approaches. To find the best model architecture, i.e., number of hidden layers and their sizes, we follow the approach proposed by \cite{CaminoVAE}. We test using no, one, and two hidden layers for the encoder and decoder and fixed their sizes relatively to the input dimension, i.e., the table's number of columns. If existing, the encoder's first hidden layer has $50\%$ of the input layer's neurons and the second $30\%$. The decoder's sizes are vice versa for upsampling the information to the same size as the input data. The latent space is also fixed to $20\%$ of the input dimension.
+VAEs learn to encode their input into a distribution over the latent space and decode by sampling from this distribution \citep{VAE}. Imputation methods based on this type of generative model include \cite{HIVAE, VAE_for_genomic_data, VAEM}. Rather than comparing all existing implementations, we focus on the original VAE imputation method for the sake of comparability with other approaches. To find the best model architecture, i.e., the number of hidden layers and their sizes, we follow the approach proposed by \cite{CaminoVAE}. We optimized using no, one, and two hidden layers for the encoder and decoder and fixed their sizes relative to the input dimension, i.e., the table's number of columns. If existing, the encoder's first hidden layer has $50\%$ of the input layer's neurons and the second $30\%$. The decoder's sizes are vice versa for upsampling the information to the same size as the input data. The latent space is also fixed to $20\%$ of the input dimension.
 For training, we use Adam optimizer with default hyperparameters, batch size of $64$, and early stopping within $50$ epochs.
 
-%We use 3-fold cross-validated grid-search to find the best number of hidden layers $\{0, 1, 2\}$. The layers' sizes are fixed and determined relatively to the input dimension, i.e., the table's number of columns. The encoder's first hidden layer has $50\%$ of the input layer's neurons, the second $30\%$, and the last layer, i.e., the latent space, $20\%$. The decoder's hidden layers' sizes are vice versa for upsampling the information to the same size as the input data.
-%To train the VAE, we use Adam optimizer with default hyperparameters, batch size of $64$, and early stopping within $50$ epochs.
-
-
-%We treat the number of hidden layers $n\_hidden\_layers$ for encoder and decoder as hyperparameters\felix{Which values were chosen?}. The size of these layers, i.e., the number of neurons, are fix and set relatively to the input dimension, i.e., the data set's number of columns\felix{Why? Can we motivate that decision?}\sebastian{For NNs the input dimension is (almost?) always the number of features. (here columns of the table)}. The dimensionality of the hidden layer one is $50\%$, hidden layer two $30\%$, and latent space is $20\%$ of the input dimension.
-%\felix{not sure this sentence is grammatically correct?} To encode the categorical columns and replace missing values with random noise \felix{what noise? uniform, normal? what mean/std?} (\cite{CaminoVAE} already present good results with this approach), we use the same preprocessing strategy as for the \emph{GAIN Imputer}.
-%\felix{didn't we also have mean/0 imputation instead of noise?}
-%To optimize the hyperparameter $n\_hidden\_layers \in \{0, 1, 2\}$, we use 3-fold cross-validated grid-search.
 
 \paragraph{Generative Adversarial Network (GAN) Imputation}
 %
 GANs consist of two parts \citep{GAN}: a generator and a discriminator. In an adversarial process, the generator learns to generate samples that are as close as possible to the data distribution, and the discriminator learns to distinguish whether an example is true or generated. Imputation approaches based on GANs include \cite{GAIN, VIGAN, MisGAN}.
-Here we employ one of the most popular approaches of GAN based imputation, Generative Adversarial Imputation Nets (GAIN)~\citep{GAIN}.
-GAIN adapts the original GAN architecture as follows. The generator's input is the concatenation of the input data and a binary matrix that represents the missing values. The discriminator learns to reconstruct the mask matrix by concatenating the generator's output and a hint matrix that is based on the introduced hyperparameter $hint\_rate$ revealing partial information about the missingness of the original data. A second hyperparameter GAIN introduces $\alpha$ is used to balance the generators performance for observed and missing values.
-For training, we use Adam optimizer with default hyperparameters except the learning rate for generator and discriminator, batch size of $64$, and early stopping withing $50$ epochs.
-
-%To optimize these and others, we use 3-fold cross-validated grid-search of: $generator\_learning\_rate \in \{0.0001, 0.0005\}$, $discriminator\_learning\_rate \in \{0.00001, 0.00005\}$, $\alpha \in \{1, 10\}$, and $hint\_rate \in \{0.7, 0.9\}$.
-%Other hyperparameters, we do not optimize are the usage of Adam optimizer for generator and discriminator, batch size of $64$, and early stopping withing $50$ epochs.
-
-
-
-%\felix{if this is the only place where we used math notation, we might consider rephrasing this, none of the other methods is described in such detail.} GAIN takes as input some data $X$, encodes categorical columns as numbers from $0$ to $n-1$, where $n$ is the number of categories, and calculates a binary mask matrix $M$ that represents missing values. To normalize $X$ into $\bar{X}$, it first scales the data min-max ($0, 1$) and second replaces missing values with random uniform noise ($\{0, 0.01\}$). The generator learns to output $\hat{X}$, where initially missing values are replaced, based on its input $\bar{X}$ and $M$. The discriminator learns to reconstruct the mask $M$ based on generator's output $\hat{X}$ and a hint matrix $H$, using the hyperparameter $hint\_rate$, that provides the discriminator with information about $M$.
-
-%GAIN is optimized by minimizing the sum of the generator's loss and the with $\alpha$ weighted discriminator's loss, see \cite{GAIN} for details. Besides the learning rates, for the generator and discriminator, GAIN introduces two new hyperparameters we optimize $hint\_rate$ and $\alpha$. For this, we use 3-fold cross-validated grid-search of: $generator\_learning\_rate \in \{0.0001, 0.0005\}$, $discriminator\_learning\_rate \in \{0.00001, 0.00005\}$, $\alpha \in \{1, 10\}$, and $hint\_rate \in \{0.7, 0.9\}$.
+Here we employ one of the most popular approaches of GAN-based imputation, Generative Adversarial Imputation Nets (GAIN)~\citep{GAIN}.
+GAIN adapts the original GAN architecture as follows.
+The generator's input is the concatenation of the input data and a binary matrix that represents the missing values. The discriminator learns to reconstruct the mask matrix. Its input is the concatenation of the generator's output and a hint matrix, which reveals partial information about the missingness of the original data. The computation of the hint matrix incorporates the introduced hyperparameter $hint\_rate$. A second hyperparameter GAIN introduces $\alpha$ helps to balance the generator's performance for observed and missing values.
+For training, we use Adam optimizer with default hyperparameters except for the learning rate for generator and discriminator, batch size of $64$, and early stopping within $50$ epochs.
 
 
 \subsection{Hyperparameter Optimization}
 \label{sec:HPO}
 %
-Optimizing and cross-validate hyperparameters is crucial to gain insights of a models' performance, robustness, and training time. Therefore, we choose for each imputation model the, as we find, most important hyperparameters and optimize them using cross-validated grid-search. For the $k$-NN and random forest imputation methods, we use $5$-fold cross validation and, to reduce the overall training time, $3$-fold cross validation for VAE and GAIN imputation. The mean/mode imputation does not have hyperparameters to optimize and because we use AutoKeras for the discriminative deep learning Imputation we do not need to set the hyperparameters explicitly. Table \ref{tab:HPO} gives an overview of all imputation approaches and their hyperparameters we optimize as well as the number of combinations.
+Optimizing and cross-validate hyperparameters is crucial to gain insights into a models' performance, robustness, and training time. Therefore, we choose for each imputation model the, as we find, most important hyperparameters and optimize them using cross-validated grid-search. For the $k$-NN and random forest imputation methods, we use $5$-fold cross-validation and $3$-fold cross-validation for VAE and GAIN imputation to reduce the overall training time. Table \ref{tab:HPO} gives an overview of all imputation approaches and their hyperparameters we optimize, and the number of combinations. We do not define a hyperparameter grid for the mean/mode imputation approach because it does not have hyperparameters, and the discriminative deep learning imputation is optimized by AutoKeras.
 %
 \begin{table}[]
 	\centering
@@ -217,7 +200,7 @@ Optimizing and cross-validate hyperparameters is crucial to gain insights of a m
 		\multirow{2}{*}{Imputation Method} & \multicolumn{2}{c}{Hyperparameters}                          & \multirow{2}{*}{Grid Size} \\\cline{2-3}
 		\\[-0.75em]
 		& \multicolumn{1}{c}{Name}        & \multicolumn{1}{c}{Values} &                            \\ \midrule
-		Mean/Mode                         &                                 &                            & 0                          \\
+		Mean/Mode                         &                                 &                            &                           \\
 		\\[-0.5em]
 		$k$-NN                             & $n\_neighbors$                  & \{1, 3, 5\}                & 3                          \\
 		\\[-0.5em]
@@ -241,7 +224,7 @@ Optimizing and cross-validate hyperparameters is crucial to gain insights of a m
 
 \subsection{Evaluation Metrics}
 %
-To evaluate our experiments, we use two metrics. For regression downstream tasks or numerical imputation, we use the $RMSE$, shown in Equation \ref{eq:RMSE}, and for classification downstream tasks or categorical imputation the $macro\ F1$, shown in Equation \ref{eq:F1}.
+To evaluate our experiments, we use two metrics: $macro F1-score$ (shown in Equation \ref{eq:F1}) and root mean square error ($RMSE$) (shown in Equation \ref{eq:RMSE}).
 %
 \begin{equation}
 	RMSE = \sqrt{\frac{1}{N} \sum_{i = 0}^{N} (x_i - \hat{x_i})^2}
@@ -253,4 +236,4 @@ To evaluate our experiments, we use two metrics. For regression downstream tasks
 	\label{eq:F1}
 \end{equation}
 %
-Because $RMSE$ measures an error, the lower its value the better the performance. On the other hand, $F1$ (we use $macro\ F1$ and $F1$ synonym) calculates a score and, therefore, greater $F1$ means better performance.
+Because imputing a categorical column can be seen as a classification task, we use the $F1-score$ (we use $macro F1-score$, $F1-score$, and $F1$ synonym) to measure their performance. Respectively, we use the $RSME$ for regression tasks and imputing numerical columns. Since $F1$ is a score measure, a larger $F1$ means better performance. On the other hand, $RSME$ is an error meassure, and the smaller RSME, the better performance.
