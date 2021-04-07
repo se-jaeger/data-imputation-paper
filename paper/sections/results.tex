@@ -4,7 +4,6 @@
 
 \felix{
 \begin{itemize}
-\item for the downstream performance i'm not sure it's immediately clear what's shown - maybe we should highlight that it's improvement over downstream performance with missing data?
 \item in the conclusion we should relate the performance to the training and prediction time and comment on the (large) differences - for AutoKeras, a lot more tuning is performed and we don't know whether it would have worked as well with less tuning.
 \item we should highlight the limitations of our results (only one column, maybe too simple)
 \item we should highlight the main findings; as far as i can see this would be: a) classical methods perform best (on these simple (?) data sets) and b) downstream performance is improved by X \% in Y \% of the experiments (we can use the quantiles in the boxplots) whereas when the imputation methods are trained on incomplete data, we cannot expect improvements.
@@ -12,14 +11,14 @@
 }
 
 In this section, we describe and visualize the results of our experiments.
-%
-Our goal was to provide as broad an overview as possible of the performance of various imputation methods. Therefore, we included a large number of datasets in our selection, with different data and task types. To make the results comparable this heterogeneous selection of data sets and tasks, we decided to aggregate the ranks of each imputation method in each experimental condition. Each condition is a combination of data set, corrupted column in a data set, missingness pattern and missingness ratio. The best rank is thus one, the worst rank six. For numerical columns the rank is is based on RMSE where lower is better. For categorical columns the rank is based on the F1 macro score where higher is better. Imputation methods with equal performance are assigned the same rank. If an imputation method produced Null-values we set its rank to be the last.
 
 
 
 \subsection{Experiment 1: Imputation Quality}
 
 In this experiment we evaluate the imputation performance of each method when training on fully observed data and incomplete data.
+
+Our goal was to provide as broad an overview as possible of the performance of various imputation methods. Therefore, we included a large number of datasets in our selection, with different data and task types. To make the results comparable this heterogeneous selection of data sets and tasks, we decided to aggregate the ranks of each imputation method in each experimental condition. Each condition is a combination of data set, corrupted column in a data set, missingness pattern and missingness ratio. The best rank is thus one, the worst rank six. For numerical columns the rank is is based on RMSE where lower is better. For categorical columns the rank is based on the F1 macro score where higher is better. Imputation methods with equal performance are assigned the same rank. If an imputation method produced Null-values we set its rank to be the last.
 
 \subsubsection{Scenario 1: Training on Complete Data}
 
@@ -71,7 +70,9 @@ We attribute the poor performance of GAIN in part to its numerical instability. 
 
 \subsection{Experiment 2: Impact on Downstream Task}
 
-In this experiment we evaluate the downstream performance of each method when training on fully observed data and incomplete data. In the following plots, the \textit{impact on downstream task} metrics (Equations \ref{eq:impact} and \ref{eq:impact_scenario2}) are labeled \textit{Improvement} and the values represented on the Y-axis.
+In this experiment we evaluate the downstream performance of each method when training on fully observed data and incomplete data.
+
+In \textit{Scenario 1} we use the definition for \textit{impact on downstream task} from \autoref{eq:impact}. In contrast, for \textit{Scenario 2} we use the slightly different definition from \autoref{eq:impact_scenario2}. Both of theses metrics are labeled \textit{Improvement} and the values represented on the Y-axis in \autoref{fig:fully_observed_downstream_boxplot} and \autoref{fig:corrupted_downstream_boxplot}.
 
 
 \subsubsection{Scenario 1: Training on Complete Data}
@@ -85,7 +86,9 @@ In this experiment we evaluate the downstream performance of each method when tr
 	\label{fig:fully_observed_downstream_boxplot}
 \end{figure}
 
-Figure \ref{fig:fully_observed_downstream_boxplot} visualizes the \textit{impact on downstream task} metric (Equation \ref{eq:impact}) in \textit{Scenario 1}. The impact of imputation seems mostly negligible if the proportion of missing values is only 1\%. However, for numeric columns, there are some outliers in the 20\% to 40\% improvement range with the MCAR and MAR patterns at 1\% missing values. With an increasing proportion of missing values we observe increasing improvements in the downstream performance in all types of missingness patterns. However, there are also some cases where downstream performance is degraded by imputation, which is mainly the case for categorical columns.
+Figure \ref{fig:fully_observed_downstream_boxplot} visualizes the \textit{impact on downstream task} metric (Equation \ref{eq:impact}) in \textit{Scenario 1}. \arndt{hier ggf. in einem Satz nochmal zusammenfassen, wie die Berechnung erfolgt (sinngemäß).}
+
+The impact of imputation seems mostly negligible if the proportion of missing values is only 1\%. However, for numeric columns, there are some outliers in the 20\% to 40\% improvement range with the MCAR and MAR patterns at 1\% missing values. With an increasing proportion of missing values we observe increasing improvements in the downstream performance in all types of missingness patterns. However, there are also some cases where downstream performance is degraded by imputation, which is mainly the case for categorical columns.
 
 For categorical columns, improvements are mostly in the 0\% to 5\% range, and in case of 50\% missing values the upper quartile reaches the 5\% to 10\% range. The whiskers even indicate performance increases which go significantly beyond. Measured by the median, as an overall aggregation, Random Forest yields the best results for categorical columns. GAIN performs often similarly well or even better but also has more negative fluctuations.
 
