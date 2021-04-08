@@ -9,7 +9,7 @@ In this section, we describe and visualize the results of our experiments. For t
 
 In this experiment we evaluate the imputation performance of each method when training on fully observed data and incomplete data.
 
-As described above, our goal was to provide a broad overview of the performance of different imputation methods on various data sets. It was difficult to compare the results across such heterogeneous data by their respective scores (F1/RMSE) on randomly sampled target columns. Therefore, we decided to use ranks instead. On each experiemental condition (see Table \ref{tab:experiment_settings}), we calculate the rank of every imputer based on its mean performance over three repetions (different random train-test splits). Since we have six imputers, there are six ranks, with one being the best and six being the worst. For numerical columns the rank is based on RMSE where lower is better and for categorical columns the rank is based on the F1 score where higher is better. Imputation methods with equal performance are assigned the same rank.
+As described above, our goal was to provide a broad overview of the performance of different imputation methods on various data sets. It was difficult to compare the results across such heterogeneous data by their respective scores (F1/RMSE) on randomly sampled target columns, as the variance was much to high. Therefore, we decided to use ranks instead. On each experiemental condition (see Table \ref{tab:experiment_settings}), we calculate the rank of every imputer based on its mean performance over three repetions (different random train-test splits). Since we have six imputers, there are six ranks, with one being the best and six being the worst. For numerical columns the rank is based on RMSE where lower is better and for categorical columns the rank is based on the F1 score where higher is better. Imputation methods with equal performance are assigned the same rank.
 
 If an imputation method did not work, it is ranked last. This is most relevant for GAIN, which failed in 273 out of 828 times in \textit{Experiment 1} - \textit{Scenario 1}, which amounts to 33\% of the cases. In \textit{Experiment 1} - \textit{Scenario 2}, however, the problem of GAIN often failing did not occur.
 
@@ -55,19 +55,19 @@ Overall, the results of \textit{Scenario 1} (Figure \ref{fig:fully_observed_impu
 
 In this experiment we evaluate the downstream performance of each method when training on fully observed data and incomplete data.
 
-In \textit{Scenario 1} we use the definition for \textit{impact on downstream task} from \autoref{eq:impact}. In contrast, for \textit{Scenario 2} we use the slightly different definition from \autoref{eq:impact_scenario2}. Both of theses metrics are labeled \textit{Improvement} and the values represented on the Y-axis in \autoref{fig:fully_observed_downstream_boxplot} and \autoref{fig:corrupted_downstream_boxplot}.
+In \textit{Scenario 1} we use the definition for \textit{impact on downstream task} from \autoref{eq:impact}. In contrast, for \textit{Scenario 2} we use the slightly different definition from \autoref{eq:impact_scenario2}. Both of theses metrics are labeled \textit{Improvement} and the values represented on the y-axis in \autoref{fig:fully_observed_downstream_boxplot} and \autoref{fig:corrupted_downstream_boxplot}.
+
+In this experiment, we group the graphs by the type of downstream task. That is, in contrast to \textit{Experiment 1}, irrespective of the data type of the column that was imputed.
 
 Experiemental settings that caused undefined results in the first experiment were filtered out in the second experiment. This means in particular that we have fewer results for GAIN in \textit{Scenario 1}.
 
-\sebastian{Würde auch hier erst eine allgemienere einführugnen machen: Zeigen hier die Improvement berechnert wie in equation 3 o. 4 depending on scenario. Dass wir jetzt oben Classificaiton tasks und unten Regression haebn... UND: vor allem muss hier hien, dass wir jetzt nur noch die verwenden, die auch wirklich sinnvolle ergebnisse geliefert haben, also bein GAIN einiges fehlt.}
-
-\felix{we should highlight the limitations of our results (only one column, maybe too simple)}
+When interpreting the results, it should be taken into account that, as described previously (Section \ref{sec:experiment_2}), we only imputed values in the test sets’ target column and measured the downstream improvement based on this.
 
 
 \subsubsection{Scenario 1: Training on Complete Data}
 
-\sebastian{GANZ WICHTIG: wir haben hier keine infos darüber, welche columns imputed wurden. Was wir sehen ist ne Gruppierung nach Downstream task! - Ich würde da noch etwas weiter raus zoom am anfang: Allgemien, mehr missingness fürht zu mehr variance in der improvement. Überraschenderweise für calssification in beide Richtugnen aber deutliche tendenz für improvement und wieder wie oben RF/KNN/DL und Mean/mode sind ganz gut.. Regression fast ausschließlich improvements und wieder das bekannte trio am besten im regelfall.. (Hbane wir ne idee warum classificaiotn auch schelcht wird und regression nicht?)}
-
+\sebastian{GANZ WICHTIG: wir haben hier keine infos darüber, welche columns imputed wurden. Was wir sehen ist ne Gruppierung nach Downstream task!}
+\arndt{@Sebastian: OK, habs oben eingefügt. Das gilt allgemein für Experiment 2, oder? War mir ehrlich gesagt nicht so richtig klar bisher. Da müssen wir beim Korrekturlesen nochmal drauf achten, dass das nicht irgendwo verdreht ist.}
 
 \begin{figure}\centering
 	\includegraphics[width=1\columnwidth]{fully_observed_downstream_boxplot.eps}
@@ -77,20 +77,18 @@ Experiemental settings that caused undefined results in the first experiment wer
 	\label{fig:fully_observed_downstream_boxplot}
 \end{figure}
 
-Figure \ref{fig:fully_observed_downstream_boxplot} visualizes the \textit{impact on downstream task} metric (Equation \ref{eq:impact}) in \textit{Scenario 1}. \arndt{hier ggf. in einem Satz nochmal zusammenfassen, wie die Berechnung erfolgt (sinngemäß).}
+Figure \ref{fig:fully_observed_downstream_boxplot} visualizes the \textit{impact on downstream task} metric, i.e. the percent change of the imputation over the incomplete data relative to the baseline (Equation \ref{eq:impact}), in \textit{Scenario 1}.
 
 The impact of imputation seems mostly negligible if the proportion of missing values is only 1\%. However, for numeric columns, there are some outliers in the 20\% to 40\% improvement range with the MCAR and MAR patterns at 1\% missing values. With an increasing proportion of missing values we observe increasing improvements in the downstream performance in all types of missingness patterns. However, there are also some cases where downstream performance is degraded by imputation, which is mainly the case for categorical columns.
 
-For categorical columns, improvements are mostly in the 0\% to 5\% range, and in case of 50\% missing values the upper quartile reaches the 5\% to 10\% range. The whiskers even indicate performance increases which go significantly beyond. Measured by the median, as an overall aggregation, Random Forest yields the best results for categorical columns. GAIN performs often similarly well or even better but also has more negative fluctuations.
+For categorical columns, improvements are mostly in the 0\% to 5\% range, and in case of 50\% missing values the upper quartile reaches the 5\% to 10\% range. The whiskers even indicate performance increases which go significantly beyond. Measured by the median, as an overall aggregation, random forest yields the best results for categorical columns. GAIN performs often similarly well or even better but also has more negative fluctuations.
 
 The situation is different for regression tasks. Here, GAIN clearly yields the least improvements downstream. Even the Mean imputation is oftentimes significantly more beneficial for the downstream tasks. The VAE results are approximately on par with Mean imputation. In contrast, the classical ML and the discriminative DL approaches do outperform the other methods in most settings. However, when the missing values are MNAR there is no clear advantage except that the discriminative DL is superior at 50\% missing values.
 
-Overall, the classical ML methods and discriminative DL perform best. As the proportion of missing values increases, we observe increasing improvements in all types of missingness patterns, along with higher variance, in downstream performance. In contrast to classification tasks, there are hardly any negative effects in regression tasks.
+Overall, the classical ML methods and discriminative DL perform best. Again, mean/mode imputation yields medium good results. As the proportion of missing values increases, we observe increasing improvements of the in downstream performance in all types of missingness patterns, along with higher variance. In contrast to classification tasks, there are hardly any negative effects in regression tasks.
+
 
 \subsubsection{Scenario 2: Training on Incomplete Data}
-
-\sebastian{Auch hier: variance wird größer, wenn fraciton steigt. Jetzt aber tendenziell verschlechterungen.. Wieder aber für Regression besser als für classification. Mit KNN/Forest beste cahnce auf verbesserung.}
-
 
 \begin{figure}\centering
 	\includegraphics[width=1\columnwidth]{corrupted_downstream_boxplot.eps}
@@ -106,7 +104,7 @@ If weak positive effects seem to predominate in classification tasks at first, t
 
 In regression tasks, apart from a few outliers, there are no significant improvements. At the highest proportion of missing values (50\%) and greatest difficulty (MNAR), the results of the generative methods (VAE and GAIN) even turn predominantly negative.
 
-In summary, no considerable improvements were achieved in regression tasks. In classification tasks, the picture is more mixed and the variance is higher. In some settings, there are slightly positive effects to note. In the difficult settings, however, the negative effects predominate.
+Here, too, the variance increases with higher fraciton. However, this time the results tend to worsen. In summary, no considerable improvements are achieved in regression tasks. In classification tasks, the picture is more mixed and the variance is higher. In some settings, there are slightly positive effects to note. In the difficult settings, however, the negative effects predominate. Again, $k$-NN and random forest appear to be the most robust methods overall.
 
 \arndt{consider points below in discussion}
 \felix{
@@ -119,6 +117,7 @@ In summary, no considerable improvements were achieved in regression tasks. In c
 \sebastian{
 \begin{itemize}
 \item Scenario 2: Training on Incomplete Data - Spätestens jetzt sollten wir mal ein wort darüber verlieren woran das liegen könnte: When eine category einfach häufiger ist, dann ist das meist ne recht guter guess. Das könnte dazu führen, dass die andere schlechter werden, weil die versuchen das intelligenter zu machen, aber einfach nicht genügend trainings daten haben um noch was sinnvolles zu lernen
+\item Figure 3 - (Hbane wir ne idee warum classificaiotn auch schelcht wird und regression nicht?)
 \end{itemize}
 }
 
