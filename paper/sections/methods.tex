@@ -224,7 +224,7 @@ Optimizing and cross-validate hyperparameters is crucial to gain insights into a
 
 \subsection{Evaluation Metrics}
 %
-To evaluate our experiments, we use two metrics: $macro F1-score$ (shown in Equation \ref{eq:F1}) and root mean square error ($RMSE$) (shown in Equation \ref{eq:RMSE}).
+To evaluate our experiments, we use two metrics: $macro F1$-score (shown in Equation \ref{eq:F1}) and root mean square error ($RMSE$) (shown in Equation \ref{eq:RMSE}).
 %
 \begin{equation}
 	RMSE = \sqrt{\frac{1}{N} \sum_{i = 0}^{N} (x_i - \hat{x_i})^2}
@@ -236,4 +236,4 @@ To evaluate our experiments, we use two metrics: $macro F1-score$ (shown in Equa
 	\label{eq:F1}
 \end{equation}
 %
-Because imputing a categorical column can be seen as a classification task, we use the $F1-score$ (we use $macro F1-score$, $F1-score$, and $F1$ synonym) to measure their performance. Respectively, we use the $RSME$ for regression tasks and imputing numerical columns. Since $F1$ is a score measure, a larger $F1$ means better performance. On the other hand, $RSME$ is an error meassure, and the smaller RSME, the better performance.
+Because imputing a categorical column can be seen as a classification task, we use the $F1$-score (we use $macro F1$-score, $F1$-score, and $F1$ synonym) to measure their performance. Respectively, we use the $RSME$ for regression tasks and imputing numerical columns. Since $F1$ is a score measure, a larger $F1$ means better performance. On the other hand, $RSME$ is an error meassure, and the smaller RSME, the better performance.

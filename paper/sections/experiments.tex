@@ -1,5 +1,6 @@
 %!TEX root = ../data-imputation.tex
 \section{Implementation and Experiments}
+\label{sec:implementation}
 %
 In this section, we describe our benchmark suite in detail and its implementation.
 
@@ -17,13 +18,13 @@ Our experimental settings are listed in Table \ref{tab:experiment_settings}. Eac
 	\begin{tabular}{ll}
 		\toprule
 		Parameter            & Values                                     \\ \midrule
-		Datasets             & 69 datasets (see supplementary material)    \\
+		Data Sets             & 69 (see supplementary material)    \\
 		\\[-0.5em]
-		Imputer              & Mode, $k$-NN, Random Forest, DL, GAIN, VAE \\
+		Imputation Methods              & Mode, $k$-NN, Random Forest, DL, GAIN, VAE \\
 		\\[-0.5em]
-		Missingness Pattern  & MCAR, MAR, MNAR                            \\
+		Missingness Patterns  & MCAR, MAR, MNAR                            \\
 		\\[-0.5em]
-		Missingness Fraction & $1\%, 10\%, 30\%, 50\%$                      \\ \bottomrule
+		Missingness Fractions & $1\%, 10\%, 30\%, 50\%$                      \\ \bottomrule
 	\end{tabular}
 	\caption{Overview of our experimental settings. We focus on covering an extensive range of the in Section \ref{sec:related_work} described dimensions. In total there are $4,968$ experiments, which we repeat three times and report the mean.}
 	\label{tab:experiment_settings}

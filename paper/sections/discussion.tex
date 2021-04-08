@@ -5,18 +5,18 @@
 
 \subsection{Simpler Imputation Methods have better Imputation Quality}
 %
-In almost all experimental settings, we see in Figure \ref{fig:fully_observed_impute_rank_boxplot} and \ref{fig:corrupted_impute_rank_boxplot} that simpler imputation methods, such as $k$-NN and random forest, are for $75\%$ of the data sets among the better ranks one, two or three. Random forest has the tendency to achieve the best rank more often. This effect is largely independent whether they are trained on complete or incomplete data.
-This finding is inline with \cite{Imputation_Benchmark_3, Imputation_Benchmark_2, Imputation_Benchmark_4}, they found that $k$-NN imputation is in most situations the best choice. However, \cite{Imputation_Benchmark_2, Imputation_Benchmark_4} did not incorporate a random forest imputation method.
-%The discriminate DL method shows very similar ranks. Whereas, in many settings it achieves rank two, three or four for $50\%$ of the data sets.
+In MCAR and MAR, we see in Figure \ref{fig:fully_observed_impute_rank_boxplot} and \ref{fig:corrupted_impute_rank_boxplot} that simpler imputation methods, such as $k$-NN and random forest, as well as the discriminate DL approach are for $50\%$ of the cases among the better ranks one, two or three. Random forest has the tendency to achieve the best rank more often. This effect is largely independent whether they are trained on complete or incomplete data.
+This finding is inline with \cite{Imputation_Benchmark_3, Imputation_Benchmark_2, Imputation_Benchmark_4}, they found that $k$-NN imputation is in most situations the best choice. However, \cite{Imputation_Benchmark_2, Imputation_Benchmark_4} did not incorporate a random forest imputation method. Further, we could not find any study that also considered discriminate deep learning methods.
 
-For categorical columns (see Figure \ref{fig:fully_observed_impute_rank_boxplot} and \ref{fig:corrupted_impute_rank_boxplot}, upper row) when the imputation setting gets more complex, which means MAR or MNAR pattern and higher missingness fractions, the mean/mode imputation tends to achieve better ranks. This makes sense because the values of categorical columns are discrete and often have small cardinality. Especially when the column's distribution is skewed, using the most frequent value to substitute missing values is a good approximation of the ground truth. If the training data is incomplete to a high extend, learning algorithms can hardly capture the underlying data distribution. For this reason, we find mean/mode imputation for $75\%$ of the data sets in the settings with $30\%$ or $50\%$ MNAR missing values at rank two or better (visualized in Figure \ref{fig:corrupted_impute_rank_boxplot}). \cite{Imputation_Benchmark_3} did not explicitly calculate the ranks but their plots show the same tendency.
+For categorical columns (see Figure \ref{fig:fully_observed_impute_rank_boxplot} and \ref{fig:corrupted_impute_rank_boxplot}, upper row) when the imputation setting gets more complex, which means MAR or MNAR pattern and higher missingness fractions, the mean/mode imputation tends to achieve better ranks. This makes sense because the values of categorical columns are discrete and often have small cardinality. Especially when the column's distribution is skewed, using the most frequent value to substitute missing values is a good approximation of the ground truth. If the training data is incomplete to a high extend, learning algorithms can hardly capture the underlying data distribution. For this reason, mean/mode scores for $30\%$ and $50\%$ MNAR missing values in $75\%$ of the cases on rank two or better (visualized in Figure \ref{fig:corrupted_impute_rank_boxplot}). \cite{Imputation_Benchmark_3} did not explicitly calculate the ranks but their plots show the same tendency. In general, it is possible that the higher variance of the ranks in contrast to the numerical imputation results occurs because we sampled six times more numerical than categorical columns. With more experiments there is a good chance to get clearer results.
 
-Since GAIN failed in about $33\%$ of settings when training data was complete, this could be that in most cases GAIN achieves rank five or works for $75\%$ of data sets (see Figure \ref{fig:fully_observed_impute_rank_boxplot}). This assumption is supported by the fact that GAIN does not fail for settings with incomplete training data
+Since GAIN failed in about $33\%$ of settings when training data was complete, this could be a reason for that in most cases GAIN achieves the worst ranks (see Figure \ref{fig:fully_observed_impute_rank_boxplot}). This assumption is supported by the fact that GAIN does not fail for settings with incomplete training data and Figure \ref{fig:corrupted_impute_rank_boxplot} shows often better ranks
 
 A widespread hypothesis is that more complex models can capture more complex interactions in the data. For the subject of data imputation, this means that using VAE or GAIN to impute data with higher missingness fractions of MAR or MNAR pattern should show some advantages over simpler models. However, our experiments do not show any evidence for this hypothesis.
 
 
-\subsection{}
+
+\subsection{Moderate Downstream Improvements when Imputation Method was Trained on Complete Data}
 %
 
 
@@ -28,4 +28,5 @@ A widespread hypothesis is that more complex models can capture more complex int
 
 \begin{itemize}
 	\item Datasets probably to small
+	\item Datasets too simple: Images, frei text..
 \end{itemize}
