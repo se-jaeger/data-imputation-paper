@@ -2,24 +2,15 @@
 \section{Results}
 \label{sec:results}
 
-\felix{
-\begin{itemize}
-\item in the conclusion we should relate the performance to the training and prediction time and comment on the (large) differences - for AutoKeras, a lot more tuning is performed and we don't know whether it would have worked as well with less tuning.
-\item we should highlight the limitations of our results (only one column, maybe too simple)
-\item we should highlight the main findings; as far as i can see this would be: a) classical methods perform best (on these simple (?) data sets) and b) downstream performance is improved by X \% in Y \% of the experiments (we can use the quantiles in the boxplots) whereas when the imputation methods are trained on incomplete data, we cannot expect improvements.
-\end{itemize}
-}
-
-In this section, we describe and visualize the results of our experiments.
-
+In this section, we describe and visualize the results of our experiments. For the visualization we choose to consistently use boxplots for all four experiments/scenarios. These allow us to get a decent impression of the distribution of the results based on quantiles. In a line chart, in contrast, the confidence bands would overlap too much to derive meaningful interpretations. The plots' arrangement from left to right corresponds to the degree of difficulty increasing in this direction. This applies to the missingness patterns (MCAR, MAR, MNAR), each of which gets an own sub-plot, as well as the missingness percentages (small to larger), which are depicted as ticks on the x-axis. Due to mostly different results, we further distinguish the plots between regression and classification tasks. These are strongly imbalanced, with only 13\% of the results based on categorical columns (637) versus a clear majority of 87\% numerical columns (4293).
 
 
 \subsection{Experiment 1: Imputation Quality}
 
 In this experiment we evaluate the imputation performance of each method when training on fully observed data and incomplete data.
 
-\sebastian{Kürzer, vieles davon ist ja auch schon erläutert. - heterogeneous data + random sampled columns machts schwer zu vergleichen. Therefore, or each experiemental setting (table 6), we calculate rank for imputers based on mean performacne for the 3 repetitions. Because 6 imptuer, 6 ranks. 1 best, 6 worse. Methods that did not work get 6. 2 equal both get same smaller rank}
-Our goal was to provide as broad an overview as possible of the performance of various imputation methods. Therefore, we included a large number of datasets in our selection, with different data and task types. To make the results comparable this heterogeneous selection of data sets and tasks, we decided to aggregate the ranks of each imputation method in each experimental condition. Each condition is a combination of data set, corrupted column in a data set, missingness pattern and missingness ratio. The best rank is thus one, the worst rank six. For numerical columns the rank is based on RMSE where lower is better. For categorical columns the rank is based on the F1 macro score where higher is better. Imputation methods with equal performance are assigned the same rank. If an imputation method produced Null-values we set its rank to be the last.
+As described above, our goal was to provide a broad overview of the performance of different imputation methods on various data sets. It was difficult to compare the results across such heterogeneous data by their respective scores (F1/RMSE) on randomly sampled target columns. Therefore, we decided to use ranks instead. On each experiemental condition (see Table \ref{tab:experiment_settings}), we calculate the rank of every imputer based on its mean performance over three repetions (different random train-test splits). Since we have six imputers, there are six ranks, with one being the best and six being the worst. For numerical columns the rank is based on RMSE where lower is better and for categorical columns the rank is based on the F1 score where higher is better. Imputation methods with equal performance are assigned the same rank. If an imputation method did not work, it is ranked last.
+
 
 \subsubsection{Scenario 1: Training on Complete Data}
 
@@ -32,15 +23,7 @@ Our goal was to provide as broad an overview as possible of the performance of v
 	\label{fig:fully_observed_impute_rank_boxplot}
 \end{figure}
 
-\autoref{fig:fully_observed_impute_rank_boxplot} shows the aggregated ranks for imputation performance when imputation methods are trained on fully observed data. \sebastian{Hier muss bevor alles andere kommt eine erläuterung des Plots:
-\begin{itemize}
-	\item Warum boxplots? -> Sehen wir wichtige statistics die sonsts sehr überlappend wären. 25, median, 75 quantile, die eben ganz schön auf die distribution deuten.
-	\item Von Links nach recht ist immer leicht zu schwerer: gilt für plot columns (MCAR, MAR, MNAR) und fractions (small to big)
-	\item Weil teils deutliche Unterscheide trennten wir categorical und numerical columns -> Hier wäre es dann acuh ganz gut zu sagen, wieviele cat. und num. columns es ware..
-\end{itemize}
-Da fällt mir ein, vll zieht man die erläterung, dass und warum wir boxplots nehmen ganz an anfang von der resulsts section. Glaub das ist besser..
-}
-
+Figure \ref{fig:fully_observed_impute_rank_boxplot} shows the aggregated ranks for imputation performance when imputation methods are trained on fully observed data.
 
 When imputing categorical columns, there is no clear winner. However, the Discriminative Deep Learning approach yields high imputation quality in most cases. In the MAR setting, also the methods random forest and $k$-NN are among the first two to three ranks often times. With increasing complexity the DL based methods seem to improve. Notably Mean/Mode imputation compares favorably in many cases especially in the most complex MNAR setting. Surprisingly, GAIN appeared to perform worse than others in most cases \sebastian{why? - explain that it fails very often (how many percents?)}. In the setting of highest complexity (MNAR with 50\% missing values) the results are not significantly worse than the other methods \sebastian{Gefährlicher Satz wegen significantly.. würde ich weg lassen}.
 
@@ -94,6 +77,8 @@ In \textit{Scenario 1} we use the definition for \textit{impact on downstream ta
 
 \sebastian{Würde auch hier erst eine allgemienere einführugnen machen: Zeigen hier die Improvement berechnert wie in equation 3 o. 4 depending on scenario. Dass wir jetzt oben Classificaiton tasks und unten Regression haebn... UND: vor allem muss hier hien, dass wir jetzt nur noch die verwenden, die auch wirklich sinnvolle ergebnisse geliefert haben, also bein GAIN einiges fehlt.}
 
+\felix{we should highlight the limitations of our results (only one column, maybe too simple)}
+
 
 \subsubsection{Scenario 1: Training on Complete Data}
 
@@ -131,13 +116,25 @@ Overall, the classical ML methods and discriminative DL perform best. As the pro
 	\label{fig:corrupted_downstream_boxplot}
 \end{figure}
 
-Figure \ref{fig:corrupted_downstream_boxplot} illustrates the \textit{impact on downstream task} (Equation \ref{eq:impact_scenario2}) in \textit{Scenario 2} (training on incomplete/imputed data). Here, the different scaling of the y-axis must be taken into account, i.e. the relative improvements are significantly smaller compared to the first scenario. One reason for this is the different basis for calculating the relative values (see sections \ref{sec:experiment_2} and \ref{sec:scenario_2}). \arndt{@Sebastian vllt. magsts du das noch mit einem weiteren Satz ausführen?!} \sebastian{wüsste nicht wie, es gibt halt keine andere Basis..}
+Figure \ref{fig:corrupted_downstream_boxplot} illustrates the \textit{impact on downstream task} (Equation \ref{eq:impact_scenario2}) in \textit{Scenario 2} (training on incomplete/imputed data). Here, the different scaling of the y-axis must be taken into account, i.e. the relative improvements are significantly smaller compared to the first scenario. One reason for this is the different basis for calculating the relative values (see sections \autoref{sec:experiment_2} and \autoref{sec:scenario_2}). \arndt{@Sebastian vllt. magsts du das noch mit einem weiteren Satz ausführen?!} \sebastian{wüsste nicht wie, es gibt halt keine andere Basis..}
 
 If weak positive effects seem to predominate in classification tasks at first, this tendency changes with increasing proportion of missing values (at 50\%) and increasing difficulty of the task (especially MNAR). The most negative results are produced by GAIN. However, the other methods also have major difficulties and often drift into negative ranges for the greater part as the tasks become more challenging.
 
 In regression tasks, apart from a few outliers, there are no significant improvements. At the highest proportion of missing values (50\%) and greatest difficulty (MNAR), the results of the generative methods (VAE and GAIN) even turn predominantly negative.
 
 In summary, no considerable improvements were achieved in regression tasks. In classification tasks, the picture is more mixed and the variance is higher. In some settings, there are slightly positive effects to note. In the difficult settings, however, the negative effects predominate.
+
+
+\felix{
+\begin{itemize}
+\item in the conclusion we should relate the performance to the training and prediction time and comment on the (large) differences - for AutoKeras, a lot more tuning is performed and we don't know whether it would have worked as well with less tuning.
+\item we should highlight the limitations of our results (only one column, maybe too simple)
+\item we should highlight the main findings; as far as i can see this would be: a) classical methods perform best (on these simple (?) data sets) and b) downstream performance is improved by X \% in Y \% of the experiments (we can use the quantiles in the boxplots) whereas when the imputation methods are trained on incomplete data, we cannot expect improvements.
+\end{itemize}
+}
+\arndt{consider Felix' points above in discussion}
+
+
 
 
 \subsection{Training Time}
