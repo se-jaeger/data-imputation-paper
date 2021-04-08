@@ -15,6 +15,7 @@ If an imputation method did not work, it is ranked last. This is most relevant f
 
 
 \subsubsection{Scenario 1: Training on Complete Data}
+\label{sec:results_experiment1_scenario1}
 
 \begin{figure}\centering
     \includegraphics[width=1\columnwidth]{fully_observed_impute_rank_boxplot.eps}
@@ -25,38 +26,29 @@ If an imputation method did not work, it is ranked last. This is most relevant f
 
 Figure \ref{fig:fully_observed_impute_rank_boxplot} shows the aggregated ranks for imputation performance when imputation methods are trained on fully observed data.
 
-When imputing categorical columns, there is no clear winner. However, the discriminative DL approach yields high imputation quality in most cases. In the MAR setting, also the methods random forest and $k$-NN are often among the first two to three ranks. With increasing complexity the DL based methods seem to improve. Notably mean/mode imputation compares favorably in many cases especially in the most complex MNAR setting. Surprisingly, GAIN appeared to perform worse than others in most cases \sebastian{why? - explain that it fails very often (how many percents?)}. In the setting of highest complexity (MNAR with 50\% missing values) the results are not significantly worse than the other methods \sebastian{Gefährlicher Satz wegen significantly.. würde ich weg lassen}.
+When imputing categorical columns, there is no clear winner. However, the discriminative DL approach yields high imputation quality in most cases. In the MAR setting, also the methods random forest and $k$-NN are often among the first two to three ranks. With increasing complexity the DL based methods seem to improve. Notably mean/mode imputation compares favorably in many cases especially in the most complex MNAR setting. In most cases GAIN appears to perform worse than other methods. As mentioned above, we can attribute this poor performance in part to a large proportion (33\%) of failed runs of in the current experiment/scenario, in which case GAIN was ranked last. However, in the setting of highest complexity (MNAR with 50\% missing values) the results of GAIN seem to improve.
 
-When imputing numerical columns the differences are more pronounced. Random Forest is the only method with 50\%\sebastian{$75\%$!! - box zeigt 25 und 75 quantile} of values\sebastian{meaning data sets - maybe better to make this clear} among the first three ranks throughout all experimental conditions. However, the whiskers indicate that there are also some results ranging on the middle and even last ranks. $k$-NN and discriminative DL are almost as strong with the boxes indicating many second and third ranks, with k-NN performing a bit better \sebastian{Vll so: In most settings, KNN ranks in $50\%$ of the data sets as second or third with tendencies to better ranks.}. Mean/Mode and VAE are in the middle with the former in being slightly in the lead. \sebastian{Bisschen seh umgangsprachlich: Mean/Mode and VAE's ranks are similarly distributed over all ranks with tendency to the worse ranks. For easier settings, such as MCAR and MAR with smaller missingness fractions, Mean/Mode tends to be better than VAE.} Again, GAIN performs worst, this time even more clearly.
+When imputing numerical columns the differences are more pronounced. Random forest is the only method with 75\% of values, i.e. data sets, among the first three ranks throughout all experimental conditions. However, the whiskers indicate that there are also some results ranging on the middle and even last ranks. In most settings, $k$-NN ranks second or third on $50\%$ of the data sets, with tendencies to better ranks. Discriminative DL is almost as strong. Mean/mode and VAE's ranks are similarly distributed over all ranks with tendency to worse performances. For easier settings, such as MCAR and MAR with smaller missingness fractions, mean/mode tends to be better than VAE. Again, GAIN performs worst, this time even more clearly.
 
-To summarize, classical ML methods and discriminative DL perform best when imputing missing values. However, for categorical columns there is often no improvement over Mode imputation \sebastian{Das ist gefährlich.. }. The generative methods are mostly outperformed even by Mean/Mode with VAE not as clearly as GAIN. However, as mentioned above, we can attribute the poor performance of GAIN in part a large proportion (33\%) of failed runs in the current experiment/scenario, in which case it was ranked last.
+To summarize, classical ML methods and discriminative DL perform best when imputing missing values. However, for categorical columns in the MNAR setting there is often no improvement over mode imputation. The generative methods are mostly outperformed even by mean/mode with VAE not as clearly as GAIN.
 
 
-\subsubsection{Scenario 2: Training on Incomplete/Imputed Data}
+\subsubsection{Scenario 2: Training on Incomplete Data}
 
 
 \begin{figure}\centering
     \includegraphics[width=1\columnwidth]{corrupted_impute_rank_boxplot.eps}
 
-    \caption[Imputation Ranks - Corrupted]{Imputation quality of the six imputation methods trained on incomplete/imputed data. We plot the imputation method's rank against the missingness fraction. The columns of plots separate the changing missingness pattern, whereas the rows distinguish the results between categorical and numerical target columns. ML methods and discriminative DL tend to perform best. However, for categorical columns in the MNAR setting, there is often no improvement over mode imputation. \arndt{@Sebastian: ich finde, den letzten Satz kann man schon so schreiben im Bezug auf MNAR. Oder würdest du den weglassen?}
+    \caption[Imputation Ranks - Corrupted]{Imputation quality of the six imputation methods trained on incomplete data. We plot the imputation method's rank against the missingness fraction. The columns of plots separate the changing missingness pattern, whereas the rows distinguish the results between categorical and numerical target columns. ML methods and discriminative DL tend to perform best. However, for categorical columns in the MNAR setting, there is often no improvement over mode imputation. \arndt{@Sebastian: ich finde, den letzten Satz kann man schon so schreiben im Bezug auf MNAR. Oder würdest du den weglassen?}
     }
 	\label{fig:corrupted_impute_rank_boxplot}
 \end{figure}
 
-\autoref{fig:corrupted_impute_rank_boxplot} shows the imputation performance in \textit{Scenario 2}, i.e. when training on incomplete/imputed data\sebastian{Nur incomplete. Imputed haben wir nicht gemacht..}. For categorical columns it is even harder to find clear patterns. With increasing task difficulty, the performance\sebastian{Nicht performance der rank} of the Mean/Mode imputation increases, though with higher variance. Interestingly, Mode imputation outperforms other methods especially in the most challenging settings (MNAR with 30\% and 50\% missing values)\sebastian{Spätestens jetzt sollten wir mal ein wort darüber verlieren woran das liegen könnte: When eine category einfach häufiger ist, dann ist das meist ne recht guter guess. Das könnte dazu führen, dass die andere schlechter werden, weil die versuchen das intelligenter zu machen, aber einfach nicht genügend trainings daten haben um noch was sinnvolles zu lernen}. The methods $k$-NN and random forest compare favorably in the MCAR and MAR setting, but random forest has much higher variance. Discriminative DL yields similar performance in these settings, slightly worse on average and with lower variance than random forest. For MCAR and MAR these three methods tend to yield better performance than using Mean/Mode imputation, especially with an increasing fraction of missing values. The generative models tend to perform worst, especially GAIN.
+\autoref{fig:corrupted_impute_rank_boxplot} shows the imputation performance in \textit{Scenario 2}, i.e. when training on incomplete data. For categorical columns it is even harder to find clear patterns. With increasing task difficulty, the rank of the mean/mode imputation improves, though with higher variance. Interestingly, Mode imputation outperforms other methods especially in the most challenging settings (MNAR with 30\% and 50\% missing values). The methods $k$-NN and random forest compare favorably in the MCAR and MAR setting, but random forest has much higher variance. Discriminative DL yields similar performance in these settings, slightly worse on average and with lower variance than random forest. For MCAR and MAR these three methods tend to yield better performance than using Mean/Mode imputation, especially with an increasing fraction of missing values. The generative models tend to perform worst, especially GAIN.
 
-Similar to the fully observed training case \sebastian{link to section}, imputation on numerical columns yields a clearer ranking than for categorical missing values. The imputation models $k$-NN and random forest yield best performances with a tendency of random forest to outperform $k$-NN, with larger variance of random forest. The Discriminative DL approach yields similar performance to the classical ML approaches in the MCAR and MAR settings. In the more challenging MNAR setting it performs slightly worse. Mean imputation and VAE perform comparably but worse than k-NN and Random Forest. GAIN falls on the last rank in most cases also in this setting.
+Similar to the fully observed training case (Section \ref{sec:results_experiment1_scenario1}), imputation on numerical columns yields a clearer ranking than for categorical missing values. The imputation models $k$-NN and random forest yield best performances with a tendency of random forest to outperform $k$-NN, with larger variance of random forest. The Discriminative DL approach yields similar performance to the classical ML approaches in the MCAR and MAR settings. In the more challenging MNAR setting it performs slightly worse. Mean imputation and VAE perform comparably but worse than k-NN and Random Forest. GAIN falls on the last rank in most cases also in this setting.
 
-Overall, the results of \textit{Scenario 1} (Figure \ref{fig:fully_observed_impute_rank_boxplot}) and \textit{Scenario 2} (Figure \ref{fig:corrupted_impute_rank_boxplot}) for numeric columns are quite similar. GAIN has become somewhat better in Scenario 2, although it still ranks worst. For categorical columns, the visualizations of the two scenarios are more pronounced in the incomplete training data setting. However, there are no major shifts in which the median worsens by more than two ranks. \arndt{Die letzte Aussage müssten wir prüfen, das geht aus den Plots nicht eindeutig hervor.}\sebastian{Würde das noch gröber halten:
-\begin{itemize}
-	\item Ob imputation methods auf complete oder incomplete trainiert sind macht an den ranks im großen und ganzen kein unterschied
-	\item Schwierigere probleme (pattern oder fraction) machen ergebnisse weniger eindeutig (größere variance)
-	\item Classische ML methoden:$k$-NN and random forest sind meist ne ziemlich gute wahl dicht gefolgt von Mean/mode, vor allem wenn probleme komplexer werden oder data incomplete sind (könnte daher kommen, dass eben dann das lernen schwerer wird.)
-\end{itemize}
-}
-
-
-
+Overall, the results of \textit{Scenario 1} (Figure \ref{fig:fully_observed_impute_rank_boxplot}) and \textit{Scenario 2} (Figure \ref{fig:corrupted_impute_rank_boxplot}) for numeric columns are quite similar. GAIN has become somewhat better in Scenario 2, although it still ranks worst. For categorical columns, the visualizations of the two scenarios are more pronounced in the incomplete training data setting. Whether imputation methods are trained on complete or incomplete data makes little difference in the ranks. The more difficult the task, depending on missingness pattern and fraction, the more ambiguous the results (higher variance). Classic ML methods like $k$-NN and random forest are generally a good choice. But also mean/mode yields relatively good results, especially when problems become more complex or the data is incomplete.
 
 
 \subsection{Experiment 2: Impact on Downstream Task}
@@ -95,7 +87,7 @@ The situation is different for regression tasks. Here, GAIN clearly yields the l
 
 Overall, the classical ML methods and discriminative DL perform best. As the proportion of missing values increases, we observe increasing improvements in all types of missingness patterns, along with higher variance, in downstream performance. In contrast to classification tasks, there are hardly any negative effects in regression tasks.
 
-\subsubsection{Scenario 2: Training on Incomplete/Imputed Data}
+\subsubsection{Scenario 2: Training on Incomplete Data}
 
 \sebastian{Auch hier: variance wird größer, wenn fraciton steigt. Jetzt aber tendenziell verschlechterungen.. Wieder aber für Regression besser als für classification. Mit KNN/Forest beste cahnce auf verbesserung.}
 
@@ -103,12 +95,12 @@ Overall, the classical ML methods and discriminative DL perform best. As the pro
 \begin{figure}\centering
 	\includegraphics[width=1\columnwidth]{corrupted_downstream_boxplot.eps}
 
-	\caption[Downstream Ranks - Corrupted]{Impact on downstream task of the six imputation methods trained on incomplete/imputed data. We plot the imputation method's rank against the missingness fraction. The columns of plots separate the changing missingness pattern, whereas the rows distinguish the results between categorical and numerical target columns. In regression tasks, no considerable improvements are achieved. In classification tasks, in contrast, we observe slightly positive effects in some settings but negative effects predominate in the harder settings.
+	\caption[Downstream Ranks - Corrupted]{Impact on downstream task of the six imputation methods trained on incomplete data. We plot the imputation method's rank against the missingness fraction. The columns of plots separate the changing missingness pattern, whereas the rows distinguish the results between categorical and numerical target columns. In regression tasks, no considerable improvements are achieved. In classification tasks, in contrast, we observe slightly positive effects in some settings but negative effects predominate in the harder settings.
     }
 	\label{fig:corrupted_downstream_boxplot}
 \end{figure}
 
-Figure \ref{fig:corrupted_downstream_boxplot} illustrates the \textit{impact on downstream task} (Equation \ref{eq:impact_scenario2}) in \textit{Scenario 2} (training on incomplete/imputed data). Here, the different scaling of the y-axis must be taken into account, i.e. the relative improvements are significantly smaller compared to the first scenario. One reason for this is the different basis for calculating the relative values (see sections \autoref{sec:experiment_2} and \autoref{sec:scenario_2}). \arndt{@Sebastian vllt. magsts du das noch mit einem weiteren Satz ausführen?!} \sebastian{wüsste nicht wie, es gibt halt keine andere Basis..}
+Figure \ref{fig:corrupted_downstream_boxplot} illustrates the \textit{impact on downstream task} (Equation \ref{eq:impact_scenario2}) in \textit{Scenario 2} (training on incomplete/imputed data). Here, the different scaling of the y-axis must be taken into account, i.e. the relative improvements are significantly smaller compared to the first scenario. One reason for this is the different basis for calculating the relative values (see sections \ref{sec:experiment_2} and \ref{sec:scenario_2}).
 
 If weak positive effects seem to predominate in classification tasks at first, this tendency changes with increasing proportion of missing values (at 50\%) and increasing difficulty of the task (especially MNAR). The most negative results are produced by GAIN. However, the other methods also have major difficulties and often drift into negative ranges for the greater part as the tasks become more challenging.
 
@@ -124,7 +116,11 @@ In summary, no considerable improvements were achieved in regression tasks. In c
 \item we should highlight the main findings; as far as i can see this would be: a) classical methods perform best (on these simple (?) data sets) and b) downstream performance is improved by X \% in Y \% of the experiments (we can use the quantiles in the boxplots) whereas when the imputation methods are trained on incomplete data, we cannot expect improvements.
 \end{itemize}
 }
-
+\sebastian{
+\begin{itemize}
+\item Scenario 2: Training on Incomplete Data - Spätestens jetzt sollten wir mal ein wort darüber verlieren woran das liegen könnte: When eine category einfach häufiger ist, dann ist das meist ne recht guter guess. Das könnte dazu führen, dass die andere schlechter werden, weil die versuchen das intelligenter zu machen, aber einfach nicht genügend trainings daten haben um noch was sinnvolles zu lernen
+\end{itemize}
+}
 
 \subsection{Training Time}
 
