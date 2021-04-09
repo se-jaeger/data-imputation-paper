@@ -112,7 +112,6 @@ Here, too, the variance increases with higher fraction. However, this time the r
 
 \subsection{Computational Complexity}
 %
-\sebastian{Add rest experiments + check whether description is still valid}
 To measure the training and inference time, we use a sub-set of our experiments. Precisely, all data sets, missingness fractions and imputation methods (shown in Table \ref{tab:experiment_settings}) with MCAR pattern. We first train the imputation method on complete data, then discard values of the given missingness fraction in the training set, and impute those missing values. The wall-time is measured in seconds when calling our framework's \code{fit} and \code{transform} methods (see Section \ref{sec:implementation} for details), which means that the training duration incorporates the hyperparameter optimization (see Section \ref{sec:HPO} for details).
 
 Because training and inference time depend heavily on the data set's size, directly average all experiments for the imputation methods lead to very similar mean but extremely high standard deviation values. For this reason, we first compute the mean duration and the standard deviation relative to its mean separately for training and inference for the imputation methods on each data set. Second, we average those values for each imputation method and present them in Table \ref{tab:time}. Using this approach helps to average over all experiments, and, at the same time, gives indicators for the training and inference durations, as well as their variance.
@@ -129,13 +128,13 @@ Because training and inference time depend heavily on the data set's size, direc
 		\\[-0.5em]
 		$k$-NN &     41.204365 &  0.253716 &       7.01833 &  0.602026 \\
 		\\[-0.5em]
-		Random Forest &    226.076551 &  0.119295 &     11.438507 &  0.245989 \\
+		Random Forest &    226.076551 &  0.119295 &     24.047614 &  0.236052 \\
 		\\[-0.5em]
-		Discriminative DL &   6275.019244 &   0.40505 &    355.920893 &  0.194171 \\
+		Discriminative DL &   6275.019244 &   0.40505 &    440.388738 &  0.210621 \\
 		\\[-0.5em]
-		VAE &     71.095282 &  0.098795 &      9.093325 &  0.084075 \\
+		VAE &     71.095282 &  0.098795 &      11.21483 &  0.084604 \\
 		\\[-0.5em]
-		GAIN &    878.058286 &  0.311553 &     48.948755 &  0.086431 \\
+		GAIN &    878.058286 &  0.311553 &     137.96578 &  0.083426 \\
 		\bottomrule
 	\end{tabular}
 	\caption{Training and inference duration for each imputation method in seconds. We use the wall-time to measure the durations for training, including hyperparameter optimization, and inference for all data sets with MCAR missingness pattern and all fractions shown in Table \ref{tab:experiment_settings}. Because training and inference durations depend heavily on the data set size, we first calculate the durations' mean and relative standard deviation for each imputation method on every data set. Second, we average those mean durations and relative standard deviations for the imputation methods and present them as \emph{Mean Duration} and \emph{Rel. SD} separately for \emph{Training} and \emph{Inference}. Abbreviations: \emph{Rel. SD} means Relative Standard Deviation.}
