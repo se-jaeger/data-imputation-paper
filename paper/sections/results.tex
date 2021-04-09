@@ -112,22 +112,39 @@ Here, too, the variance increases with higher fraciton. However, this time the r
 
 \subsection{Computational Complexity}
 %
-To measure the training and inference time, we use a sub-set of our experiments. Precisely, we use all data sets in the complete case scenario, MCAR missingness pattern, as well as the missingness fractions and imputation methods shown in Table \ref{tab:experiment_settings}. We then discarded values of the given missingness fraction in the training set and imputed those missing values. Again, we repeat the experiments three times to gain insights of the duration's variance. We use the wall-time when calling our framework's \code{fit} and \code{transform} methods (see Section \ref{sec:implementation} for details), which means that the training duration incorporates the hyperparameter optimization (see Section \ref{sec:HPO} for details). Table \ref{tab:time} presents the results.
+\sebastian{Add rest experiments + check whether description is still valid}
+To measure the training and inference time, we use a sub-set of our experiments. Precisely, all data sets, missingness fractions and imputation methods (shown in Table \ref{tab:experiment_settings}) with MCAR pattern. We first train the imputation method on complete data, then discard values of the given missingness fraction in the training set, and impute those missing values. The wall-time is measured in seconds when calling our framework's \code{fit} and \code{transform} methods (see Section \ref{sec:implementation} for details), which means that the training duration incorporates the hyperparameter optimization (see Section \ref{sec:HPO} for details).
+
+Because training and inference time depend heavily on the data set's size, directly average all experiments for the imputation methods lead to very similar mean but extremely high standard deviation values. For this reason, we first compute the mean duration and the standard deviation relative to its mean separately for training and inference for the imputation methods on each data set. Second, we average those values for each imputation method and present them in Table \ref{tab:time}. Using this approach helps to average over all experiments, and, at the same time, gives indicators for the training and inference durations, as well as their variance.
 %
 \begin{table}
 	\centering
-	\label{tab:time}
-	\begin{tabular}{lrr}
+	\begin{tabular}{@{\extracolsep{4pt}}lllll@{}}
 		\toprule
-		Imputation Method &  Training Time &  Relative Standard Deviation \\
+		\multirow{2}{*}{Imputation Method} & \multicolumn{2}{c}{Training} & \multicolumn{2}{c}{Inference} \\\cline{2-3}\cline{4-5}
+		\\[-0.75em]
+		& Mean Duration &   Rel. SD & Mean Duration &   Rel. SD \\
 		\midrule
-		Mean/Mode &       0.005009 &                     0.656056 \\
-		$k$-NN &      40.961577 &                     0.243020 \\
-		Random Forest &     225.513999 &                     0.118707 \\
-		Discriminative DL &    6285.017741 &                     0.424011 \\
-		VAE &      71.685278 &                     0.107189 \\
-		GAIN &     874.657293 &                     0.299608 \\
+		Mean/Mode &      0.005277 &  0.550878 &      0.029195 &  0.171139 \\
+		\\[-0.5em]
+		$k$-NN &     41.204365 &  0.253716 &       7.01833 &  0.602026 \\
+		\\[-0.5em]
+		Random Forest &    226.076551 &  0.119295 &     11.438507 &  0.245989 \\
+		\\[-0.5em]
+		Discriminative DL &   6275.019244 &   0.40505 &    355.920893 &  0.194171 \\
+		\\[-0.5em]
+		VAE &     71.095282 &  0.098795 &      9.093325 &  0.084075 \\
+		\\[-0.5em]
+		GAIN &    878.058286 &  0.311553 &     48.948755 &  0.086431 \\
 		\bottomrule
 	\end{tabular}
-	\caption{Training time for each imputation method in seconds. Training time is the mean overall experimental settings, experiments, and scenarios. The data set's size skews the standard deviation heavily, which is why we first compute the relative standard deviation for each imputation method on each data set separately and then average over the data sets.\felix{for knn the training time should be almost 0, right? maybe it would be good to have the inference/prediction times as well, if we have that? kNN should perform much worse here, and the winner should be RF, i'm assuming}}
+	\caption{Training and inference duration for each imputation method in seconds. We use the wall-time to measure the durations for training, including hyperparameter optimization, and inference for all data sets with MCAR missingness pattern and all fractions shown in Table \ref{tab:experiment_settings}. Because training and inference durations depend heavily on the data set size, we first calculate the durations' mean and relative standard deviation for each imputation method on every data set. Second, we average those mean durations and relative standard deviations for the imputation methods and present them as \emph{Mean Duration} and \emph{Rel. SD} separately for \emph{Training} and \emph{Inference}. Abbreviations: \emph{Rel. SD} means Relative Standard Deviation.}
+	\label{tab:time}
 \end{table}
+
+Striking but not surprisingly, if the imputation model's complexity increases, their training duration increases too, most of the time by multiple factors. There are two exceptions: discriminative DL and VAE, an explanation for this could be their number of hyperparameter combinations optimized during training. VAE optimizes only three, GAIN $16$, and discriminative DL $50$ combinations, which represents their training durations order.
+
+Similarly, the inference time increases with the model's complexity. The differences are clear but not as high as for the training durations.
+Higher inference standard deviations, e.g., for $k$-NN and random forest (and discriminative DL), indicate that the found best hyperparameters strongly varying with the experimental settings and influence the model's computational complexity for inference. One reason for the discriminative DL's and GAIN's high training standard deviations could be the usage of early-stopping and, at the same time, indicate that it is important to try a huge number of hyperparameters to achieve good results. For mean/mode the high standard deviation is likely an artifact of the very small training duration. Changes in milliseconds for computations are common and represent a large change relative to the mean/mode imputation's mean duration.
+
+To summarize, the increasing complexity of the imputation methods are clearly represented in their training and inference duration. For training more complex models, this is supported by higher variance of training time indicating the necessity to try a wide range of hyperparameters. On the other hand, once found, the hyperparameters  for generative models influence the inference time less than for $k$-NN or random forest, which prediction times depend heavily on the hyperparameters.
