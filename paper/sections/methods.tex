@@ -236,4 +236,4 @@ To evaluate our experiments, we use two metrics: $macro F1$-score (shown in Equa
 	\label{eq:F1}
 \end{equation}
 %
-Because imputing a categorical column can be seen as a classification task, we use the $F1$-score (we use $macro F1$-score, $F1$-score, and $F1$ synonym) to measure their performance. Respectively, we use the $RSME$ for regression tasks and imputing numerical columns. Since $F1$ is a score measure, a larger $F1$ means better performance. On the other hand, $RSME$ is an error meassure, and the smaller RSME, the better performance.
+Imputing categorical columns can be seen as a classification task. Accordingly, we measure performance in this case by the $F1$-score (we use the terms $macro F1$-score, $F1$-score, and $F1$ synonymously). For regression tasks and when imputing numerical columns, we use the $RMSE$ metric. Since, on the one hand, $F1$ is a score measure, larger values imply better performance. On the other hand, $RMSE$ is an error measure, where a smaller value indicates better performance.

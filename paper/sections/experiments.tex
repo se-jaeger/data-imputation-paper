@@ -4,12 +4,12 @@
 %
 In this section, we describe our benchmark suite in detail and its implementation.
 
-As described in Section \ref{sec:methods:impuation}, we define a framework that provides for each of the six implemented imputation approaches a common API with \code{fit} and \code{transform} methods. \code{fit} trains the imputer for the given data and cross-validates its hyperparameters, and \code{transform} allows imputing missing values of the target column the imputer is trained on. For our implementation, we use \emph{tensorflow} version 2.4.1, \emph{scikit-learn} version 0.24.1, and \emph{autokeras} version 1.0.12.
+As described in Section \ref{sec:methods:impuation}, we define a framework that provides for each of the six implemented imputation approaches a common API with \code{fit} and \code{transform} methods. \code{fit} trains the imputer on given data while cross-validateing a set of hyperparameters, and \code{transform} allows imputing missing values of the target column the imputer is trained on. For our implementation, we use \code{tensorflow} version 2.4.1, \code{scikit-learn} version 0.24.1, and \code{autokeras} version 1.0.12.
 
-The Python package \code{jenga}\footnote{Software package "to study the effects of common data corruptions (e.g., missing values, broken character encodings) on the prediction quality of ML models." Source: \url{https://github.com/schelterlabs/jenga}} \citep{Jenga} provides two features we use to implement our experiments. First, it implements the mechanisms to discard values for the missingness patterns MCAR, MAR, and MNAR, as described in Section \ref{sec:missingess_pattern}. Second, it provides a wrapper for OpenML data sets, creates an $80/20$ training-test split, and can automatically train a \emph{baseline model} for the downstream task defined by the data set. Therefore, \code{jenga} uses \code{scikit-learn}'s \code{SGDClassifier} for classification and \code{SGDRegressor} for regression tasks. As preprocessing steps, it first replaces missing values with a constant, and second encodes categorical columns one-hot and normalizes numerical columns to zero mean and unit variance. Finally, to train a robust model, it 5-fold cross-validates the hyperparameters \emph{loss}, \emph{penalty}, and \emph{alpha} using grid-search. \code{Jenga} reports the baseline model's performance ($F1$ for classification, $RSME$ for regression) on the test set.
+The Python package \code{jenga}\footnote{Software package "to study the effects of common data corruptions (e.g., missing values, broken character encodings) on the prediction quality of ML models." Source: \url{https://github.com/schelterlabs/jenga}} \citep{Jenga} provides two features we use to implement our experiments. First, it implements the mechanisms to discard values for the missingness patterns MCAR, MAR, and MNAR, as described in Section \ref{sec:missingess_pattern}. Second, it provides a wrapper for OpenML data sets, creates an $80/20$ training-test split, and can automatically train a \emph{baseline model} for the downstream task defined by the data set. Therefore, \code{jenga} uses \code{scikit-learn}'s \code{SGDClassifier} for classification and \code{SGDRegressor} for regression tasks. As preprocessing steps, it first replaces missing values with a constant, and second, one-hot encodes categorical columns and normalizes numerical columns to zero mean and unit variance. Finally, to train a robust model, it 5-fold cross-validates the hyperparameters \emph{loss}, \emph{penalty}, and \emph{alpha} using grid-search. \code{jenga} reports the baseline model's performance ($F1$ for classification, $RMSE$ for regression) on the test set.
 
 
-\subsection{Experimental Setting}
+\subsection{Experimental Settings}
 %
 Our experimental settings are listed in Table \ref{tab:experiment_settings}. Each experiment is executed three times, and the average performance metrics are reported.
 %
@@ -20,17 +20,17 @@ Our experimental settings are listed in Table \ref{tab:experiment_settings}. Eac
 		Parameter            & Values                                     \\ \midrule
 		Data Sets             & 69 (see supplementary material)    \\
 		\\[-0.5em]
-		Imputation Methods              & Mode, $k$-NN, Random Forest, DL, GAIN, VAE \\
+		Imputation Methods              & Mean/Mode, $k$-NN, Random Forest, DL, GAIN, VAE \\
 		\\[-0.5em]
 		Missingness Patterns  & MCAR, MAR, MNAR                            \\
 		\\[-0.5em]
 		Missingness Fractions & $1\%, 10\%, 30\%, 50\%$                      \\ \bottomrule
 	\end{tabular}
-	\caption{Overview of our experimental settings. We focus on covering an extensive range of the in Section \ref{sec:related_work} described dimensions. In total there are $4,968$ experiments, which we repeat three times and report the mean.}
+	\caption{Overview of our experimental settings. We focus on covering an extensive range of the dimensions described in Section \ref{sec:related_work}. In total, there are $4,968$ experiments, which we repeat three times to report the mean imputation/downstream score.}
 	\label{tab:experiment_settings}
 \end{table}
 %
-For each of the data sets, we sample one to-be-imputed (or target) column upfront that remains static throughout our experiments.
+For each of the data sets, we sample one to-be-imputed column upfront, the \emph{target} column, which remains static throughout our experiments.
 
 We split the experiments into four parts. \emph{Experiment 1} (Section \ref{sec:experiment_1}) and \emph{Experiment 2} (Section \ref{sec:experiment_2}) compare the imputation approaches based on their imputation quality and impact on the downstream task. Both experiments are then repeated in two application scenarios: \emph{Scenario 1} (Section \ref{sec:scenario_1}) and \emph{Scenario 2} (Section \ref{sec:scenario_2}), with complete and incomplete training data.
 
@@ -38,9 +38,9 @@ We split the experiments into four parts. \emph{Experiment 1} (Section \ref{sec:
 \subsubsection{Experiment 1: Imputation Quality}
 \label{sec:experiment_1}
 %
-With this experiment, we aim to reveal how accurate the imputation methods can impute the correct values. In practice, it is common that not only a single column is affected by missing values. Therefore, an important factor is the imputation model's robustness against missing values in other columns.
+With this experiment, we aim to reveal how accurate the imputation methods can impute the original values. In practice, it is common that not only a single column is affected by missing values. Therefore, an important factor is the imputation model's robustness against missing values in other columns.
 
-With the help of \code{jenga}, we spread the number of missing values over all columns of the test set. For example, for a given missingness pattern, e.g., \emph{MAR} and missingness fraction, e.g., $30\%$, we introduce $\frac{30\%}{N}$ missing values of the pattern MAR to each of the $N$ columns.
+With the help of \code{jenga}, we spread the desired number of missing values across all columns of the test set. For a certain missingness pattern and fraction, MAR and $30\%$ for instance, we introduce $\frac{30\%}{N}$ missing values of this pattern to each of the $N$ columns.
 
 The evaluation of the imputation quality is then performed using the target column's discarded values as ground truth and the imputer's predictions. If the target column is categorical, we report the $F1$-score, and for numerical columns, the $RMSE$.
 
@@ -48,9 +48,14 @@ The evaluation of the imputation quality is then performed using the target colu
 \subsubsection{Experiment 2: Impact on Downstream Task}
 \label{sec:experiment_2}
 %
-In \emph{Experiment 2}, we evaluate the impact of each imputation approach on the respective downstream ML task. As described in Section \ref{sec:generative_imputation}, for discriminative models, it is necessary to train one imputation model for each column with missing values. This fact, combined with our large number of experimental settings (see Table \ref{tab:experiment_settings}), results in vast computational cost. To reduce those, while covering all relevant experimental conditions, we only discard values in the test sets’ target column.
+In \emph{Experiment 2}, we evaluate the impact of the different imputation approaches on numerous downstream ML tasks. As described in Section \ref{sec:generative_imputation}, for discriminative models, it is necessary to train one imputation model for each column with missing values. This fact, combined with our large number of experimental conditions (see Table \ref{tab:experiment_settings}), results in vast computational costs. To reduce those, while covering all relevant experimental conditions, we decided to only discard values in the test sets’ target column.
 
-First, we train the baseline model of the downstream ML task on the training set and report its $baseline$ score ($F1$ for classification and $RMSE$ for regression tasks) on the test set. Second, after discarding values in the target column, we again use the trained baseline model and calculate its score on the incomplete test set, hence the name: $incomplete$. Third, we impute the missing values of the test set and, once more, using the trained baseline model, calculate the $imputed$ score. Finally, we report the impact on the downstream task's performance as the percent change of the imputation over the incomplete data relative to the baseline:
+\begin{enumerate}
+\item We train the baseline model of the downstream ML task on the training set and report its $baseline$ score ($F1$ for classification and $RMSE$ for regression tasks) on the test set.
+\item After discarding values in the target column, we again use the trained baseline model and calculate its score on the incomplete test set, hence the name: $incomplete$.
+\item We then impute the missing values of the test set and, once more, using the trained baseline model, calculate the $imputed$ score.
+\item Finally, we report the impact on the downstream task's performance as the percent change of the imputation over the incomplete data relative to the baseline:
+\end{enumerate}
 %
 \begin{equation}
 	impact\ on \ downstream\ task = \frac{imputed - incomplete}{baseline}
@@ -63,15 +68,15 @@ First, we train the baseline model of the downstream ML task on the training set
 \subsubsection{Scenario 1: Training on Complete Data}
 \label{sec:scenario_1}
 %
-In practice, ML researchers commonly use complete (or fully observed) data to train, tune, and validate their ML applications. However, in production, missing values may occur, e.g., because of processing or transmission errors or incomplete user input. These missing values likely reduce the model's prediction performance. An imputation model trained on complete data to impute these incomplete observations can help to lift the performance. We use \emph{Scenario 1} to simulate those situations and run both experiments as described in Section \ref{sec:experiment_1} and \ref{sec:experiment_2}
+ML researchers commonly use complete (or fully observed) data to train, tune, and validate their ML applications. In production, however, missing values may occur, e.g., due to processing or transmission errors or incomplete user input. These missing values likely reduce the model's predictive performance at inference time. An imputation model trained on complete data can help to lift the performance on such incomplete observations by imputing the missing values. We use \emph{Scenario 1} to simulate such situations and run both experiments as described in Section \ref{sec:experiment_1} and \ref{sec:experiment_2}
 
 
 \subsubsection{Scenario 2: Training on Incomplete/Imputed Data}
 \label{sec:scenario_2}
 %
-A more realistic scenario than training on fully observed data is training ML or imputation models on incomplete data. To evaluate this application scenario, we adapt \emph{Experiment 1} and \emph{Experiment 2} slightly.
+In industry projects and real-life applications, a more common scenario than training on fully observed data is training ML or imputation models on incomplete data. To evaluate this application scenario, we adapt \emph{Experiment 1} and \emph{Experiment 2} slightly.
 
-We first introduce missing values in the training and test set and then train the baseline and imputation model based on these incomplete training and test sets. The calculation of the imputation quality (\emph{Experiment 1}, Section \ref{sec:experiment_1}) remains the same. However, to calculate the impact on the downstream task, we lack the availability of the $baseline$ score trained on complete data. Therefore, we adapt \autoref{eq:impact} as follows:
+We first introduce missing values in the training set as well as the test set and then train the baseline and imputation models based on these incomplete data. The calculation of the imputation quality (\emph{Experiment 1}, Section \ref{sec:experiment_1}) remains the same. However, to calculate the impact on the downstream task, we lack the availability of the $baseline$ score on complete data. Therefore, we adapt Equation \ref{eq:impact} by replacing the $baseline$ denominator with $incomplete$. That means, in this scenario, we report the percent change of the imputation over the incomplete data relative to the downstream task performance on incomplete data:
 %
 \begin{equation}
 	impact\ on \ downstream\ task = \frac{imputed - incomplete}{incomplete}
