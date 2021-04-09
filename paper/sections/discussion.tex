@@ -1,37 +1,40 @@
+%!TEX root = ../data-imputation.tex
+\section{Discussion}
+\label{sec:discussion}
 
+We investigated the performance of classical and modern imputation approaches on a large number of heterogenous data sets under realistic conditions. In the following we highlight some of the key findings. 
 
-\section{Discussions}
-
-TODO
-
-\subsection{Simpler Imputation Methods have better Imputation Quality}
+\subsection{Simpler imputation methods yield competitive results}
 %
-In MCAR and MAR, we see in Figure \ref{fig:fully_observed_impute_rank_boxplot} and \ref{fig:corrupted_impute_rank_boxplot} that simpler imputation methods, such as $k$-NN and random forest, as well as the discriminate DL approach are for at least $50\%$ of the cases among the better ranks one, two or three. Random forest has the tendency to achieve the best rank more often. This effect is largely independent whether they are trained on complete or incomplete data.
-This is inline with \cite{Imputation_Benchmark_3, Imputation_Benchmark_2, Imputation_Benchmark_4}, they found that $k$-NN imputation is in most situations the best choice. However, \cite{Imputation_Benchmark_2, Imputation_Benchmark_4} did not incorporate a random forest imputation method. Further, we could not find any study that also considered discriminate deep learning methods.
+When evaluating imputation quality our results demonstrate that simple supervised learning methods achieve competitive results and in many cases outperform modern generative deep learning based approaches. In particular in the MCAR and MAR setting, we see in Figure \ref{fig:fully_observed_impute_rank_boxplot} and \ref{fig:corrupted_impute_rank_boxplot} that $k$-NN and random forest, as well as the discriminative DL approach are for at least $50\%$ of the cases among the better ranks one, two or three. Random forest has the tendency to achieve the best rank more often. This effect is largely independent whether the imputation methods are trained on complete or incomplete data.
 
-For categorical columns (see Figure \ref{fig:fully_observed_impute_rank_boxplot} and \ref{fig:corrupted_impute_rank_boxplot}, upper row) when the imputation setting gets more complex, which means MAR or MNAR pattern and higher missingness fractions, the mean/mode imputation tends to achieve better ranks. This makes sense because the values of categorical columns are discrete and often have small cardinality. Especially when the column's distribution is skewed, using the most frequent value to substitute missing values is a good approximation of the ground truth. If the training data is incomplete to a high extend, learning algorithms can hardly capture the underlying data distribution. For this reason, mean/mode scores for higher MNAR missing values in $75\%$ of the cases on rank two or better (visualized in Figure \ref{fig:corrupted_impute_rank_boxplot}). \cite{Imputation_Benchmark_3} did not explicitly calculate the ranks but their plots show the same tendency. In general, it is possible that the higher variance of the ranks in contrast to the numerical imputation results occurs because we sampled six times more numerical than categorical columns. With more experiments there is a good chance to get clearer results.
+This finding is inline with \cite{Imputation_Benchmark_3, Imputation_Benchmark_2, Imputation_Benchmark_4}. In these previous studies the authors report that $k$-NN imputation is in most situations the best choice. However, \cite{Imputation_Benchmark_2, Imputation_Benchmark_4} did not incorporate a random forest imputation method. Other comparisons show a slight advantage of discriminative deep learning methods over random forests \citep{biessmann2019datawig}, but these experiments were conducted on a much smaller selection of data sets. 
 
-Since GAIN failed in about $33\%$ of settings when training data was complete, this could be a reason for that in most cases GAIN achieves the worst ranks (see Figure \ref{fig:fully_observed_impute_rank_boxplot}). This is supported by the fact that GAIN does not fail for settings with incomplete training data and Figure \ref{fig:corrupted_impute_rank_boxplot} shows often better ranks.
+For categorical columns (see Figure \ref{fig:fully_observed_impute_rank_boxplot} and \ref{fig:corrupted_impute_rank_boxplot}, upper row) when the imputation setting gets more complex, which means MAR or MNAR pattern and higher missingness fractions, the mean/mode imputation tends to achieve better ranks. This effect can be attributed to the fact that the sets of observed categorical values often have small cardinality. Especially when the column's distribution is skewed, using the most frequent value to substitute missing values is a good approximation of the ground truth. If the training data contains a large fraction of missing values, the underlying dependencies exploited by learning algorithms are difficult to capture. For this reason, mean/mode scores for higher MNAR missing values in $75\%$ of the cases on rank two or better (visualized in Figure \ref{fig:corrupted_impute_rank_boxplot}). \cite{Imputation_Benchmark_3} did not explicitly calculate the ranks but their plots show the same tendency. 
+%In general, it is possible that the higher variance of the ranks in contrast to the numerical imputation results occurs because we sampled six times more numerical than categorical columns. With more experiments there is a good chance to get clearer results.
 
-All in all, using random forest, discriminate DL, or $k$-NN are good choices in most experimental settings and promise best imputation quality. However, incorporating the model's training and inference time, presented in Table \ref{tab:time}, shows that the discriminate DL approach is much slower for training and inference than the other two methods. Further, using less combinations to find best hyperparameters could decrease its imputation performance drastically. The training duration's high variance indicates that trying a large number of hyperparameters is necessary for good performance because early stopping would finish the training if the model converges. $k$-NN's standard deviation for inference is in contrast to random forest very high indicating that its computational complexity depends to a high extend on the chosen hyperparameter $k$. Further its inference speed also scales with the training data set size, which can be a limitation and makes it not practical to use $k$-NN for huge training data sets.
+Since GAIN failed in about $33\%$ of settings when training data was complete, this could be a reason for that in most cases GAIN achieves the worst ranks (see Figure \ref{fig:fully_observed_impute_rank_boxplot}). This is supported by the fact that GAIN does not fail for settings with incomplete training data and Figure \ref{fig:corrupted_impute_rank_boxplot} shows often better ranks. \felix{oh, das klingt dann nach ner unfairen comparison ... }
 
-Summarizing, the outstanding imputation approach is random forest. It not only ranks best in most experimental settings, it also shows good balance of training, including optimizing hyperparameters, and inference time that is not influenced by the training set size. However, when coping with data sets that miss $30\%$ or more values of the pattern MNAR, imputing categorical columns with their mode is very often the best choice.
+All in all, using random forest, discriminate DL, or $k$-NN are good choices in most experimental settings and promise best imputation quality. However, incorporating the model's training and inference time, presented in Table \ref{tab:time}, shows that the discriminative DL approach is substantially slower for training and inference than the other two methods. This is due to the fact that we used the expensive default model optimization of AutoKeras. Exploring fewer hyperparameters could decrease its imputation performance drastically. The training duration's high variance indicates that trying a large number of hyperparameters is necessary for good performance because early stopping would finish the training if the model converges. $k$-NN's standard deviation for inference is in contrast to random forest very high. This is expected as the inference time grows exponentially with the number of training data points. We conclude that given the similar performance of $k$-NN and random forests, when the training data set is large, random forests (or similar methods) should be preferred over naive $k$-NN implementations. Alternatively, one might use appropriate speedups for the nearest neighbor search, such as kd-trees or approximate nearest neighbor search. 
+
+Summarizing, the best performing imputation approach is random forest. It not only ranks best in most experimental settings, it also shows good balance of training, including optimizing hyperparameters, and inference time that is not influenced by the training set size. However, when coping with data sets that miss $30\%$ or more values of the pattern MNAR, imputing categorical columns with their mode is very often the best choice.
 
 %A widespread hypothesis is that more complex models can capture more complex interactions in the data (TODO: cites). For the subject of data imputation, this means that using VAE or GAIN to impute data with higher missingness fractions of MAR or MNAR pattern should show some advantages over simpler models. However, our experiments do not show any evidence for this hypothesis.
 
 
 
-\subsection{Moderate Downstream Improvements when Imputation Method was Trained on Complete Data}
+\subsection{Substantial Downstream Improvements when Imputation Method was Trained on Complete Data}
 %
+Another key finding is that our results show the substantial positive impact of imputation on predictive performance in downstream ML tasks. We observe improvements in the downstream task of 10\% to 20\% in more than 75\% of our experiments. This holds true for most imputation methods, while we did not observe a clear advantage for an imputation method overall. Taking into account the considerable differences in wall-clock run time, our results indicate that also here random forests would be the preferred imputation method. 
 
-
-\subsection{title}
-
+The positive impact of imputation on downstream performance is most pronounced when the imputation methods were trained on fully observed data. When imputation methods were trained on incomplete data, the positive impact of imputation of missing values in the test data was substantially lower, sometimes even negative. While this might seem a disadvantage we emphasize that in many application use cases we can ensure that the training data be fully observed, for instance by acquiring more data before training the imputation as well as the downstream ML model. 
 
 \subsection{Limitations}
 %
 
 \begin{itemize}
 	\item Datasets probably to small
+	\item Tasks too easy,
+	\item just one column affected and that might not have been the most important column
 	\item Datasets too simple: Images, frei text..
 \end{itemize}
