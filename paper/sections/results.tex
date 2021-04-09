@@ -52,40 +52,27 @@ Overall, the results of \textit{Scenario 1} (Figure \ref{fig:fully_observed_impu
 
 \subsection{Experiment 2: Impact on Downstream Task}
 
-In this experiment we evaluate the downstream performance of each method when training on fully observed data and incomplete data.
-
-In \textit{Scenario 1} we use the definition for \textit{impact on downstream task} from \autoref{eq:impact}. In contrast, for \textit{Scenario 2} we use the slightly different definition from \autoref{eq:impact_scenario2}. Both of theses metrics are labeled \textit{Improvement} and the values represented on the y-axis in \autoref{fig:fully_observed_downstream_boxplot} and \autoref{fig:corrupted_downstream_boxplot}. \felix{Da fehlt was oder? Am besten beschreiben, was geplottet ist, ohne dass man andere definitions nachlesen muss.}
-
-In this experiment, we group the graphs by the type of downstream task. That is, in contrast to \textit{Experiment 1}, irrespective of the data type of the column that was imputed.
-
-Experiemental settings that caused undefined results in the first experiment were filtered out in the second experiment. This means in particular that we have fewer results for GAIN in \textit{Scenario 1}.
-
-When interpreting the results, it should be taken into account that, as described previously (Section \ref{sec:experiment_2}), we only imputed values in the test sets’ target column \felix{die target column der imputation ist nicht die target column des downstream tasks oder? das sollten wir klar trennen.} and measured the downstream improvement based on this.
+In this experiment, we evaluate the downstream performance of each method in two scenarios: training on complete data and training on incomplete data. The plots are row-wise grouped by the type of downstream task (regression or classifiation). That is, in contrast to \textit{Experiment 1}, irrespective of the data type of the column which was imputed. \arndt{Beim Korrekturlesen nochmal drauf achten, dass das nicht irgendwo verdreht ist.}
 
 
 \subsubsection{Scenario 1: Training on Complete Data}
 
-\sebastian{GANZ WICHTIG: wir haben hier keine infos darüber, welche columns imputed wurden. Was wir sehen ist ne Gruppierung nach Downstream task!}
-\arndt{@Sebastian: OK, habs oben eingefügt. Das gilt allgemein für Experiment 2, oder? War mir ehrlich gesagt nicht so richtig klar bisher. Da müssen wir beim Korrekturlesen nochmal drauf achten, dass das nicht irgendwo verdreht ist.}
-
 \begin{figure}\centering
 	\includegraphics[width=1\columnwidth]{fully_observed_downstream_boxplot.eps}
-
-	\caption[Downstream Ranks - Fully Observed]{Impact on downstream task of the six imputation methods trained on complete data. We plot the imputation method's rank against the missingness fraction. The columns of plots separate the changing missingness pattern, whereas the rows distinguish the results between categorical and numerical target columns. Overall, the classical ML methods and discriminative DL perform best.
+	\caption[Downstream Ranks - Fully Observed]{Impact on downstream task of the six imputation methods trained on complete data. We plot the imputation method's impact on downstream task against the missingness fraction. The columns of plots separate the changing missingness pattern, whereas the rows distinguish the results between categorical and numerical target columns. Overall, the classical ML methods and discriminative DL perform best.
     }
 	\label{fig:fully_observed_downstream_boxplot}
 \end{figure}
 
-Figure \ref{fig:fully_observed_downstream_boxplot} visualizes the \textit{impact on downstream task} metric, i.e. the percent change of the imputation over the incomplete data relative to the baseline (Equation \ref{eq:impact}), in \textit{Scenario 1}.
-\felix{Ich wuerde versuchen, das immer so zu beschreiben, dass man es auch ohne andere definitionen verstehen kann, also etwa: percent change of the imputation over the incomplete data relative to the downstream task performance on fully observed data }
+Figure \ref{fig:fully_observed_downstream_boxplot} visualizes the \textit{impact on downstream task} metric's version for \textit{Scenario 1}, that means the percent change of the imputation over the incomplete data relative to the downstream task performance on complete data (Equation \ref{eq:impact}). This metric is labeled \textit{Improvement} and represented on the y-axis.
 
-\felix{das deutlichste ergebnis ist: imputation hilft! das sollte man auch genauer beschreiben, also etwa: in many conditions imputation improves the downstream performance by XY\%}
-The impact of imputation seems mostly negligible if the proportion of missing values is only 1\%. However, for numeric columns, there are some outliers in the 20\% to 40\% improvement range with the MCAR and MAR patterns at 1\% missing values. With an increasing proportion of missing values we observe increasing improvements in the downstream performance in all types of missingness patterns. However, there are also some cases where downstream performance is degraded by imputation, which is mainly the case for categorical columns. \felix{das kann man auch quantifizieren, es sind ja weniger als 25\% der Faelle.}
+Experiemental settings that caused undefined results in the first experiment were filtered out in the second experiment. This means in particular that we have about 33\% fewer results for GAIN in \textit{Scenario 1}.
 
-For categorical columns, improvements are mostly in the 0\% to 5\% range, and in case of 50\% missing values the upper quartile reaches the 5\% to 10\% range. The whiskers even indicate performance increases which go significantly beyond. Measured by the median, as an overall aggregation, random forest yields the best results for categorical columns. GAIN performs often similarly well or even better but also has more negative fluctuations.
+In many conditions, imputation improves the downstream performance by up to 5\% or more. Unsurprisingly, the impact is mainly neglectable at the lowest missingness fraction of 1\%. At higher missingness fractions, we observe increasing improvements in all types of missingness patterns and downstream tasks. However, for categorical columns, downstream performance is degraded by imputation in mostly less than 25\% of cases.
 
-\felix{die unterschiede zwischen den Methoden sind nicht sehr deutlich, man kann die beschreibung dabei belassen, dass es keine richtigen unterschiede gab, denke ich.}
-The situation is different for regression tasks. Here, GAIN clearly yields the least improvements downstream. Even the Mean imputation is oftentimes significantly more beneficial for the downstream tasks. The VAE results are approximately on par with Mean imputation. In contrast, the classical ML and the discriminative DL approaches do outperform the other methods in most settings. However, when the missing values are MNAR there is no clear advantage except that the discriminative DL is superior at 50\% missing values.
+For categorical columns, improvements are mostly in the 0\% to 5\% range, and in case of 50\% missing values the upper quartile reaches the 5\% to 10\% range. There are no clear differences between the results of the different imputation methods.
+
+The situation is slightly different for regression tasks. Here, GAIN yields the least improvements downstream. Even the mean imputation is often more beneficial for the downstream performance. VAE is approximately on par with mean imputation. In contrast, the ML and the discriminative DL approaches do outperform the other methods in most settings. However, when the missing values are MNAR there is no clear advantage except that the discriminative DL is superior at 50\% missing values.
 
 Overall, the classical ML methods and discriminative DL perform best. Again, mean/mode imputation yields medium good results. As the proportion of missing values increases, we observe increasing improvements of the in downstream performance in all types of missingness patterns, along with higher variance. In contrast to classification tasks, there are hardly any negative effects in regression tasks.
 
@@ -95,16 +82,16 @@ Overall, the classical ML methods and discriminative DL perform best. Again, mea
 \begin{figure}\centering
 	\includegraphics[width=1\columnwidth]{corrupted_downstream_boxplot.eps}
 
-	\caption[Downstream Ranks - Corrupted]{Impact on downstream task of the six imputation methods trained on incomplete data. We plot the imputation method's rank against the missingness fraction. The columns of plots separate the changing missingness pattern, whereas the rows distinguish the results between categorical and numerical target columns. In regression tasks, no considerable improvements are achieved. In classification tasks, in contrast, we observe slightly positive effects in some settings but negative effects predominate in the harder settings.
+	\caption[Downstream Ranks - Corrupted]{Impact on downstream task of the six imputation methods trained on incomplete data. We plot the imputation method's impact on downstream task against the missingness fraction. The columns of plots separate the changing missingness pattern, whereas the rows distinguish the results between categorical and numerical target columns. In regression tasks, no considerable improvements are achieved. In classification tasks, in contrast, we observe slightly positive effects in some settings but negative effects predominate in the harder settings.
     }
 	\label{fig:corrupted_downstream_boxplot}
 \end{figure}
 
-Figure \ref{fig:corrupted_downstream_boxplot} illustrates the \textit{impact on downstream task} (Equation \ref{eq:impact_scenario2}) in \textit{Scenario 2} (training on incomplete/imputed data). Here, the different scaling of the y-axis must be taken into account, i.e. the relative improvements are significantly smaller compared to the first scenario. One reason for this is the different basis for calculating the relative values (see sections \ref{sec:experiment_2} and \ref{sec:scenario_2}).
+Figure \ref{fig:corrupted_downstream_boxplot} illustrates the \textit{impact on downstream task} metric's version for \textit{Scenario 2}, which means the percent change of the imputation over the incomplete data relative to the downstream task performance on incomplete data (Equation \ref{eq:impact_scenario2}). This metric is labeled \textit{Improvement} and represented on the y-axis. Here, the different scaling must be taken into account, i.e. the relative improvements are considerably smaller compared to the first scenario. One reason for this is the different basis for calculating the relative values (see sections \ref{sec:experiment_2} and \ref{sec:scenario_2}).
 
 If weak positive effects seem to predominate in classification tasks at first, this tendency changes with increasing proportion of missing values (at 50\%) and increasing difficulty of the task (especially MNAR). The most negative results are produced by GAIN. However, the other methods also have major difficulties and often drift into negative ranges for the greater part as the tasks become more challenging.
 
-In regression tasks, apart from a few outliers, there are no significant improvements. At the highest proportion of missing values (50\%) and greatest difficulty (MNAR), the results of the generative methods (VAE and GAIN) even turn predominantly negative.
+In regression tasks, apart from a few outliers, there are no considerable improvements. At the highest proportion of missing values (50\%) and greatest difficulty (MNAR), the results of the generative methods (VAE and GAIN) even turn predominantly negative.
 
 Here, too, the variance increases with higher fraciton. However, this time the results tend to worsen. In summary, no considerable improvements are achieved in regression tasks. In classification tasks, the picture is more mixed and the variance is higher. In some settings, there are slightly positive effects to note. In the difficult settings, however, the negative effects predominate. Again, $k$-NN and random forest appear to be the most robust methods overall.
 
