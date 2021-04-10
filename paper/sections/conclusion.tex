@@ -1,7 +1,9 @@
 %!TEX root = ../data-imputation.tex
 \section{Conclusions}
 \label{sec:conclusion}
-\felix{here we could highlight the two main findings from the discussion and translate them into actionable insights for researchers / practitioners.}
-To be fair: Trainings zeit skaliert mit der anzahl to-be-imputed columns. Das trifft aber nicht für die generativen modelle zu!
+%
+To the best of our knowledge, this is the first benchmark that compares classical and modern imputation approaches on a large number of datasets under realistic missingness conditions with respect to the imputation quality and the impact on the predictive performance of a downstream ML model. We also evaluated how the results change when the imputation and downstream model were trained on incomplete data.
 
-Multiple imputation instead of single..
+Our results show that, when training data is fully observed, using an imputation model helps to increase the downstream predictive performance regardless the missingness conditions. The improvements for classification tasks, ML engineers can expect, are up to $10\%$ and for regression tasks around $15\%$.
+
+In almost all experiments, random forest-based imputation shows best imputation quality and consequently also on the most data sets the best improvements on the downstream predictive performance.

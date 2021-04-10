@@ -2,9 +2,9 @@
 \section{Discussion}
 \label{sec:discussion}
 
-We investigated the performance of classical and modern imputation approaches on a large number of heterogenous data sets under realistic conditions. In the following we highlight some of the key findings.
+We investigated the performance of classical and modern imputation approaches on a large number of heterogeneous data sets under realistic conditions. In the following we highlight some of the key findings.
 
-\subsection{Simpler imputation methods yield competitive results}
+\subsection{Simpler Imputation Methods Yield Competitive Results}
 %
 When evaluating imputation quality our results demonstrate that simple supervised learning methods achieve competitive results and in many cases outperform modern generative deep learning based approaches. In particular in the MCAR and MAR setting, we see in Figure \ref{fig:fully_observed_impute_rank_boxplot} and \ref{fig:corrupted_impute_rank_boxplot} that $k$-NN and random forest, as well as the discriminative DL approach are for at least $50\%$ of the cases among the better ranks one, two or three. Random forest has the tendency to achieve the best rank more often. This effect is largely independent whether the imputation methods are trained on complete or incomplete data.
 
@@ -25,12 +25,11 @@ Another key finding is that our results show the substantial positive impact of 
 
 The positive impact of imputation on downstream performance is most pronounced when the imputation methods were trained on fully observed data. When imputation methods were trained on incomplete data, the positive impact of imputation of missing values in the test data was substantially lower, sometimes even negative. While this might seem a disadvantage we emphasize that in many application use cases we can ensure that the training data be fully observed, for instance by acquiring more data before training the imputation as well as the downstream ML model.
 
+
 \subsection{Limitations}
 %
+Because one of the main goals of this study is a comprehensive comparison of imputation methods on a large number of data sets and missingness conditions, we made some decisions that limit our results.
 
-\begin{itemize}
-	\item Datasets probably to small
-	\item Tasks too easy,
-	\item just one column affected and that might not have been the most important column
-	\item Datasets too simple: Images, frei text..
-\end{itemize}
+Firstly, the used data sets consists of maximum $25$ features and $100k$ observations. For this reason, we can not conclude from our experiments how the imputation methods perform on large-scale data sets. Further, our data sets only contain numerical or categorical columns and no image- or text-based data. However, modern ML applications often coping with these types. Therefore, our results presumably do not generalize to other downstream tasks as regression and classification.
+
+Secondly, to measure the imputation impact on the downstream performance, we discarded and imputed values in a single column. Therefore, the impact depends heavily on the chosen column's importance (e.g., see \cite{Jenga}). Generally, the impact when using an imputation model could vary when multiple columns are affected of missing values.
