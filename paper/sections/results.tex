@@ -19,7 +19,6 @@ In this experiment we evaluate the imputation performance of each method when tr
 	\label{fig:fully_observed_impute_rank_boxplot}
 \end{figure}
 
-%\sebastian{Unterbringen: If an imputation method did not work, it is ranked last. This is most relevant for GAIN, which failed in 273 out of 828 times in \textit{Experiment 1} - \textit{Scenario 1}, which amounts to 33\% of the cases. In \textit{Experiment 1} - \textit{Scenario 2}, however, the problem of GAIN often failing did not occur.}
 
 Figure \ref{fig:fully_observed_impute_rank_boxplot} presents the imputation results when training on complete data. In about $33\%$ of these results, GAIN failed during training and get assigned the worst rank six.
 
@@ -99,27 +98,26 @@ Because training and inference time depend heavily on the data set's size, direc
 %
 \begin{table}
 	\centering
-	\begin{tabular}{@{\extracolsep{4pt}}lllll@{}}
+	\begin{tabular}{@{\extracolsep{4pt}}lrrrr@{}}
 		\toprule
 		\multirow{2}{*}{Imputation Method} & \multicolumn{2}{c}{Training} & \multicolumn{2}{c}{Inference} \\\cline{2-3}\cline{4-5}
 		\\[-0.75em]
 		& Mean Duration &   Rel. SD & Mean Duration &   Rel. SD \\
 		\midrule
-		Mean/Mode &      0.005277 &  0.550878 &      0.029195 &  0.171139 \\
+		Mean/Mode &      0.005 &  0.550 &      0.029 &  0.171 \\
 		\\[-0.5em]
-		$k$-NN &     41.204365 &  0.253716 &       7.01833 &  0.602026 \\
+		$k$-NN &     41.204 &  0.254 &       7.018 &  0.602 \\
 		\\[-0.5em]
-		Random Forest &    226.076551 &  0.119295 &     24.047614 &  0.236052 \\
+		Random Forest &    226.077 &  0.119 &     24.048 &  0.236 \\
 		\\[-0.5em]
-		Discriminative DL &   6275.019244 &   0.40505 &    440.388738 &  0.210621 \\
+		Discriminative DL &   6275.019 &   0.405 &    440.389 &  0.211 \\
 		\\[-0.5em]
-		VAE &     71.095282 &  0.098795 &      11.21483 &  0.084604 \\
+		VAE &     71.095 &  0.099 &      11.215 &  0.085 \\
 		\\[-0.5em]
-		GAIN &    878.058286 &  0.311553 &     137.96578 &  0.083426 \\
+		GAIN &    878.058 &  0.312 &     137.966 &  0.083 \\
 		\bottomrule
 	\end{tabular}
 	\caption{Training and inference duration for each imputation method in seconds. We use the wall-clock run time to measure the durations for training, including hyperparameter optimization, and inference for all data sets with MCAR missingness pattern and all fractions shown in Table \ref{tab:experiment_settings}. Because training and inference durations depend heavily on the data set size, we first calculate the durations' mean and relative standard deviation for each imputation method on every data set. Second, we average those mean durations and relative standard deviations for the imputation methods and present them as \emph{Mean Duration} and \emph{Rel. SD} separately for \emph{Training} and \emph{Inference}. Abbreviations: \emph{Rel. SD} means Relative Standard Deviation.
-	\felix{koennte man auf zwei nachkommastellen runden}
 	}
 	\label{tab:time}
 \end{table}
