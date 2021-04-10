@@ -21,9 +21,9 @@ In this experiment we evaluate the imputation performance of each method when tr
 
 %\sebastian{Unterbringen: If an imputation method did not work, it is ranked last. This is most relevant for GAIN, which failed in 273 out of 828 times in \textit{Experiment 1} - \textit{Scenario 1}, which amounts to 33\% of the cases. In \textit{Experiment 1} - \textit{Scenario 2}, however, the problem of GAIN often failing did not occur.}
 
-Figure \ref{fig:fully_observed_impute_rank_boxplot} presents the imputation results when training on complete data. In about $33\%$ of these results, GAIN failed during training and get assigned the worst rank six. 
+Figure \ref{fig:fully_observed_impute_rank_boxplot} presents the imputation results when training on complete data. In about $33\%$ of these results, GAIN failed during training and get assigned the worst rank six.
 
-When imputing categorical columns, there is no clear best method. However, in many settings the discriminative DL approach achieves for $75\%$ of the cases at least rank three or better. Very similar but slightly worse results are shown by the random forest imputation method. For MCAR with $50\%$ missing values and MAR with $10\%$ to $50\%$ missingness, the $k$-NN imputation approach performs well and gets for $75\%$ of the cases at least rank three or better. VAE achieves in $50\%$ of the cases a rank between two and four, and GAIN shows consistently the worst performance, in most settings it is placed fourth or worse in $75\%$. Interestingly, mean/mode imputation scores better ranks for the more complex settings with MNAR missingness pattern. 
+When imputing categorical columns, there is no clear best method. However, in many settings the discriminative DL approach achieves for $75\%$ of the cases at least rank three or better. Very similar but slightly worse results are shown by the random forest imputation method. For MCAR with $50\%$ missing values and MAR with $10\%$ to $50\%$ missingness, the $k$-NN imputation approach performs well and gets for $75\%$ of the cases at least rank three or better. VAE achieves in $50\%$ of the cases a rank between two and four, and GAIN shows consistently the worst performance, in most settings it is placed fourth or worse in $75\%$. Interestingly, mean/mode imputation scores better ranks for the more complex settings with MNAR missingness pattern.
 
 When imputing numerical columns, the differences are more pronounced. Random forest is the only method that achieves one of the first three ranks in $75\%$ of the cases throughout all experimental conditions. Also $k$-NN shows good results, ranking second or third in most settings in $50\%$ of the cases. Very similar results are achieved by the discriminative DL method that tends to lose performance from MAR with $30\%$ missingness to MNAR with $50\%$ missing values. Again VAE ranges most of the time between rank three and five similar to mean/mode imputation and GAIN gets the worst ranks five and six.
 
@@ -47,7 +47,7 @@ Overall, the results of \textit{Scenario 1} (Figure \ref{fig:fully_observed_impu
 
 \subsection{Experiment 2: Impact on Downstream Task}
 
-In this experiment, we evaluate the downstream performance of each method in two scenarios: training on complete data and training on incomplete data. The plots are row-wise grouped by the type of downstream task (regression or classification). That is, in contrast to \textit{Experiment 1}, irrespective of the data type of the column which was imputed. \arndt{Beim Korrekturlesen nochmal drauf achten, dass das nicht irgendwo verdreht ist.}
+In this experiment, we evaluate the imputation method's impact on the downstream performance in two scenarios: the imputation model was trained on complete and incomplete data. As described in Section \ref{sec:experiment_2}, this time, we discard only values in the data set's randomly sampled target column. We exclude the experiment setting, which failed during training the imputation model, i.e., there are about $33\%$ fewer results for the first scenario (training on complete data).
 
 
 \subsubsection{Scenario 1: Training on Complete Data}
@@ -59,17 +59,15 @@ In this experiment, we evaluate the downstream performance of each method in two
 	\label{fig:fully_observed_downstream_boxplot}
 \end{figure}
 
-Figure \ref{fig:fully_observed_downstream_boxplot} visualizes the \textit{impact on downstream task} metric's version for \textit{Scenario 1}. We show how much the predictive performance of a downstream ML model improves compared to incomplete test data and normalize by the downstream performance obtained on fully observed test data (Equation \ref{eq:impact}). This metric is labeled \textit{Improvement} and represented on the y-axis.
+Figure \ref{fig:fully_observed_downstream_boxplot} visualizes how much the predictive performance of a downstream ML model improves compared to incomplete test data and normalize by the downstream performance obtained on fully observed test data (Equation \ref{eq:impact}). This metric is labeled \textit{Improvement} and represented on the plots' y-axis.
 
-Experimental settings that caused undefined results in the first experiment were filtered out in the second experiment. This means in particular that we have about 33\% fewer results for GAIN in \textit{Scenario 1}.
+In all cases, using imputation approaches increase the downstream performance in $75\%$ of the cases. Not surprisingly, independent from the downstream task and the missingness pattern, the more missing values exist, the better the potential improvement, shown by the method's increasing median and $75\%$ quantile.
 
-In many conditions, imputation improves the downstream performance by up to 5\% or more. Unsurprisingly, the impact is  negligible at the lowest missingness fraction of 1\%. At higher missingness fractions, we observe increasing improvements in all types of missingness patterns and downstream tasks. However, for categorical columns, downstream performance is degraded by imputation in than 25\% of cases. This could be due to the relatively small impact the missingness had on the downstream performance. 
+For regression tasks, all imputation methods on all settings degrade the performance in less than $25\%$ of the cases. Further, they hold great potential for improving the performance in the range of $\sim10\%$ and $\sim15\%$ for $30\%$ and $50\%$ MCAR or MAR missing values. However, there is a tendency from MCAR to MNAR that the potential performance degrades. In most settings, random forest's median improvement is best, followed by $k$-NN and discriminative DL. This effect also holds for their potential improvement ($75\%$ quantile), except for $50\%$ MNAR, where it is about five percentage points higher than the others. In most settings, VAE and mean/mode increase the downstream performance very similar but worse than the other three, and GAIN is always the worst.
 
-For categorical columns, improvements are mostly in the 0\% to 5\% range, and in case of 50\% missing values the upper quartile reaches the 5\% to 10\% range. There are no clear differences between the different imputation methods.
+For classification tasks, few imputation methods in some settings show degrading performance in slightly more than $25\%$ of the cases. However, their median imputation performance is always positive and generally higher than for regression tasks. In general, the potential improvements of the methods are in all settings roughly the same. As for regression tasks, random forest, followed by $k$-NN and discriminate DL, hold in $50\%$ of the cases the best performance. Unfortunately, this degrades from MCAR to MNAR. Surprisingly, this time GAIN holds much more potential improvement and performs in many settings better than VAE, especially when the missingness fraction is high.
 
-The situation is slightly different for regression tasks. Here, GAIN yields the least improvements downstream. Even the mean imputation is often more beneficial for the downstream performance. VAE is approximately on par with mean imputation. In contrast, the ML and the discriminative DL approaches do outperform the other methods in most settings. However, when the missing values are MNAR there is no clear advantage except that the discriminative DL is superior at 50\% missing values.
-
-Overall, the classical ML methods and discriminative DL perform best. Again, mean/mode imputation yields medium good results. As the proportion of missing values increases, we observe increasing improvements of the downstream performance in all types of missingness patterns, along with higher variance. In contrast to classification tasks, there are hardly any negative effects in regression tasks.
+All in all, independent from the experimental settings, random forest performs in $50\%$ of the cases best, closely followed by $k$-NN and discriminative DL. In general, when using imputation, the expected improvement is for classification higher than for regression tasks. This effect also holds for the missingness fractions: the higher the missingness fraction, the higher the potential improvements. Only in less than $25\%$ of all cases, we found degraded downstream performance.
 
 
 \subsubsection{Scenario 2: Training on Incomplete Data}
@@ -82,28 +80,16 @@ Overall, the classical ML methods and discriminative DL perform best. Again, mea
 	\label{fig:corrupted_downstream_boxplot}
 \end{figure}
 
-Figure \ref{fig:corrupted_downstream_boxplot} illustrates the \textit{impact on downstream task} metric's version for \textit{Scenario 2}, which means the percent change of the imputation over the incomplete data relative to the downstream task performance on incomplete data (Equation \ref{eq:impact_scenario2}). This metric is labeled \textit{Improvement} and represented on the y-axis. Here, the different scaling must be taken into account, i.e., the relative improvements are considerably smaller compared to the first scenario. One reason for this is the different basis for calculating the relative values (see sections \ref{sec:experiment_2} and \ref{sec:scenario_2}).
 
-If weak positive effects seem to predominate in classification tasks at first, this tendency changes with increasing proportion of missing values (at 50\%) and increasing difficulty of the task (especially MNAR). The most negative results are produced by GAIN. However, the other methods also have major difficulties and often drift into negative ranges for the greater part as the tasks become more challenging.
+Figure \ref{fig:corrupted_downstream_boxplot} illustrates the impact imputation has on the downstream task. We show how many percent the predictive performance of a downstream ML model improves compared to incomplete test data. This metric is labeled \textit{Improvement} and represented on the plots' y-axis. Here, the different scaling must be taken into account, i.e., the relative improvements are considerably smaller compared to the first scenario. One reason for this is the different basis for calculating the relative values (see Sections \ref{sec:experiment_2} and \ref{sec:scenario_2}).
 
-In regression tasks, apart from a few outliers, there are no considerable improvements. At the highest proportion of missing values (50\%) and greatest difficulty (MNAR), the results of the generative methods (VAE and GAIN) even turn predominantly negative.
+The potential improvements when the imputation methods are trained on incomplete data are marginal. In all settings, there are hardly any improvements greater than $1\%$. However, with $30\%$ missing values or fewer, most cases have a positive impact.
 
-Here, too, the variance increases with higher fraction. However, this time the results tend to worsen. In summary, no considerable improvements in downstream predictive performance are achieved in regression tasks when imputing with an imputation model trained on incomplete data. In classification tasks, the picture is more mixed and the variance is higher. In some settings, there are slightly positive effects to note. In the difficult settings, however, the negative effects predominate. Again, $k$-NN and random forest appear to be the most robust methods overall.
+For classification tasks, with up to $30\%$ MCAR or MAR missingness, there for all imputation methods, but GAIN, mostly very small but positive improvements, where higher missing fractions yield potentially higher improvements ($75\%$ quantile). However, high missingness fractions shift the improvements into the negative range, i.e., degrade the performance. For MNAR only for $1\%$ and $10\%$ missing values, we see mostly improvements, and for $30\%$ or $50\%$ missingness, the downstream performance degrades in most cases.
 
-\arndt{consider points below in discussion}
-\felix{
-\begin{itemize}
-\item in the conclusion we should relate the performance to the training and prediction time and comment on the (large) differences - for AutoKeras, a lot more tuning is performed and we don't know whether it would have worked as well with less tuning.
-\item we should highlight the limitations of our results (only one column, maybe too simple)
-\item we should highlight the main findings; as far as i can see this would be: a) classical methods perform best (on these simple (?) data sets) and b) downstream performance is improved by X \% in Y \% of the experiments (we can use the quantiles in the boxplots) whereas when the imputation methods are trained on incomplete data, we cannot expect improvements.
-\end{itemize}
-}
-\sebastian{
-\begin{itemize}
-\item Scenario 2: Training on Incomplete Data - Spätestens jetzt sollten wir mal ein wort darüber verlieren woran das liegen könnte: When eine category einfach häufiger ist, dann ist das meist ne recht guter guess. Das könnte dazu führen, dass die andere schlechter werden, weil die versuchen das intelligenter zu machen, aber einfach nicht genügend trainings daten haben um noch was sinnvolles zu lernen
-\item Figure 3 - (Hbane wir ne idee warum classificaiotn auch schelcht wird und regression nicht?)
-\end{itemize}
-}
+For regression tasks, there are hardly any potential improvements over $0.5\%$. On the other hand, there are also much fewer cases where imputation potentially degrades the performance. Outstanding is random forest, which yields in most settings the highest performance and the generative approaches that harm the performance when missingness is $30\%$ or higher.
+
+To summarize, for up to $30\%$ missing values independent of the missingness pattern or downstream tasks, imputation increases the performance in most cases. Using random forest holds the best chance in almost all settings to improve the downstream performance.
 
 \subsection{Computational Complexity}
 %
