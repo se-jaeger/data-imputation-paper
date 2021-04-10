@@ -37,7 +37,7 @@ We split the experiments into four parts. In \emph{Experiment 1} we compare impu
 \subsubsection{Experiment 1: Imputation Quality}
 \label{sec:experiment_1}
 %
-With this experiment, we aim to reveal how accurately the different imputation methods can impute the original values. 
+With this experiment, we aim to reveal how accurately the different imputation methods can impute the original values.
 %In practice, it is common that not only a single column contains missing values. Therefore, an important factor is the imputation model's robustness against missing values in other columns.
 With the help of \code{jenga}, we spread the desired number of missing values across all columns of the test set. For a certain missingness pattern and fraction, MAR and $30\%$ for instance, we introduce $\frac{30\%}{N}$ missing values of this pattern to each of the $N$ columns.
 %
@@ -69,7 +69,7 @@ To summarize the entire experimental procedure is as follows:
 \subsubsection{Scenario 1: Training on Complete Data}
 \label{sec:scenario_1}
 %
-ML researchers commonly use complete (or fully observed) data to train, tune, and validate their ML applications. This is a reasonable assumption as the quality of the training data can be controlled better that that of the test data when the model is deployed in production. For instance one can use crowdsourced tasks to collect all necessary features in the training data, or use sampling schemes for the training data that ensure complete and representative training data. In this scenario, one can easily train an imputation model on complete data and then use that imputation model to impute missing values in the test data before the test data is fed into the downstream Ml model. We use \emph{Scenario 1} to simulate such situations and run both experiments as described in Section \ref{sec:experiment_1} and \ref{sec:experiment_2}.
+ML researchers commonly use complete (or fully observed) data to train, tune, and validate their ML applications. This is a reasonable assumption as the quality of the training data can be controlled better than that of the test data when the model is deployed in production. For instance one can use crowdsourced tasks to collect all necessary features in the training data, or use sampling schemes for the training data that ensure complete and representative training data. In this scenario, one can easily train an imputation model on complete data and then use that imputation model to impute missing values in the test data before the test data is fed into the downstream ML model. We use \emph{Scenario 1} to simulate such situations and run both experiments as described in Section \ref{sec:experiment_1} and \ref{sec:experiment_2}.
 
 \subsubsection{Scenario 2: Training on Incomplete/Imputed Data}
 \label{sec:scenario_2}
