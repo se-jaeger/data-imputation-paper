@@ -135,7 +135,7 @@ For generative imputation approaches, we need to preserve the number of columns.
 \subsection{Imputation Methods}
 \label{sec:methods:impuation}
 %
-In this section, we describe our six single imputation methods. The overall goal of an imputation method is to train a model on $\vec{X}\in\R^{n\times d} = [\vec{x}_1, \vec{x}_2, ..., \vec{x}_{i-1}, \vec{x}_{i+1}, ..., \vec{x}_d]$, where $d$ is the number of features, $n$ the number of observations, and $\vec{x}_i$ denotes the to-be-imputed (or target) column.
+In this section, we describe our six single imputation methods. The overall goal of an imputation method is to train a model on $\vec{X}\in\R^{n\times d} = [\vec{x}_1, \vec{x}_2, ..., \vec{x}_{i-1}, \vec{x}_{i+1}, ..., \vec{x}_d]$, where $d$ is the number of features, $n$ the number of observations, and $\vec{x}_i$ denotes the to-be-imputed column.
 To abstract crucial steps such as preprocessing the data (see Section \ref{sec:preprocessing}) and cross-validate the imputation method's hyperparameters (see Section \ref{sec:HPO}), we define a framework implemented by all of the following imputation approaches.
 
 
@@ -148,8 +148,7 @@ As a simple imputation baseline, we use the column-wise \code{mean} for numerica
 \subsubsection{$k$-NN Imputation}
 \label{sec:knKNN}
 %
-A popular ML imputation baseline is $k$-NN imputation, also known as Hot-Deck imputation~\citep{Batista2003}. For our implementation thereof, we use \code{scikit-learn}'s \code{KNeighborsClassifier} for categorical target columns and \code{KNeighborsRegressor} for numerical columns, respectively.
-%Both models expose the hyperparameter $k \in \{1, 3, 5\}$, which we optimize by 5-fold cross-validated grid-search.
+A popular ML imputation baseline is $k$-NN imputation, also known as Hot-Deck imputation~\citep{Batista2003}. For our implementation thereof, we use \code{scikit-learn}'s \code{KNeighborsClassifier} for categorical to-be-imputed columns and \code{KNeighborsRegressor} for numerical columns, respectively.
 
 
 \subsubsection{Random Forest Imputation}
