@@ -223,8 +223,10 @@ Optimizing and cross-validating hyperparameters is crucial to gain insights into
 
 \subsection{Evaluation Metrics}
 %
-To evaluate our experiments, we use two metrics: $macro F1$-score (shown in Equation \ref{eq:F1}) and root mean square error ($RMSE$) (shown in Equation \ref{eq:RMSE}).
+To evaluate our experiments, we use two metrics: root mean square error ($RMSE$) and $macro F1$-score.
 
+The $RMSE$ is defined as:
+%
 \begin{equation}
 	RMSE = \sqrt{\frac{1}{N} \sum_{i = 0}^{N} (y_i - \hat{y_i})^2}
 	\label{eq:RMSE}
@@ -235,10 +237,16 @@ where $N$ is the number of observations, $y_i$ are the observed values, and $\ha
 The $macroF1$-score is defined as the mean of class-wise $F1$-scores:
 %
 \begin{equation}
-	macro\ F1 = \frac{1}{M}\sum_{i = 0}^{M} F1_i
+	macro\ F1 = \frac{1}{C}\sum_{i = 0}^{C} F1_i
 	\label{eq:F1}
 \end{equation}
 %
-where $i$ is the class index and $M$ the number of classes.
+where $i$ is the class index, $C$ the number of classes, and $F1_i$ defined as:
+%
+\begin{equation}
+	F1 = \frac{TP}{TP + \frac{1}{2}(FP + FN)}
+\end{equation}
+%
+where $TP$ is the number of true positives, $FP$ the number of false positives, and $FN$ the number of false negatives.
 
-Imputing categorical columns can be seen as a classification task. Accordingly, we measure performance in this case by the $F1$-score (we use the terms $macro F1$-score, $F1$-score, and $F1$ synonymously). For regression tasks and when imputing numerical columns, we use the $RMSE$ metric. Since, on the one hand, $F1$ is a score measure, larger values imply better performance. On the other hand, $RMSE$ is an error measure, where a smaller value indicates better performance.
+Imputing categorical columns can be seen as a classification task. Accordingly, we measure performance in this case as well as for downstream classification tasks by the $macroF1$-score. In the following, we use the terms $F1$-score and $F1$ synonymously for $macro F1$-score. For regression tasks and when imputing numerical columns, we use the $RMSE$ metric. Since, on the one hand, $F1$ is a score measure, larger values imply better performance. On the other hand, $RMSE$ is an error measure, where a smaller value indicates better performance.
