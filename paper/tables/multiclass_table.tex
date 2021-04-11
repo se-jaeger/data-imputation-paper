@@ -2,7 +2,7 @@
 \centering
 \begin{tabular}{rllrrr}
 \toprule
-\multirow{2}{*}{OpenML ID} & \multirow{2}{*}{Name} & \multirow{2}{*}{Target Column} & \multirow{2}{*}{Obs.} & \multicolumn{2}{c}{Features} \\ \cline{5-6}
+\multirow{2}{*}{OpenML ID} & \multirow{2}{*}{Name} & \multirow{2}{*}{To-be-imputed Column} & \multirow{2}{*}{Obs.} & \multicolumn{2}{c}{Features} \\ \cline{5-6}
 \\[-0.75em]
 &        &                &                            & Num.    & Cat.   \\
 \midrule
@@ -19,12 +19,12 @@
         32 &                              pendigits &    input4 &    10992 &               16 &                1 \\
       1481 &                                kr-vs-k &     V2 &   28056 &                3 &                4 \\
        184 &                                  kropt &      black\_king\_col &  28056 &                0 &                7 \\
-     41027 & jungle\_chess\_2pcs\_raw\_endgame\_complete &    black\_piece0\_strength &    44819 &                6 &                1 \\
+     41027 & jungle\_chess\_2pcs\_raw\_endgame\_(...) &    black\_piece0\_strength &    44819 &                6 &                1 \\
          6 &                                 letter &     x-box &   20000 &               16 &                1 \\
      41671 &                      microaggregation2 &    a9 &    20000 &               20 &                1 \\
      40685 &                                shuttle &     A2 &   58000 &                9 &                1 \\
 \bottomrule
 \end{tabular}
-\caption{Overview of all data sets we use associated with a multi-class classification downstream task. \emph{Target Column} presents the data set's column we used to evaluate the imputation methods, \emph{Obs.} the number of observations, \emph{Num.} the number numerical columns, and \emph{Cat.} the number of categorical columns.}
+\caption{Overview of all data sets we use associated with a multi-class classification downstream task. \emph{To-be-imputed Column} presents the data set's column we used to evaluate the imputation methods, \emph{Obs.} the number of observations, \emph{Num.} the number numerical columns, and \emph{Cat.} the number of categorical columns.}
 \label{tab:multiclass_data}
 \end{table}
