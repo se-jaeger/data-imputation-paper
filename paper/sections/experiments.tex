@@ -1,0 +1,83 @@
+%!TEX root = ../data-imputation.tex
+\section{Implementation and Experiments}
+\label{sec:implementation}
+%
+In this section, we describe our benchmark suite in detail and its implementation.
+
+As described in Section \ref{sec:methods:impuation}, we define a framework that provides for each of the six implemented imputation approaches a common API with the methods \code{fit} and \code{transform}. \code{fit} trains the imputation model on given data while cross-validating a set of hyperparameters, and \code{transform} allows imputing missing values of the to-be-imputed column the imputation model is trained on. For our implementation, we use \code{tensorflow} version 2.4.1, \code{scikit-learn} version 0.24.1, and \code{autokeras} version 1.0.12.
+
+The Python package \code{jenga}\footnote{Software package "to study the effects of common data corruptions (e.g., missing values, broken character encodings) on the prediction quality of ML models." Source: \url{https://github.com/schelterlabs/jenga}} \citep{Jenga} provides two features we use to implement our experiments. First, it implements the mechanisms to discard values for the missingness patterns MCAR, MAR, and MNAR, as described in Section \ref{sec:missingess_pattern}. Second, it provides a wrapper for OpenML data sets, creates an $80/20$ training-test split, and can automatically train a \emph{baseline model} for the downstream task defined by the data set. We use the default task settings of \code{jenga} in which \code{scikit-learn}'s \code{SGDClassifier}  is used for classification and \code{SGDRegressor} for regression tasks. As preprocessing steps, it first replaces missing values with a constant, and second, one-hot encodes categorical columns and normalizes numerical columns to zero mean and unit variance. Finally, to train a robust model, it 5-fold cross-validates the hyperparameters \emph{loss}, \emph{penalty}, and \emph{alpha} using grid search. \code{jenga} reports the baseline model's performance ($F1$ for classification, $RMSE$ for regression) on the test set.
+
+
+\subsection{Experimental Settings}
+%
+Our experimental settings are listed in Table \ref{tab:experiment_settings}. Each experiment is executed three times, and the average performance metrics are reported.
+%
+\begin{table}
+	\centering
+	\begin{tabular}{ll}
+		\toprule
+		Parameter            & Values                                     \\ \midrule
+		Data Sets             & 69 (see supplementary material)    \\
+		\\[-0.5em]
+		Imputation Methods              & Mean/Mode, $k$-NN, Random Forest, DL, GAIN, VAE \\
+		\\[-0.5em]
+		Missingness Patterns  & MCAR, MAR, MNAR                            \\
+		\\[-0.5em]
+		Missingness Fractions & $1\%, 10\%, 30\%, 50\%$                      \\ \bottomrule
+	\end{tabular}
+	\caption{Overview of our experimental settings. We focus on covering an extensive range of the dimensions described in Section \ref{sec:related_work}. In total, there are $4,968$ experiments, which we repeat three times to report the mean imputation/downstream score.}
+	\label{tab:experiment_settings}
+\end{table}
+%
+For each of the data sets, we sample one to-be-imputed column upfront, which remains static throughout our experiments.
+
+We split the experiments into four parts. In \emph{Experiment 1}, we compare imputation approaches with respect to their imputation quality (Section \ref{sec:experiment_1}), and in \emph{Experiment 2}, we compare imputation methods with respect to the impact on downstream tasks (Section \ref{sec:experiment_2}). Both experiments are repeated in two application scenarios: \emph{Scenario 1} (with complete training data, see Section \ref{sec:scenario_1}) and \emph{Scenario 2} (with incomplete training data, see Section \ref{sec:scenario_2}).
+
+\subsubsection{Experiment 1: Imputation Quality}
+\label{sec:experiment_1}
+%
+With this experiment, we aim to reveal how accurately the imputation methods can impute the original values.
+With the help of \code{jenga}, we spread the desired number of missing values across all columns of the test set. For a certain missingness pattern and fraction, e.g., $30\%$ MAR, we introduce $\frac{30\%}{N}$ missing values of this pattern to each of the $N$ columns.
+The evaluation of the imputation quality is then performed using the to-be-imputed column's discarded values as ground truth and the imputation model's predictions. If the to-be-imputed column is categorical, we report the $F1$-score, and for numerical columns, the $RMSE$.
+
+
+\subsubsection{Experiment 2: Impact on Downstream Task}
+\label{sec:experiment_2}
+%
+In \emph{Experiment 2}, we evaluate the impact of the different imputation approaches on numerous downstream ML tasks. For discriminative models, it is necessary to train one imputation model for each column with missing values. This fact, combined with our large number of experimental conditions (see Table \ref{tab:experiment_settings}), results in vast computational costs. To reduce those, while covering all relevant experimental conditions, we decided to discard values only in the test sets' to-be-imputed column.
+
+To summarize, the entire experimental procedure is as follows:
+%
+\begin{enumerate}
+\item We train the baseline model of the downstream ML task on the training set and report its $baseline$ score ($F1$ for classification and $RMSE$ for regression tasks) on the test set.
+\item After discarding values in the to-be-imputed column, we again use the trained baseline model and calculate its score on the incomplete test set, hence the name: $incomplete$.
+\item We then impute the missing values of the test set and, once more, using the trained baseline model, calculate the $imputed$ score.
+\item Finally, we report the impact on the downstream task's performance as the percent change of the imputation over the incomplete data relative to the baseline performance on fully observed test data:
+\end{enumerate}
+%
+\begin{equation}
+	impact\ on \ downstream\ task = \frac{imputed - incomplete}{baseline}
+	\label{eq:impact}
+\end{equation}
+%
+
+
+
+\subsubsection{Scenario 1: Training on Complete Data}
+\label{sec:scenario_1}
+%
+ML researchers commonly use complete (or fully observed) data to train, tune, and validate their ML applications. This is a reasonable assumption as the quality of the training data can be controlled better than that of the test data when the model is deployed in production. For instance, one can use crowdsourced tasks to collect all necessary features in the training data or use sampling schemes that ensure complete and representative training data. In this scenario, one can easily train an imputation model on complete data and use it to impute missing values in the test data before it is fed into the downstream ML model. We use \emph{Scenario 1} to simulate such situations and run both experiments, as described in Section \ref{sec:experiment_1} and \ref{sec:experiment_2}.
+
+\subsubsection{Scenario 2: Training on Incomplete}
+\label{sec:scenario_2}
+%
+Another common scenario is that not only the test data but also the training data have missing values. Thus, the imputation and downstream ML model has to be trained on incomplete training data. Also, in this scenario, we should expect missing values in the test data, which have to be imputed before applying the downstream ML model. To evaluate this application scenario, we adapt \emph{Experiment 1} and \emph{Experiment 2} slightly.
+
+We first introduce missing values in the training and test set and then train the baseline and imputation models based on these incomplete data. The calculation of the imputation quality (\emph{Experiment 1}, Section \ref{sec:experiment_1}) remains the same. However, to calculate the impact on the downstream task, we lack the availability of the $baseline$ score on complete data. Therefore, we adapt Equation \ref{eq:impact} by replacing the $baseline$ denominator with $incomplete$. That means, in this scenario, we report the percent change of the imputation over the incomplete data relative to the downstream task performance on incomplete data:
+%
+\begin{equation}
+	impact\ on \ downstream\ task = \frac{imputed - incomplete}{incomplete}
+	\label{eq:impact_scenario2}
+\end{equation}
+%

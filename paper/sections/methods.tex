@@ -1,0 +1,250 @@
+%!TEX root = ../data-imputation.tex
+
+\section{Methods}
+\label{sec:methods}
+%
+One of the main goals of this work is to provide a comprehensive evaluation of missing value imputation methods under realistic conditions. In particular, we focus on two aspects: (a) a broad suite of real-world data sets and tasks and (b) realistic missingness patterns. The following sections describe the data sets and missingness patterns we considered and the data preprocessing steps. Then follows a detailed description of the compared imputation methods, the used hyperparameter optimization strategies, and metrics for evaluation.
+
+\subsection{Data sets}
+\label{sec:datasets}
+%
+We focus on a comprehensive evaluation with several numeric data sets and tasks (regression, binary classification, and multi-class classification). The OpenML database~\citep{OpenML2013} contains thousands of data sets and provides an API. The Python package \code{scikit-learn} \citep{scikit-learn} can use this API to download data sets and create well-formatted \code{DataFrames} that encode the data properly.
+
+We filter available data sets as follows. To calculate the imputation performance, we need ground truth data sets without missing values. Moreover, especially deep learning models need sufficient data to learn their task properly. However, because we plan to run many experiments, the data sets must not be too big to keep training times feasible. For this reason, we choose data sets without missing values that contain 5 to 25 features and 3.000 to 100.000 observations. We then removed duplicated, corrupted, and Sparse ARFF\footnote{Attribute-Relation File Format} formatted data sets.
+
+The resulting 69 data sets are composed of 21 regression, 31 binary classification, and 17 multi-class classification data sets. The supplementary material contains a detailed list of all data sets and further information, such as OpenML ID, name, and the number of observations and features.
+
+
+\subsection{Missingness Patterns}
+\label{sec:missingess_pattern}
+Most research on missing value imputation considers three different types of missingness patterns:
+%
+\begin{itemize}
+\item Missing completely at random (MCAR, see Table \ref{tab:missingness_patterns_MCAR}): \\
+Values are discarded independently of any other values
+\item Missing at random (MAR, see Table \ref{tab:missingness_patterns_MAR}): \\
+Values in column $c$ are discarded dependent on values in another column $k\neq c$
+\item Missing not at random (MNAR, see Table \ref{tab:missingness_patterns_MNAR}): \\
+Values in column $c$ are discarded dependent on their value in $c$
+\end{itemize}
+%
+The missingness pattern most often used in the literature on missing value imputation is MCAR. Here the missing values are chosen independently at random. Usually, the implementations of this condition draw a random number from an uniform distribution and discard a value if that random number was below the desired missingness ratio. Few studies report results on the more challenging conditions MAR and MNAR. We here aim for realistic modeling of these missingness patterns inspired by observations in large-scale real-world data sets as investigated in \cite{Biessmann2018a}. We use an implementation proposed in \cite{Schelter2020a} and \cite{Jenga}, which selects two random percentiles of the values in a column, one for the lower and one for the upper bound of the value range considered. In the MAR condition, we discard values if values in a random other column fall in that percentile. In the MNAR condition, we discard values in a column if the values themselves fall in that random percentile range.
+%
+\begin{table}
+	\centering
+%	\caption{
+%		Examples of missingness patterns for a missingness ratio of 50\%. 	}
+%	\label{tab:missingness_patterns}
+%	\vspace{1em}
+%	\begin{subtable}{0.3\textwidth}
+\begin{minipage}{0.28\textwidth}
+\centering
+	\begin{tabular}{cc}
+\toprule
+ height &  height$_{\text{MCAR}}$ \\
+\midrule
+  179.0 &                     ? \\
+  192.0 &                     ? \\
+  189.0 &                 189.0 \\
+  156.0 &                 156.0 \\
+  175.0 &                     ? \\
+  170.0 &                 170.0 \\
+  181.0 &                     ? \\
+  197.0 &                     ? \\
+  156.0 &                 156.0 \\
+  160.0 &                 160.0 \\
+\bottomrule
+\end{tabular}
+\caption{
+		Applying the MCAR condition to column \textit{height} discards five out of ten values independent of the height values.
+	}
+	\label{tab:missingness_patterns_MCAR}
+\vspace{2em}
+\end{minipage}
+\hfill
+\begin{minipage}{0.3\textwidth}
+\centering
+	\begin{tabular}{ccc}
+\toprule
+ height & gender &  height$_{\text{MAR}}$ \\
+\midrule
+  200.0 &      m &                    ? \\
+  191.0 &      m &                    ? \\
+  198.0 &      f &                198.0 \\
+  155.0 &      m &                    ? \\
+  206.0 &      m &                    ? \\
+  152.0 &      f &                152.0 \\
+  175.0 &      f &                175.0 \\
+  159.0 &      m &                    ? \\
+  153.0 &      f &                153.0 \\
+  209.0 &      m &                209.0 \\
+\bottomrule
+\end{tabular}
+\caption{In the MAR condition, \textit{height} values are discarded dependent on values in another column,  here \textit{gender}. All discarded \textit{height} values correspond to rows in which \textit{gender} was \textit{male}.
+}
+	\label{tab:missingness_patterns_MAR}
+\end{minipage}
+\hfill
+\begin{minipage}{0.28\textwidth}
+\centering
+	\begin{tabular}{cc}
+\toprule
+ height &  height$_{\text{MNAR}}$ \\
+\midrule
+  154.0 &                     ? \\
+  181.0 &                 181.0 \\
+  207.0 &                 207.0 \\
+  194.0 &                 194.0 \\
+  153.0 &                     ? \\
+  156.0 &                     ? \\
+  198.0 &                 198.0 \\
+  185.0 &                 185.0 \\
+  155.0 &                     ? \\
+  164.0 &                     ? \\
+\bottomrule
+\end{tabular}
+\caption{In the MNAR condition, \textit{height} values are discarded dependent on the actual \textit{height} values. All discarded values correspond to small \textit{height} values.
+}
+	\label{tab:missingness_patterns_MNAR}
+\vspace{1em}
+\end{minipage}
+
+\end{table}
+
+\subsection{Data Preprocessing}
+\label{sec:preprocessing}
+%
+Data preprocessing is often an essential part of ML pipelines to achieve good results \citep{Sculley2015}. In our experiments, we apply the following three preprocessing steps for all imputation methods:
+%
+\begin{itemize}
+	\item Encode categorical columns: \\
+		Categories are transformed into a numerical representation, which is defined on the training set and equally applied to the test set
+
+	\item Replace missing values: \\
+		To avoid the imputation model from failing
+
+	\item Normalize the data: \\
+		Columns are rescaled to the same range, which is defined on the training set and equally applied to the test set
+\end{itemize}
+%
+However, the concrete techniques for discriminative imputation, described in Sections \ref{sec:simple_imputation} to \ref{sec:dl_imputation}, and generative approaches, described in Section \ref{sec:generative_imputation}, are different.
+
+For discriminative imputation approaches, we substitute missing values with their column-wise mean/mode value, one-hot encode categorical columns and normalize the data to zero mean and unit variance.
+For generative imputation approaches, we need to preserve the number of columns. For this reason, we encode the categories of categorical columns as values from $0$ to $n-1$, where $n$ is the number of categories. Then, missing values are replaced with random uniform noise from $0$ to $0.01$, and, finally, the data is min-max scaled ranging from $0$ to $1$.
+
+\subsection{Imputation Methods}
+\label{sec:methods:impuation}
+%
+In this section, we describe our six different imputation methods. The overall goal of an imputation method is to train a model on a data set $\vec{X}\in\R^{n\times d} = [\vec{x}_1, \vec{x}_2, ..., \vec{x}_{i-1}, \vec{x}_{i+1}, ..., \vec{x}_d]$, where $d$ is the number of features, $n$ the number of observations, and $\vec{x}_i$ denotes the to-be-imputed column.
+To abstract crucial steps such as preprocessing the data (see Section \ref{sec:preprocessing}) and cross-validating the imputation method's hyperparameters (see Section \ref{sec:HPO}), we define a framework implemented by all of the following imputation approaches.
+
+
+\subsubsection{Mean/Mode Imputation}
+\label{sec:simple_imputation}
+%
+As a simple imputation baseline, we use the column-wise \code{mean} for numerical or \code{mode}, i.e., the most frequent value,  for categorical columns to fill missing values.
+
+
+\subsubsection{$k$-NN Imputation}
+\label{sec:knKNN}
+%
+A popular ML imputation baseline is $k$-NN imputation, also known as Hot-Deck imputation~\citep{Batista2003}. For our implementation thereof, we use \code{scikit-learn}'s \code{KNeighborsClassifier} for categorical to-be-imputed columns and \code{KNeighborsRegressor} for numerical columns, respectively.
+
+
+\subsubsection{Random Forest Imputation}
+%
+Similarly to the $k$-NN imputation approach, described in Section \ref{sec:knKNN}, we implement the random forest imputation method using \code{scikit-learn}'s \code{RandomForestClassifier}, and \code{RandomForestRegressor}.
+
+
+
+\subsubsection{Discriminative Deep Learning Imputation}
+\label{sec:dl_imputation}
+%
+Often simple deep learning models can achieve good imputation results~\citep{Biessmann2018a}. To easily optimize the model's architecture, we use the AutoML\footnote{"automated machine learning (AutoML) [...] automatically set [the model's] hyperparameters to optimize performance" \cite{AutoML}} library \code{autokeras} \citep{AutoKeras} to implement the discriminative deep learning imputation method.
+For categorical columns, we use \code{autokeras}' \code{StructuredDataClassifier} and for numerical columns \code{StructuredDataRegressor}. Both classes take care of properly encoding the data themselves and optimizing the model's architecture and hyperparameters. We use $max\_trials = 50$, which means \code{autokeras} tries up to $50$ different model architecture and hyperparameter combinations, and $epochs = 50$, such that each model is trained for a maximum of $50$ epochs (\code{autokeras} uses early stopping by default).
+
+
+\subsubsection{Generative Deep Learning Imputation}
+\label{sec:generative_imputation}
+%
+All of the above approaches essentially follow the ideas known in the statistics literature as multiple imputation with chained equations (MICE) \citep{Little} or as {\em fully conditional specification} \citep{vanBuuren2018}: a discriminative model is trained on all but one column as features and the remaining column as the target variable. This approach has the advantage to be applicable to any supervised learning method, but it has the decisive disadvantage that for each to-be-imputed column, a new model has to be trained. Generative approaches are different in that they train just one model for an entire table. All matrix factorization-based approaches, such as \cite{Troyanskaya2001,Koren2009,Mazumder2010}, can be thought of as examples of generative models for imputation. We do not consider those linear generative models here as they have been shown to be outperformed by the mentioned methods and focus on deep learning variants of generative models only.
+
+Generative deep learning methods can be broadly categorized into two classes: (variational) autoencoders (VAE)~\citep{VAE}\footnote{We focus on probabilistic autoencoders here as there are more imputation methods available for VAEs} and generative adversarial networks (GAN)~\citep{GAN}. In the following, we shortly highlight some representative imputation methods based on either of these two and describe the implementation used in our experiments.
+
+\paragraph{Variational Autoencoder (VAE) Imputation}
+%
+VAEs learn to encode their input into a distribution over the latent space and decode by sampling from this distribution \citep{VAE}. Imputation methods based on this type of generative model include \cite{HIVAE, VAE_for_genomic_data, VAEM}. Rather than comparing all existing implementations, we focus on the original VAE imputation method for the sake of comparability with other approaches. To find the best model architecture, i.e., the number of hidden layers and their sizes, we follow the approach proposed by \cite{CaminoVAE}. We optimized using zero, one, or two hidden layer(s) for the encoder and decoder and fixed their sizes relative to the input dimension, i.e., the table's number of columns. If existing, the encoder's first hidden layer has $50\%$ of the input layer's neurons and the second layer $30\%$. The decoder's sizes are vice versa for upsampling the information to the same size as the input data. The latent space is also fixed to $20\%$ of the input dimension.
+For training, we use Adam optimizer with default hyperparameters, batch size of $64$, and early stopping within $50$ epochs.
+
+
+\paragraph{Generative Adversarial Network (GAN) Imputation}
+%
+GANs consist of two parts - a generator and a discriminator \citep{GAN}. In an adversarial process, the generator learns to generate samples that are as close as possible to the data distribution, and the discriminator learns to distinguish whether an example is true or generated. Imputation approaches based on GANs include \cite{GAIN, VIGAN, MisGAN}.
+Here we employ one of the most popular approaches of GAN-based imputation, Generative Adversarial Imputation Nets (GAIN)~\citep{GAIN}.
+GAIN adapts the original GAN architecture as follows.
+The generator's input is the concatenation of the input data and a binary matrix that represents the missing values. The discriminator learns to reconstruct the mask matrix. Its input is the concatenation of the generator's output and a hint matrix, which reveals partial information about the missingness of the original data. The computation of the hint matrix incorporates the introduced hyperparameter $hint\_rate$. A second hyperparameter GAIN introduces $\alpha$ helps to balance the generator's performance for observed and missing values.
+For training, we use Adam optimizer with default hyperparameters except for the learning rate for generator and discriminator, batch size of $64$, and early stopping within $50$ epochs.
+
+
+\subsection{Hyperparameter Optimization}
+\label{sec:HPO}
+%
+Optimizing and cross-validating hyperparameters are crucial to gain insights into a models' performance, robustness, and training time. Therefore, we choose for each imputation model the, as we find, most important hyperparameters and optimize them using cross-validated grid-search. For the $k$-NN and random forest imputation methods, we use 5-fold cross-validation, whereas we only 3-fold cross-validate VAE and GAIN to reduce the overall training time. Table \ref{tab:HPO} gives an overview of all imputation approaches and their hyperparameters we optimize, and the number of combinations. We do not define hyperparameter grids for mean/mode and DL imputation, as the former is parameterless and the latter optimized by \code{autokeras}.
+%
+\begin{table}[]
+	\centering
+	\begin{tabular}{@{}llll@{}}
+		\toprule
+		\multirow{2}{*}{Imputation Method} & \multicolumn{2}{c}{Hyperparameters}                          & \multirow{2}{*}{Grid Size} \\\cline{2-3}
+		\\[-0.75em]
+		& \multicolumn{1}{c}{Name}        & \multicolumn{1}{c}{Values} &                            \\ \midrule
+		Mean/Mode                         &                                 &                            &                           \\
+		\\[-0.5em]
+		$k$-NN                             & $n\_neighbors$                  & \{1, 3, 5\}                & 3                          \\
+		\\[-0.5em]
+		Random Forest                      & $n\_estimators$                 & \{10, 50, 100\}            & 3                          \\
+		\\[-0.5em]
+		Discriminative DL*                   &                                 &                            &                            \\
+		\\[-0.5em]
+		VAE                                & $n\_hidden\_layers$             & \{0, 1, 2\}                & 3                          \\
+		\\[-0.5em]
+		\multirow{4}{*}{GAIN}              & $alpha$                         & \{1, 10\}                  & \multirow{4}{*}{16}        \\
+		& $hint\_rate$                    & \{0.7, 0.9\}               &                            \\
+		& $generator\_learning\_rate$     & \{0.0001, 0.0005\}         &                            \\
+		& $discriminator\_learning\_rate$ & \{0.00001, 0.00005\}       &                            \\ \bottomrule
+		\multicolumn{4}{l}{\footnotesize*Optimized using \code{autokeras}, see Section \ref{sec:dl_imputation}}
+	\end{tabular}
+	\caption{An overview of all imputation methods and their hyperparameters we optimized. \emph{Mean/Mode} imputation does not have any hyperparameters, and \emph{Discriminative DL} is optimized using \code{autokeras}, which is why we do not explicitly define a hyperparameter grid.}
+	\label{tab:HPO}
+\end{table}
+
+
+
+\subsection{Evaluation Metrics}
+%
+To evaluate our experiments, we use two metrics: root mean square error ($RMSE$) and $macro\ F1$-score.
+%
+The $RMSE$ is defined as:
+%
+\begin{equation}
+	RMSE = \sqrt{\frac{1}{N} \sum_{i = 0}^{N} (y_i - \hat{y_i})^2}
+	\label{eq:RMSE}
+\end{equation}
+%
+where $N$ is the number of observations, $y_i$ the observed values, and $\hat{y}_{i}$ the predicted values.
+The $macro\ F1$-score is defined as the mean of class-wise $F1$-scores:
+%
+\begin{equation}
+	macro\ F1 = \frac{1}{C}\sum_{i = 0}^{C} F1_i
+	\label{eq:F1}
+\end{equation}
+%
+where $i$ is the class index, $C$ the number of classes and the definition of $F1$ is:
+%
+\begin{equation}
+	F1 = \frac{TP}{TP + \frac{1}{2}(FP + FN)}
+\end{equation}
+%
+where $TP$ is the number of true positives, $FP$ the number of false positives, and $FN$ the number of false negatives.
+
+Imputing categorical columns can be seen as a classification task. Accordingly, we measure performance in this case and for downstream classification tasks by the $macro\ F1$-score. In the following, we use the terms $F1$-score and $F1$ synonymously for $macro\ F1$-score. For regression tasks and imputing numerical columns, we use the $RMSE$. Since $F1$ is a score measure, larger values imply better performance. On the other hand, $RMSE$ is an error measure: a smaller value indicates better performance.

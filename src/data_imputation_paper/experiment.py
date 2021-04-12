@@ -1,11 +1,15 @@
 import json
 import logging
+import os
+import random
+import re
 import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
 import joblib
+import pandas as pd
 from jenga.tasks.openml import OpenMLTask
 
 from .imputation._base import BaseImputer
@@ -135,3 +139,117 @@ class Experiment(object):
         )
 
         logger.info(f"Experiment Finished! - Results are at: {self._base_path.parent}")
+
+
+def _recursive_split(path):
+    """
+    Recursively splits a path into its components.
+
+    Returns:
+        tuple
+    """
+    rest, tail = os.path.split(path)
+    if rest in ('', os.path.sep):
+        return tail,
+    return _recursive_split(rest) + (tail,)
+
+
+def read_experiment(path):
+    """
+    Discovers CSV files an experiment produced and construct columns
+    for the experiment's conditions from the sub-directory structure.
+
+    Args:
+        path: path to the experiment's results.
+
+    Returns:
+        pd.DataFrame
+    """
+    objects = list(path.rglob('*.csv'))
+    data = []
+    path_split = _recursive_split(path)
+
+    for obj in objects:
+        obj_path_split = _recursive_split(obj)
+        if len(obj_path_split) - len(path_split) > 7:
+            raise Exception("Path depth too long! Provide path to actual experiment or one of its sub-directories.")
+        data.append(obj_path_split)
+
+    df = pd.DataFrame(data=data)
+
+    columns = ["experiment", "imputer", "task", "missing_type", "missing_fraction", "strategy", "file_or_dir", "detail_file"]
+    auto_columns = []
+    for i in range(df.shape[1] - len(columns)):
+        auto_columns.append(f"col{i}")
+    df.columns = auto_columns + columns
+    df.drop(auto_columns, axis=1, inplace=True)
+
+    df["path"] = objects
+    df["detail_file"] = df["detail_file"].fillna("")
+
+    return df.reset_index(drop=True)
+
+
+def _read_prefixed_csv_files(df_experiment, file_prefix, read_details):
+    col_pattern = f"({file_prefix}_)(\\S*)(.csv)"
+    dfs = []
+    if read_details:
+        file_col = "detail_file"
+    else:
+        file_col = "file_or_dir"
+    # TODO this loop is pretty slow
+    for row in df_experiment[df_experiment[file_col].str.startswith(file_prefix)].iterrows():
+        df_new = pd.read_csv(row[1]["path"])
+        df_new.rename({"Unnamed: 0": "metric"}, inplace=True, axis=1)
+        df_new["experiment"] = row[1]["experiment"]
+        df_new["imputer"] = row[1]["imputer"]
+        df_new["task"] = row[1]["task"]
+        df_new["missing_type"] = row[1]["missing_type"]
+        df_new["missing_fraction"] = row[1]["missing_fraction"]
+        df_new["strategy"] = row[1]["strategy"]
+        if read_details:
+            df_new["column"] = row[1]["file_or_dir"]
+        else:
+            # column name contained in file names
+            df_new["column"] = re.findall(col_pattern, row[1][file_col])[0][1]
+        df_new["result_type"] = file_prefix
+        dfs.append(df_new)
+    return pd.concat(dfs, ignore_index=True)
+
+
+def read_csv_files(df_experiment, read_details=True):
+    """
+    Reads data from the CSV files which were produced by an experiment, i.e. the results.
+
+    Args:
+        df_experiment: pd.DataFrame containing the conditions as well as names/path of the CSV files of an experiment.
+
+    Returns:
+        pd.DataFrame with all experiment conditions and (aggregated) scores
+    """
+    if read_details:
+        result_types = [
+            "impute_performance",
+            "downstream_performance"
+        ]
+    else:
+        result_types = [
+            "impute_performance_std",
+            "impute_performance_mean",
+            "downstream_performance_std",
+            "downstream_performance_mean"
+        ]
+    df_experiment = pd.concat(
+        [_read_prefixed_csv_files(df_experiment, rt, read_details) for rt in result_types],
+        ignore_index=True
+    )
+    df_experiment["missing_fraction"] = pd.to_numeric(df_experiment["missing_fraction"])
+
+    ordered_columns = [
+        "experiment", "imputer", "task", "missing_type", "missing_fraction", "strategy", "column",
+        "result_type", "metric", "train", "test", "baseline", "corrupted", "imputed"
+    ]
+    assert len(ordered_columns) == df_experiment.shape[1]
+    df_experiment = df_experiment[ordered_columns]
+
+    return df_experiment
