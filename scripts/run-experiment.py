@@ -36,7 +36,6 @@ IMPUTER_NAME = {
     "vae": "VAEImputer"
 }
 
-# TODO...
 IMPUTER_ARGUMENTS = {
     "mode": {},
     "knn": {
@@ -87,9 +86,14 @@ IMPUTER_ARGUMENTS = {
     }
 }
 
-BINARY_TASK_IDS = [int(x) for x in json.loads(Path("../data/raw/binary.txt").read_text()).keys()]
-MULTI_TASK_IDS = [int(x) for x in json.loads(Path("../data/raw/multi.txt").read_text()).keys()]
-REGRESSION_TASK_IDS = [int(x) for x in json.loads(Path("../data/raw/regression.txt").read_text()).keys()]
+binary_task_id_mappings = json.loads(Path("../data/raw/binary.txt").read_text())
+multi_task_id_mappings = json.loads(Path("../data/raw/multi.txt").read_text())
+regression_task_id_mappings = json.loads(Path("../data/raw/regression.txt").read_text())
+task_id_mappings = {**binary_task_id_mappings, **multi_task_id_mappings, **regression_task_id_mappings}
+
+BINARY_TASK_IDS = [int(x) for x in binary_task_id_mappings.keys()]
+MULTI_TASK_IDS = [int(x) for x in multi_task_id_mappings.keys()]
+REGRESSION_TASK_IDS = [int(x) for x in regression_task_id_mappings.keys()]
 
 
 def get_missing_fractions(missing_fractions) -> List[float]:
@@ -150,7 +154,6 @@ def get_imputer_class_and_arguments(imputer_name: str) -> BaseImputer:
 def main(
     task_id: int,
     imputer: str,
-    target_column: str,
     experiment_name: str,
     missing_fractions: str = typer.Option(str, help="comma-separated list"),
     missing_types: str = typer.Option(str, help="comma-separated list"),
@@ -178,7 +181,7 @@ def main(
         timestamp=experiment_name,
         fully_observed=False if "corrupted" in experiment_name else True
     )
-    experiment.run(target_column)
+    experiment.run(task_id_mappings[f"{task_id}"])
 
 
 if __name__ == '__main__':

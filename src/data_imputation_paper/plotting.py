@@ -54,7 +54,7 @@ def draw_cat_box_plot(data, y, ylim, fpath, fname, col_order=["MCAR", "MAR", "MN
         hue_order=hue_order,
         margin_titles=True
     )
-    g.set_titles(row_template="{row_name}", col_template="{col_name}", size=17).set(ylim=ylim)
+    g.set_titles(row_template="{row_name}", col_template="{col_name}", size=18).set(ylim=ylim)
 
     plt.tight_layout(rect=(0, 0, 0.85, 1))
     fpath.mkdir(parents=True, exist_ok=True)

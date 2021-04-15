@@ -15,13 +15,13 @@ base_path = "/results"
 MISSING_FRACTIONS = [0.01, 0.1, 0.3, 0.5]
 MISSING_TYPES = ["MCAR", "MNAR", "MAR"]
 IMPUTER = ["gain", "vae", "dl", "forest", "knn", "mode"]
-STRATEGIES = ["single_all"]
+STRATEGIES = ["single_single", "single_all"]
 
 binary_task_ids = json.loads(Path("../data/raw/binary.txt").read_text())
 multi_task_ids = json.loads(Path("../data/raw/multi.txt").read_text())
 regression_task_ids = json.loads(Path("../data/raw/regression.txt").read_text())
 
-task_ids = {**binary_task_ids, **multi_task_ids, **regression_task_ids}
+task_ids = [*binary_task_ids.keys(), *multi_task_ids.keys(), *regression_task_ids.keys()]
 
 ###############
 
@@ -37,12 +37,10 @@ strategies_arg = f"--set strategies='{strategies_as_argument_string}'"
 fractions_arg = f"--set missing_fractions='{fractions_as_argument_string}'"
 num_repetitions_arg = f"--set num_repetitions='{num_repetitions}'"
 base_path_arg = f"--set base_path='{base_path}'"
-gpu = "--set image.tag=gpu"
-cpu = "--set image.tag=cpu"
 
-for task_id, target_column in task_ids.items():
+for task_id in task_ids:
     for imputer in IMPUTER:
-        command = f"{cmd} --set task_id={task_id} --set imputer={imputer} --set target_column={target_column} {name_arg} {types_arg} {strategies_arg} \
-            {fractions_arg} {num_repetitions_arg} {gpu if imputer == 'vae' else cpu} {base_path_arg} {template}"
+        command = f"{cmd} --set task_id={task_id} --set imputer={imputer} {name_arg} {types_arg} {strategies_arg} \
+            {fractions_arg} {num_repetitions_arg} {base_path_arg} {template}"
         output = subprocess.run(command, shell=True, capture_output=True)
         print(f"Started id: {task_id:<5} - imputer: {imputer:<6} - Kubernets Job name: {output.stdout.decode('utf-8').splitlines()[0][6:]}")

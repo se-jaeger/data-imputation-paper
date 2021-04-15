@@ -1,9 +1,4 @@
-# data-imputation-paper
-
-## Run Experiment
-
-The file `scripts/run-experiments.py` implements a simple CLI to run an experiment. It consists of exactly one `task_id` and one `imputer`. The arguments `missing_types`, and `missing_fractions` take a comma separated list, or omit to use default set. Use a good name that does not exist yet as `experiment_name` (e.g., timestamp) since it is used as base path to save the experiments.
-
+# Source Code for the Paper: Benchmark for Data Imputation Methods
 
 ## Installation
 
@@ -17,15 +12,9 @@ In order to set up the necessary environment:
    ```bash
    conda activate data-imputation-paper
    ```
-3. initialize and clone the `jenga` submodule
-   ```bash
-   git submodule init
-   git submodule update
-   ```
-4. install `jenga` with
+3. install `jenga` with
    ```bash
    cd src/jenga
-   git checkout imputation-paper # checkout proper branch
    python setup.py develop
    ```
 4. install `data-imputation-paper` with:
@@ -43,8 +32,8 @@ Optional and needed only once after `git clone`:
    and checkout the configuration under `.pre-commit-config.yaml`.
    The `-n, --no-verify` flag of `git commit` can be used to deactivate pre-commit hooks temporarily.
 
-
 Then take a look into the `scripts` and `notebooks` folders.
+
 
 ## Dependency Management & Reproducibility
 
