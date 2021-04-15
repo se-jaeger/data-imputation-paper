@@ -579,8 +579,12 @@ class VAEImputer(GenerativeImputer):
             Tuple[np.array, np.array, np.array]: Three matrices all of the same shapes used as GAIN input: \
                 `X` (data matrix), `M` (mask matrix), `H` (hint matrix)
         """
-        # TODO(VAE): how do other VAE-imputation papers prepare the input data?
-        X = np.nan_to_num(data, nan=0)
+        X_temp = np.nan_to_num(data, nan=0)
+        Z_temp = np.random.uniform(0, 0.01, size=[data.shape[0], self._num_data_columns])
+
+        M = 1 - np.isnan(data)
+        X = M * X_temp + (1 - M) * Z_temp
+
         return X
 
     def _set_hyperparameters_for_optimization(self, trial: optuna.trial.Trial) -> None:
