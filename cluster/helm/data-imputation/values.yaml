@@ -8,12 +8,11 @@ image:
   repository: registry.datexis.com
   user: sjaeger
   name: data-imputation
-  tag:
+  tag: final
   pullPolicy: Always
 
 task_id:
 imputer:
-target_column:
 experiment_name:
 missing_fractions:
 missing_types:
