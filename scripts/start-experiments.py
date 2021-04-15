@@ -15,13 +15,13 @@ base_path = "/results"
 MISSING_FRACTIONS = [0.01, 0.1, 0.3, 0.5]
 MISSING_TYPES = ["MCAR", "MNAR", "MAR"]
 IMPUTER = ["gain", "vae", "dl", "forest", "knn", "mode"]
-STRATEGIES = ["single_all"]
+STRATEGIES = ["single_single", "single_all"]
 
 binary_task_ids = json.loads(Path("../data/raw/binary.txt").read_text())
 multi_task_ids = json.loads(Path("../data/raw/multi.txt").read_text())
 regression_task_ids = json.loads(Path("../data/raw/regression.txt").read_text())
 
-task_ids = {**binary_task_ids, **multi_task_ids, **regression_task_ids}
+task_ids = [*binary_task_ids.keys(), *multi_task_ids.keys(), *regression_task_ids.keys()]
 
 ###############
 

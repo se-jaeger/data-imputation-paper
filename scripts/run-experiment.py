@@ -36,7 +36,6 @@ IMPUTER_NAME = {
     "vae": "VAEImputer"
 }
 
-# TODO...
 IMPUTER_ARGUMENTS = {
     "mode": {},
     "knn": {
