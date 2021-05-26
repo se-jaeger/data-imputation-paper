@@ -91,7 +91,7 @@ Throughout the past decades, researchers from different communities have been co
 
 More recently also ML approaches are increasingly used for imputation. Popular methods include k-nearest neighbors ($k$-NN)~\citep{Batista2003}, matrix factorization~\citep{Troyanskaya2001,Koren2009,Mazumder2010}, random forest-based approaches~\citep{Stekhoven2012}, discriminative deep learning methods~\citep{Biessmann2018a} as well as generative deep learning methods~\citep{GAIN, HIVAE, VAE_for_genomic_data, MisGAN, VIGAN}.
 
-Most imputation studies provide solid experimental evidence that the respective proposed method in the application setting investigated outperforms other competitor's baselines. Yet, it remains hard to assess which imputation method consistently performs best in a large spectrum of application scenarios and data sets under realistic missingness conditions. In particular, most studies do not systematically report and compare both imputation quality and the impact of the imputation on downstream ML applications with baselines.
+Most imputation studies provide solid experimental evidence that the respective proposed method in the application setting investigated outperforms other competitor's baselines. Yet, it remains hard to assess which imputation method consistently performs best in a large spectrum of application scenarios and data sets under realistic missingness conditions. In particular, most studies do not systematically report and compare both imputation quality and the impact of the imputation on downstream ML applications with baselines in a wide range of situations.
 
 In this paper, we aim at filling this gap. We benchmark a representative set of imputation methods on a large number of data sets under realistic missingness conditions with respect to imputation quality and the impact on the predictive performance of downstream ML models. For our experiments, we use $69$ fully observed data sets from \code{OpenML} \citep{OpenML2013} with numeric and categorical columns. Each data set is associated with a downstream ML task (binary classification, multi-class classification, and regression). We run experiments by artificially introducing varying fractions of missing values of the three missingness patterns (MCAR, MAR, and MNAR, see also Section \ref{sec:methods}). We then measure both the imputation accuracy and impact on downstream performance in two application scenarios: (a) missing values in the test data, i.e., we train on complete data, and corrupt (and impute) only test data, and (b) both training and test data have missing values, i.e., we train and test on corrupted data.
 
@@ -511,7 +511,7 @@ In this experiment, we evaluate the imputation performance of each method when t
 \end{figure}
 
 
-Figure \ref{fig:fully_observed_impute_rank_boxplot} presents the imputation results when training on complete data. In about $33\%$ of these results, GAIN failed during training and got assigned the worst rank six.
+Figure \ref{fig:fully_observed_impute_rank_boxplot} presents the imputation results when training on complete data. In about $33\%$ of these results, GAIN failed during training and got assigned the worst rank six. Investigating the errors reveals that GAIN's discriminator loss gets \code{NaN} at some point, leading to failures on further calculations and a failing training process. This depends heavily on the discriminator's learning rate and the data set. GAN-based models are generally known as hard to train, which is why improvements for training GAN's are introduced to make their training process more robust, e.g., \cite{GAN_balance_1, GAN_balance_2, GAN_balance_3}. However, optimizing the hyperparameters for all data sets is out of the scope of this paper. Therefore, we decide to define the hyperparameter grids once and incorporate the imputation methods' robustness regarding their hyperparameters into our evaluation.
 
 When imputing categorical columns, there is no clear best method. However, in many settings, the discriminative DL approach achieves in $75\%$ of the cases at least rank three or better. Very similar but slightly worse results are shown by the random forest imputation method. For MCAR with $50\%$ missing values and MAR with $10\%$ to $50\%$ missingness, the $k$-NN imputation approach performs well and gets for $75\%$ of the cases at least rank three or better. VAE achieves in $50\%$ of the cases a rank between two and four. GAIN shows in most settings consistently the worst performance: rank four or worse in $75\%$ of the cases. Interestingly, mean/mode imputation scores better ranks for the more complex settings with MNAR missingness pattern.
 
@@ -538,7 +538,7 @@ Overall, \textit{Scenario 1} (Figure \ref{fig:fully_observed_impute_rank_boxplot
 
 \subsection{Experiment 2: Impact on Downstream Task}
 
-In this experiment, we evaluate the imputation method's impact on the downstream performance in two scenarios: the imputation model was trained on complete and incomplete data. As described in Section \ref{sec:experiment_2}, this time, we discard only values in the data set's randomly sampled target column. We exclude the experiment setting, which failed during training the imputation model, i.e., there are about $33\%$ fewer results for the first scenario (training on complete data).
+In this experiment, we evaluate the imputation method's impact on the downstream performance in two scenarios: the imputation model was trained on complete and incomplete data. As described in Section \ref{sec:experiment_2}, this time, we discard only values in the data set's randomly sampled target column.
 
 
 \subsubsection{Scenario 1: Training on Complete Data}
@@ -550,7 +550,7 @@ In this experiment, we evaluate the imputation method's impact on the downstream
 	\label{fig:fully_observed_downstream_boxplot}
 \end{figure}
 
-Figure \ref{fig:fully_observed_downstream_boxplot} visualizes how much the predictive performance of a downstream ML model improves compared to incomplete test data and normalized by the downstream performance obtained on fully observed test data (Equation \ref{eq:impact}). This metric is labeled \textit{Improvement} and represented on the plots' y-axis.
+Since training GAIN failed in about $33\%$ of the experiments (see Section \ref{sec:results_experiment1_scenario1}), we exclude those from this evaluation. Figure \ref{fig:fully_observed_downstream_boxplot} visualizes how much the predictive performance of a downstream ML model improves compared to incomplete test data and normalized by the downstream performance obtained on fully observed test data (Equation \ref{eq:impact}). This metric is labeled \textit{Improvement} and represented on the plots' y-axis.
 
 In all cases, using imputation approaches increase the downstream performance in $75\%$ of the cases. Not surprisingly, independent from the downstream task and the missingness pattern, the more missing values exist, the better the potential improvement, shown by the method's increasing median and $75\%$ quantile.
 
