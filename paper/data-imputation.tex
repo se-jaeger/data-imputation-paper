@@ -93,7 +93,7 @@ More recently also ML approaches are increasingly used for imputation. Popular m
 
 Most imputation studies provide solid experimental evidence that the respective proposed method in the application setting investigated outperforms other competitor's baselines. Yet, it remains hard to assess which imputation method consistently performs best in a large spectrum of application scenarios and data sets under realistic missingness conditions. In particular, most studies do not systematically report and compare both imputation quality and the impact of the imputation on downstream ML applications with baselines in a wide range of situations.
 
-In this paper, we aim at filling this gap. We benchmark a representative set of imputation methods on a large number of data sets under realistic missingness conditions with respect to imputation quality and the impact on the predictive performance of downstream ML models. For our experiments, we use $69$ fully observed data sets from \code{OpenML} \citep{OpenML2013} with numeric and categorical columns. Each data set is associated with a downstream ML task (binary classification, multi-class classification, and regression). We run experiments by artificially introducing varying fractions of missing values of the three missingness patterns (MCAR, MAR, and MNAR, see also Section \ref{sec:methods}). We then measure both the imputation accuracy and impact on downstream performance in two application scenarios: (a) missing values in the test data, i.e., we train on complete data, and corrupt (and impute) only test data, and (b) both training and test data have missing values, i.e., we train and test on corrupted data.
+In this paper, we aim at filling this gap. We benchmark a representative set of imputation methods on a large number of data sets under realistic missingness conditions with respect to imputation quality and the impact on the predictive performance of downstream ML models. For our experiments, we use $69$ fully observed data sets from \code{OpenML} \citep{OpenML2013} with numeric and categorical columns. Each data set is associated with a downstream ML task (binary classification, multi-class classification, and regression). We run experiments by artificially introducing varying fractions of missing values of the three missingness patterns (MCAR, MAR, and MNAR, see also Section \ref{sec:methods}). We then measure both the imputation performance and impact on downstream performance in two application scenarios: (a) missing values in the test data, i.e., we train on complete data, and corrupt (and impute) only test data, and (b) both training and test data have missing values, i.e., we train and test on corrupted data.
 
 The rest of this paper is structured as follows. In Section \ref{sec:related_work}, we review the related work on imputation benchmarking efforts and continue in Section \ref{sec:methods} with an overview of the missingness conditions and imputation methods investigated in this study. A detailed description of our benchmark suite and its implementation follows in Section \ref{sec:implementation}. The results of our experiments are described and visualized in Section \ref{sec:results}. We then highlight the key findings in Section \ref{sec:discussion} and, finally, draw our conclusions in Section \ref{sec:conclusion}.
 
@@ -101,16 +101,7 @@ The rest of this paper is structured as follows. In Section \ref{sec:related_wor
 \section{Related Work}
 \label{sec:related_work}
 %
-The body of literature that is related to our work consists of two types of studies. Some focus on presenting new or improved imputation methods and compare them with existing and baseline approaches in broader settings, similar to benchmark papers \citep{Imputation_Benchmark_4, Imputation_Benchmark_6}. Others are benchmark studies and compare imputation strategies \citep{Imputation_Benchmark_1, Imputation_Benchmark_2, Imputation_Benchmark_3}. However, both have in common that they often focus on specific aspects or use cases and do not aim at an extensive comparison. In contrast, our goal is to get a broad overview of the following dimensions:
-%
-\begin{enumerate}
-	\item Number and heterogeneity of data sets
-	\item Varying downstream tasks (binary classification, multi-class classification, and regression)
-	\item Realistic missingness patterns and amount of missing values
-	\item Imputation methods and optimized hyperparameters
-	\item Evaluation on imputation accuracy and impact on downstream task performance
-	\item Training on complete and incomplete data
-\end{enumerate}
+The body of literature that is related to our work consists of two types of studies. Some focus on presenting new or improved imputation methods and compare them with existing and baseline approaches in broader settings, similar to benchmark papers \citep{Imputation_Benchmark_4, Imputation_Benchmark_6}. Others are benchmark studies and compare imputation strategies \citep{Imputation_Benchmark_1, Imputation_Benchmark_2, Imputation_Benchmark_3}. However, both have in common that they often focus on specific aspects or use cases and do not aim at an extensive comparison.
 
 \cite{Imputation_Benchmark_3} compared the downstream task performance on two binary classification data sets ($N = 48,842$, and $N = 435$) with imputed and incomplete data. Therefore, they varied the amount of MCAR and MNAR values from $0\%$ to $40\%$ in categorical features. For the imputation, they used six models: mode, random, $k$-NN, logistic regression, random forest, and SVM. The authors optimize the hyperparameters for one of the three downstream tasks but not for the imputation models. They conclude that using a $k$-NN imputation model performs best in most situations.
 
@@ -121,9 +112,7 @@ Similarly, \cite{Imputation_Benchmark_2} compare seven imputation methods (rando
 The following two papers differ from others because they aim to compare their proposed method against existing approaches. \cite{Imputation_Benchmark_6} implement an iterative expectation-maximization (EM) algorithm that learns and optimizes a latent representation of the data distribution, parameterized by a deep neural network, to perform the imputation. They use ten classification and three regression task data sets and 11 imputation baselines (zero, mean, median, MICE, miss-Forest, softImpute, $k$-NN, PCA, autoencoder, denoising autoencoder, residual autoencoder) for comparison. The authors conducted both evaluations, imputation and downstream task performance, with $25\%$, $50\%$, and $75\%$ MNAR missing values and showed that their method outperforms the baselines.
 
 To the best of our knowledge \citep{Imputation_Benchmark_4} is the largest and most extensive comparison, although the authors focus on introducing an imputation algorithm and present its improvements. Their proposed algorithm cross-validates the choice of the best imputation method out of $k$-NN, SVM, or tree-based imputation methods, where the hyperparameters are cross-validated, too. The authors then benchmarked their approach on $84$ classification and regression tasks against five imputation methods: mean, predictive mean matching, Bayesian PCA, $k$-NN, and iterative $k$-NN. They measured the imputation and downstream task performance on $10\%$ to $50\%$ MCAR and MNAR missing values. The authors show that their proposed method outperforms the baselines, closely followed by $k$-NN and iterative $k$-NN.
-
-We summarize the mentioned papers and related benchmarks in Table \ref{tab:related_work}. Most benchmarks use broad missingness fractions but lack realistic missingness conditions or a large number of heterogeneous data sets. Further, no paper systematically compares the imputation quality and impact on downstream tasks for imputation methods trained on complete and incomplete data. Studies presenting novel imputation methods based on deep learning often lack a comprehensive comparison with classical methods under realistic conditions, with few exceptions~\citep{Imputation_Benchmark_6}. In contrast, we aim at a broad and comprehensive benchmark, which accounts for all dimensions mentioned in this section.
-
+%
 % Please add the following required packages to your document preamble:
 % \usepackage{booktabs}
 % \usepackage{multirow}
@@ -152,6 +141,29 @@ We summarize the mentioned papers and related benchmarks in Table \ref{tab:relat
 	\caption{An overview of related benchmarks. In contrast to our benchmark, all other studies focus on specific aspects such as downstream tasks or missingness conditions. Most importantly, no paper systematically compares imputation methods trained on complete and incomplete data sets. Abbreviations: the symbol \emph{\#} stands for the number of, \emph{B.} means Baselines, \emph{Imp.} means Imputation Quality, \emph{Down.} means Impact on Downstream Task, \emph{Comp.} means Complete Data, \emph{Incomp.} means Incomplete Data, and \emph{clf.} means classification.}
 	\label{tab:related_work}
 \end{table}
+%
+We summarize the mentioned papers and related benchmarks in Table \ref{tab:related_work}. Most benchmarks use broad missingness fractions but lack realistic missingness conditions or a large number of heterogeneous data sets. Further, no paper systematically compares the imputation quality and impact on downstream tasks for imputation methods trained on complete and incomplete data. Studies presenting novel imputation methods based on deep learning often lack a comprehensive comparison with classical methods under realistic conditions, with few exceptions~\citep{Imputation_Benchmark_6}. In contrast, we aim at a broad and comprehensive benchmark of the following dimensions:
+
+\begin{enumerate}
+	\item Number and heterogeneity of data sets:\\
+	We use $69$ data sets with numeric and categorical columns.
+
+	\item Varying downstream tasks:\\
+	We use $21$ regression, $31$ binary classification, and $17$ multi-class classification tasks.
+
+	\item Realistic missingness patterns and amount of missing values:\\
+	We use MCAR, MAR and, MNAR missingness patterns and $1\%$, $10\%$, $30\%$, and $50\%$ missing values.
+
+	\item Imputation methods and optimized hyperparameters:\\
+	We use six imputation methods that range from simple baselines to modern deep generative models.
+
+	\item Evaluation on imputation performance and impact on downstream task performance:\\
+	We systematically compare the imputation methods based on their imputation performance and how they impact the performance of a downstream model.
+
+	\item Training on complete and incomplete data:\\
+	We simulate and compare the performance when imputation models can learn from complete and incomplete data.
+\end{enumerate}
+
 
 
 \section{Methods}
