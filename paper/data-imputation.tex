@@ -495,7 +495,7 @@ In this section, we describe and visualize the results of our experiments. For t
 
 \subsection{Experiment 1: Imputation Quality}
 
-In this experiment, we evaluate the imputation performance of each method when training on complete data. As described above, our goal was to provide a broad overview of the imputation methods' performance on various data sets. Using randomly sampled to-be-imputed columns on heterogeneous data leads to a wide range of values for their evaluation metric ($F1$/$RMSE$), making it difficult to compare. To solve this problem, we split the results into categorical and numerical imputations and compute the rank for each imputation method and missingness pattern and fraction combination separately. Since we use six imputation methods, there are six ranks, where rank one is best and rank six the worst. If two or more methods perform equally, we assign the same rank, and for methods that failed during training, rank six.
+In this experiment, we evaluate the imputation performance of each method when training on complete data. As described above, our goal was to provide a broad overview of the imputation methods' performance on various data sets. Using randomly sampled to-be-imputed columns on heterogeneous data leads to a wide range of values for their evaluation metric ($F1$/$RMSE$), making it difficult to compare. To solve this problem, we split the results into categorical and numerical imputations and compute the rank for each imputation method, missingness pattern, and fraction combination separately. Since we use six imputation methods, there are six ranks, where rank $1$ is best and rank $6$ the worst. If two or more methods perform equally, we assign the same rank. Imputation methods that failed to train the model get rank $6$. For each experimental setting and every data set, we have ordered ranks for the imputation methods. This allows us to interpret the results relative to each other. For example, if one imputation method ranks best, i.e., rank $1$, for all data sets, we know that all other imputation methods have at least rank $2$.
 
 
 
@@ -504,7 +504,7 @@ In this experiment, we evaluate the imputation performance of each method when t
 
 \begin{figure}\centering
 	\includegraphics[width=1\columnwidth]{fully_observed_impute_rank_boxplot}
-	\caption{Imputation ranks of the  imputation methods trained on complete data. Ranks are computed for each experimental condition characterized by data set, missingness pattern, and missingness ratio. In most conditions, random forest, $k$-NN, and discriminative DL perform best. Generative deep learning methods tend to perform worst. In the most challenging MNAR condition, mean/mode imputation achieves competitive results.
+	\caption{Imputation ranks of the  imputation methods trained on complete data. Ranks are computed for each experimental condition characterized by data set, missingness pattern, and missingness ratio. Since we compare six imputation methods, the possible imputation ranks range between $1$ and $6$. In most conditions, random forest, $k$-NN, and discriminative DL perform best. Generative deep learning methods tend to perform worst. In the most challenging MNAR condition, mean/mode imputation achieves competitive results.
 	}
 	\label{fig:fully_observed_impute_rank_boxplot}
 \end{figure}
@@ -523,7 +523,7 @@ To summarize, simple imputation methods, such as $k$-NN and random forest, often
 
 \begin{figure}\centering
 	\includegraphics[width=1\columnwidth]{corrupted_impute_rank_boxplot}
-	\caption{Imputation ranks of the  imputation methods trained on incomplete data. Ranks are computed for each experimental condition characterized by data set, missingness pattern, and missingness ratio. Similar to the training on fully observed data random forest, $k$-NN and discriminative DL perform better than generative deep learning methods in most settings. In the MNAR conditions, the imputation quality of all imputation approaches degrades in favor of mean/mode that outperforms the other for $30\%$ and $50\%$ missingness.}
+	\caption{Imputation ranks of the  imputation methods trained on incomplete data. Ranks are computed for each experimental condition characterized by data set, missingness pattern, and missingness ratio. Since we compare six imputation methods, the possible imputation ranks range between $1$ and $6$. Similar to the training on fully observed data random forest, $k$-NN and discriminative DL perform better than generative deep learning methods in most settings. In the MNAR conditions, the imputation quality of all imputation approaches degrades in favor of mean/mode that outperforms the other for $30\%$ and $50\%$ missingness.}
 	\label{fig:corrupted_impute_rank_boxplot}
 \end{figure}
 
