@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: If you use this software, please cite our paper.
+type: article
+title: A Benchmark for Data Imputation Methods
+authors:
+  - given-names: Sebastian
+    family-names: Jäger
+    email: sebastian.jaeger@beuth-hochschule.de
+    affiliation: Beuth University of Applied Sciences
+  - given-names: Arndt
+    family-names: Allhorn
+    affiliation: Beuth University of Applied Sciences
+  - given-names: Felix
+    family-names: Bießmann
+    affiliation: Beuth University of Applied Sciences
+journal: "Frontiers in Big Data"
+volume: 4
+pages: 48
+year: 2021
+url: "https://www.frontiersin.org/article/10.3389/fdata.2021.693674"
+doi: 10.3389/fdata.2021.693674"
+issn: "2624-909X"
